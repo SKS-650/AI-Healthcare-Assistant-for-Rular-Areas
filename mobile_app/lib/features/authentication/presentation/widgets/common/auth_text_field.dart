@@ -14,6 +14,8 @@ class AuthTextField extends StatelessWidget {
   final ValueChanged<String>? onChanged;
   final VoidCallback? onEditingComplete;
   final FocusNode? focusNode;
+  /// Optional validator function — runs during Form.validate()
+  final String? Function(String?)? validator;
 
   const AuthTextField({
     super.key,
@@ -29,6 +31,7 @@ class AuthTextField extends StatelessWidget {
     this.onChanged,
     this.onEditingComplete,
     this.focusNode,
+    this.validator,
   });
 
   @override
@@ -54,6 +57,7 @@ class AuthTextField extends StatelessWidget {
         textInputAction: textInputAction,
         onChanged: onChanged,
         onEditingComplete: onEditingComplete,
+        validator: validator,
         style: const TextStyle(
           fontSize: 15,
           fontWeight: FontWeight.w500,

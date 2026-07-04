@@ -71,7 +71,9 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage>
     final state = ref.watch(authControllerProvider);
 
     ref.listen<AuthenticationState>(authControllerProvider, (prev, next) {
-      if (next.isSuccess && next.resetToken == null && prev?.isLoading == true) {
+      // Reset succeeded: flow is success and resetToken is now null
+      // (it was non-null before the call, set during OTP verification)
+      if (next.isSuccess && next.resetToken == null) {
         SuccessDialog.show(
           context,
           title: 'Password Reset!',
@@ -186,6 +188,17 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage>
                           onEditingComplete: () =>
                               FocusScope.of(context).requestFocus(_confirmFocus),
                           onChanged: (_) => setState(() {}),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Password is required';
+                            if (v.length < 8) return 'At least 8 characters';
+                            if (!RegExp(r'[A-Z]').hasMatch(v)) return 'Add an uppercase letter';
+                            if (!RegExp(r'[a-z]').hasMatch(v)) return 'Add a lowercase letter';
+                            if (!RegExp(r'[0-9]').hasMatch(v)) return 'Add a digit';
+                            if (!RegExp(r'[!@#\$%^&*()\-_,.?":{}|<>]').hasMatch(v)) {
+                              return 'Add a special character';
+                            }
+                            return null;
+                          },
                           suffix: IconButton(
                             onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword),
@@ -211,6 +224,11 @@ class _ResetPasswordPageState extends ConsumerState<ResetPasswordPage>
                           obscureText: _obscureConfirm,
                           textInputAction: TextInputAction.done,
                           onEditingComplete: _submit,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) return 'Please confirm your password';
+                            if (v != _passwordCtrl.text) return 'Passwords do not match';
+                            return null;
+                          },
                           suffix: IconButton(
                             onPressed: () => setState(
                                 () => _obscureConfirm = !_obscureConfirm),

@@ -209,6 +209,27 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
                           onEditingComplete: () =>
                               FocusScope.of(context).requestFocus(_confirmFocus),
                           onChanged: (_) => setState(() {}),
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return 'Password is required';
+                            }
+                            if (v.length < 8) {
+                              return 'Password must be at least 8 characters';
+                            }
+                            if (!RegExp(r'[A-Z]').hasMatch(v)) {
+                              return 'Password must contain an uppercase letter';
+                            }
+                            if (!RegExp(r'[a-z]').hasMatch(v)) {
+                              return 'Password must contain a lowercase letter';
+                            }
+                            if (!RegExp(r'[0-9]').hasMatch(v)) {
+                              return 'Password must contain a digit';
+                            }
+                            if (!RegExp(r'[!@#\$%^&*()\-_,.?":{}|<>]').hasMatch(v)) {
+                              return 'Password must contain a special character';
+                            }
+                            return null;
+                          },
                           suffix: IconButton(
                             onPressed: () => setState(
                                 () => _obscurePassword = !_obscurePassword),
@@ -246,6 +267,15 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
                           obscureText: _obscureConfirm,
                           textInputAction: TextInputAction.done,
                           onEditingComplete: _submit,
+                          validator: (v) {
+                            if (v == null || v.isEmpty) {
+                              return 'Please confirm your password';
+                            }
+                            if (v != _passwordCtrl.text) {
+                              return 'Passwords do not match';
+                            }
+                            return null;
+                          },
                           suffix: IconButton(
                             onPressed: () => setState(
                                 () => _obscureConfirm = !_obscureConfirm),

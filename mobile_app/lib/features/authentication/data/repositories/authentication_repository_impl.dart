@@ -13,6 +13,9 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   String? _refreshToken;
   bool _seenOnboarding = false;
 
+  /// Exposes the current access token so other providers can make authenticated requests.
+  String? get accessToken => _accessToken;
+
   @override
   Future<UserEntity> getCurrentUser() async {
     return _cachedUser ?? UserEntity.empty;

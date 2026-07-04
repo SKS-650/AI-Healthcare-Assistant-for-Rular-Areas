@@ -1,63 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../../routing/route_names.dart';
 import '../../../../../shared/design_system/design_tokens.dart';
 import '../../../authentication/presentation/providers/authentication_provider.dart';
-
-// ── State model ───────────────────────────────────────────────────────────────
-
-class _ProfileData {
-  String name;
-  String age;
-  String gender;
-  String bloodGroup;
-  String phone;
-  String village;
-  String chronicConditions;
-  String allergies;
-  String currentMedications;
-  String emergencyContact;
-  String smoking;
-  String alcohol;
-  String exercise;
-  String sleep;
-
-  _ProfileData({
-    this.name = 'Ramesh Kumar',
-    this.age = '34',
-    this.gender = 'Male',
-    this.bloodGroup = 'O Positive',
-    this.phone = '+91 98765 43210',
-    this.village = 'Rampur, UP',
-    this.chronicConditions = 'Hypertension',
-    this.allergies = 'None known',
-    this.currentMedications = 'Amlodipine 5mg',
-    this.emergencyContact = 'Sita Devi • +91 87654 32109',
-    this.smoking = 'Never',
-    this.alcohol = 'Occasional',
-    this.exercise = 'Medium',
-    this.sleep = '7 hours/night',
-  });
-
-  _ProfileData copyWith({
-    String? name, String? age, String? gender, String? bloodGroup,
-    String? phone, String? village, String? chronicConditions,
-    String? allergies, String? currentMedications, String? emergencyContact,
-    String? smoking, String? alcohol, String? exercise, String? sleep,
-  }) => _ProfileData(
-    name: name ?? this.name, age: age ?? this.age,
-    gender: gender ?? this.gender, bloodGroup: bloodGroup ?? this.bloodGroup,
-    phone: phone ?? this.phone, village: village ?? this.village,
-    chronicConditions: chronicConditions ?? this.chronicConditions,
-    allergies: allergies ?? this.allergies,
-    currentMedications: currentMedications ?? this.currentMedications,
-    emergencyContact: emergencyContact ?? this.emergencyContact,
-    smoking: smoking ?? this.smoking, alcohol: alcohol ?? this.alcohol,
-    exercise: exercise ?? this.exercise, sleep: sleep ?? this.sleep,
-  );
-}
-
-// ── Page ──────────────────────────────────────────────────────────────────────
+import '../providers/user_profile_provider.dart';
 
 class ProfilePage extends ConsumerStatefulWidget {
   const ProfilePage({super.key});
@@ -69,95 +16,98 @@ class ProfilePage extends ConsumerStatefulWidget {
 class _ProfilePageState extends ConsumerState<ProfilePage> {
   final _formKey = GlobalKey<FormState>();
   bool _editing = false;
-  bool _saving = false;
-  late _ProfileData _data;
-  late _ProfileData _draft;
 
-  // Controllers
-  late final TextEditingController _nameCtrl;
-  late final TextEditingController _ageCtrl;
-  late final TextEditingController _phoneCtrl;
-  late final TextEditingController _villageCtrl;
-  late final TextEditingController _chronicCtrl;
-  late final TextEditingController _allergiesCtrl;
-  late final TextEditingController _medsCtrl;
-  late final TextEditingController _emergencyCtrl;
-  late final TextEditingController _sleepCtrl;
+  final _nameCtrl       = TextEditingController();
+  final _phoneCtrl      = TextEditingController();
+  final _occupationCtrl = TextEditingController();
+  final _bioCtrl        = TextEditingController();
+  final _heightCtrl     = TextEditingController();
+  final _weightCtrl     = TextEditingController();
+  final _allergiesCtrl  = TextEditingController();
+  final _chronicCtrl    = TextEditingController();
+  final _medsCtrl       = TextEditingController();
+  final _notesCtrl      = TextEditingController();
 
-  static const _genders = ['Male', 'Female', 'Non-binary', 'Prefer not to say'];
-  static const _bloodGroups = ['A Positive', 'A Negative', 'B Positive', 'B Negative',
-    'O Positive', 'O Negative', 'AB Positive', 'AB Negative'];
-  static const _smokingOpts = ['Never', 'Occasionally', 'Regularly', 'Quit'];
-  static const _alcoholOpts = ['Never', 'Occasional', 'Moderate', 'Regular'];
-  static const _exerciseOpts = ['None', 'Light', 'Medium', 'Active', 'Athlete'];
+  String? _gender;
+  String? _bloodGroup;
+  String? _maritalStatus;
+  bool _smokingStatus     = false;
+  bool _alcoholConsumption = false;
+
+  static const _genders     = ['male', 'female', 'non-binary', 'prefer not to say'];
+  static const _bloodGroups = ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'];
+  static const _maritalOpts = ['single', 'married', 'divorced', 'widowed'];
 
   @override
   void initState() {
     super.initState();
-    _data = _ProfileData();
-    _draft = _data.copyWith();
-    _initControllers();
-  }
-
-  void _initControllers() {
-    _nameCtrl      = TextEditingController(text: _draft.name);
-    _ageCtrl       = TextEditingController(text: _draft.age);
-    _phoneCtrl     = TextEditingController(text: _draft.phone);
-    _villageCtrl   = TextEditingController(text: _draft.village);
-    _chronicCtrl   = TextEditingController(text: _draft.chronicConditions);
-    _allergiesCtrl = TextEditingController(text: _draft.allergies);
-    _medsCtrl      = TextEditingController(text: _draft.currentMedications);
-    _emergencyCtrl = TextEditingController(text: _draft.emergencyContact);
-    _sleepCtrl     = TextEditingController(text: _draft.sleep);
+    // Load real data when page opens
+    Future.microtask(() => ref.read(userProfileProvider.notifier).loadProfile());
   }
 
   @override
   void dispose() {
-    for (final c in [_nameCtrl, _ageCtrl, _phoneCtrl, _villageCtrl,
-        _chronicCtrl, _allergiesCtrl, _medsCtrl, _emergencyCtrl, _sleepCtrl]) {
-      c.dispose();
-    }
+    for (final c in [
+      _nameCtrl, _phoneCtrl, _occupationCtrl, _bioCtrl,
+      _heightCtrl, _weightCtrl, _allergiesCtrl, _chronicCtrl,
+      _medsCtrl, _notesCtrl,
+    ]) { c.dispose(); }
     super.dispose();
   }
 
-  void _startEditing() {
-    _draft = _data.copyWith();
-    _nameCtrl.text      = _draft.name;
-    _ageCtrl.text       = _draft.age;
-    _phoneCtrl.text     = _draft.phone;
-    _villageCtrl.text   = _draft.village;
-    _chronicCtrl.text   = _draft.chronicConditions;
-    _allergiesCtrl.text = _draft.allergies;
-    _medsCtrl.text      = _draft.currentMedications;
-    _emergencyCtrl.text = _draft.emergencyContact;
-    _sleepCtrl.text     = _draft.sleep;
+  /// Populate controllers from the loaded profile data.
+  void _populateFromProfile(UserFullProfile p) {
+    _nameCtrl.text       = p.fullName;
+    _phoneCtrl.text      = p.phone ?? '';
+    _occupationCtrl.text = p.occupation ?? '';
+    _bioCtrl.text        = p.bio ?? '';
+    _heightCtrl.text     = p.heightCm?.toString() ?? '';
+    _weightCtrl.text     = p.weightKg?.toString() ?? '';
+    _allergiesCtrl.text  = p.allergies.join(', ');
+    _chronicCtrl.text    = p.chronicDiseases.join(', ');
+    _medsCtrl.text       = p.currentMedications.join(', ');
+    _notesCtrl.text      = p.medicalNotes ?? '';
+    _gender              = _genders.contains(p.gender) ? p.gender : null;
+    _bloodGroup          = _bloodGroups.contains(p.bloodGroup) ? p.bloodGroup : null;
+    _maritalStatus       = _maritalOpts.contains(p.maritalStatus) ? p.maritalStatus : null;
+    _smokingStatus       = p.smokingStatus;
+    _alcoholConsumption  = p.alcoholConsumption;
+  }
+
+  void _startEditing(UserFullProfile p) {
+    _populateFromProfile(p);
     setState(() => _editing = true);
   }
 
   void _cancelEditing() {
     FocusScope.of(context).unfocus();
-    setState(() { _editing = false; _draft = _data.copyWith(); });
+    setState(() => _editing = false);
   }
 
-  Future<void> _saveChanges() async {
+  Future<void> _save() async {
     FocusScope.of(context).unfocus();
     if (!(_formKey.currentState?.validate() ?? false)) return;
-    setState(() => _saving = true);
-    // Simulate network save
-    await Future.delayed(const Duration(milliseconds: 800));
-    _data = _draft.copyWith(
-      name: _nameCtrl.text.trim(),
-      age: _ageCtrl.text.trim(),
-      phone: _phoneCtrl.text.trim(),
-      village: _villageCtrl.text.trim(),
-      chronicConditions: _chronicCtrl.text.trim(),
-      allergies: _allergiesCtrl.text.trim(),
-      currentMedications: _medsCtrl.text.trim(),
-      emergencyContact: _emergencyCtrl.text.trim(),
-      sleep: _sleepCtrl.text.trim(),
+
+    final ok = await ref.read(userProfileProvider.notifier).saveProfile(
+      fullName:           _nameCtrl.text.trim(),
+      phone:              _phoneCtrl.text.trim(),
+      gender:             _gender,
+      bloodGroup:         _bloodGroup,
+      heightCm:           double.tryParse(_heightCtrl.text.trim()),
+      weightKg:           double.tryParse(_weightCtrl.text.trim()),
+      occupation:         _occupationCtrl.text.trim(),
+      maritalStatus:      _maritalStatus,
+      bio:                _bioCtrl.text.trim(),
+      allergies:          _splitList(_allergiesCtrl.text),
+      chronicDiseases:    _splitList(_chronicCtrl.text),
+      currentMedications: _splitList(_medsCtrl.text),
+      smokingStatus:      _smokingStatus,
+      alcoholConsumption: _alcoholConsumption,
+      medicalNotes:       _notesCtrl.text.trim(),
     );
-    setState(() { _saving = false; _editing = false; });
-    if (mounted) {
+
+    if (ok && mounted) {
+      setState(() => _editing = false);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: const Row(children: [
           Icon(Icons.check_circle_rounded, color: Colors.white, size: 18),
@@ -172,10 +122,56 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     }
   }
 
+  static List<String> _splitList(String raw) =>
+      raw.split(',').map((s) => s.trim()).where((s) => s.isNotEmpty).toList();
+
+  // ── Logout ──────────────────────────────────────────────────────────────────
+
+  Future<void> _logout() async {
+    final confirm = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+        title: const Text('Sign Out', style: TextStyle(fontWeight: FontWeight.w800)),
+        content: const Text('Are you sure you want to sign out?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: DesignTokens.danger),
+            child: const Text('Sign Out'),
+          ),
+        ],
+      ),
+    );
+    if (confirm == true && mounted) {
+      await ref.read(authControllerProvider.notifier).logout();
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil(RouteNames.login, (r) => false);
+      }
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    final authUser = ref.watch(authControllerProvider).user;
-    final displayName = authUser?.name ?? _data.name;
+    final profileState = ref.watch(userProfileProvider);
+
+    // Respond to save errors
+    ref.listen<UserProfileState>(userProfileProvider, (_, next) {
+      if (next.error != null && !next.isSaving) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text(next.error!),
+          backgroundColor: DesignTokens.danger,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+        ));
+      }
+    });
+
+    final p = profileState.profile;
 
     return Scaffold(
       backgroundColor: DesignTokens.background,
@@ -189,71 +185,146 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
                 onPressed: _editing ? _cancelEditing : () => Navigator.of(context).pop(),
               )
             : null,
-        title: const Row(
-          children: [
-            Text('👤', style: TextStyle(fontSize: 20)),
-            SizedBox(width: 8),
-            Text('My Profile', style: TextStyle(
-              fontSize: 18, fontWeight: FontWeight.w800,
-              color: DesignTokens.textStrong,
-            )),
-          ],
-        ),
+        title: const Row(children: [
+          Text('👤', style: TextStyle(fontSize: 20)),
+          SizedBox(width: 8),
+          Text('My Profile', style: TextStyle(
+            fontSize: 18, fontWeight: FontWeight.w800, color: DesignTokens.textStrong,
+          )),
+        ]),
         actions: [
-          if (!_editing)
+          if (!_editing) ...[
+            if (p != null)
+              IconButton(
+                icon: const Icon(Icons.edit_rounded, color: DesignTokens.primary, size: 20),
+                tooltip: 'Edit profile',
+                onPressed: () => _startEditing(p),
+              ),
             IconButton(
-              icon: const Icon(Icons.edit_rounded, color: DesignTokens.primary, size: 20),
-              tooltip: 'Edit profile',
-              onPressed: _startEditing,
-            )
-          else ...[
+              icon: const Icon(Icons.logout_rounded, color: DesignTokens.danger, size: 20),
+              tooltip: 'Sign out',
+              onPressed: _logout,
+            ),
+          ] else ...[
             TextButton(
-              onPressed: _saving ? null : _cancelEditing,
+              onPressed: profileState.isSaving ? null : _cancelEditing,
               child: const Text('Cancel', style: TextStyle(color: DesignTokens.textMuted)),
             ),
-            const SizedBox(width: 4),
           ],
         ],
       ),
-      body: Form(
-        key: _formKey,
-        child: Stack(
-          children: [
-            SingleChildScrollView(
-              padding: const EdgeInsets.only(bottom: 100),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  _buildHeader(displayName),
-                  _buildStats(),
-                  const SizedBox(height: 24),
-                  _buildPersonalSection(),
-                  const SizedBox(height: 24),
-                  _buildMedicalSection(),
-                  const SizedBox(height: 24),
-                  _buildLifestyleSection(),
-                  const SizedBox(height: 32),
-                ],
-              ),
-            ),
-            // Floating Save button when editing
-            if (_editing)
-              Positioned(
-                bottom: 0, left: 0, right: 0,
-                child: _SaveBar(saving: _saving, onSave: _saveChanges),
-              ),
-          ],
-        ),
-      ),
+      body: _buildBody(profileState),
     );
   }
 
-  // ── Header ─────────────────────────────────────────────────────────────────
+  Widget _buildBody(UserProfileState profileState) {
+    if (profileState.isLoading) {
+      return const Center(
+        child: CircularProgressIndicator(color: DesignTokens.primary),
+      );
+    }
 
-  Widget _buildHeader(String displayName) {
+    if (profileState.error != null && profileState.profile == null) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Text('⚠️', style: TextStyle(fontSize: 48)),
+            const SizedBox(height: 16),
+            Text(profileState.error!, textAlign: TextAlign.center,
+              style: const TextStyle(color: DesignTokens.textMuted, fontSize: 15)),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: () => ref.read(userProfileProvider.notifier).loadProfile(),
+              icon: const Icon(Icons.refresh_rounded),
+              label: const Text('Retry'),
+              style: FilledButton.styleFrom(backgroundColor: DesignTokens.primary),
+            ),
+          ]),
+        ),
+      );
+    }
+
+    final p = profileState.profile;
+    if (p == null) return const SizedBox.shrink();
+
+    return Form(
+      key: _formKey,
+      child: Stack(children: [
+        SingleChildScrollView(
+          padding: EdgeInsets.only(bottom: _editing ? 90 : 24),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            _buildHeader(p),
+            const SizedBox(height: 20),
+            _buildSection('👤', 'Personal', [
+              _field('Full Name', _nameCtrl, editing: _editing,
+                validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
+              _field('Phone', _phoneCtrl, editing: _editing,
+                keyboardType: TextInputType.phone),
+              _field('Occupation', _occupationCtrl, editing: _editing),
+              _dropdown('Gender', _genders, _gender, editing: _editing,
+                onChanged: (v) => setState(() => _gender = v)),
+              _dropdown('Marital Status', _maritalOpts, _maritalStatus, editing: _editing,
+                onChanged: (v) => setState(() => _maritalStatus = v)),
+              _field('Bio', _bioCtrl, editing: _editing, maxLines: 2),
+            ]),
+            const SizedBox(height: 20),
+            _buildSection('🩺', 'Health Details', [
+              _dropdown('Blood Group', _bloodGroups, _bloodGroup, editing: _editing,
+                onChanged: (v) => setState(() => _bloodGroup = v)),
+              _field('Height (cm)', _heightCtrl, editing: _editing,
+                keyboardType: TextInputType.number),
+              _field('Weight (kg)', _weightCtrl, editing: _editing,
+                keyboardType: TextInputType.number),
+            ]),
+            const SizedBox(height: 20),
+            _buildSection('💊', 'Medical Info', [
+              _field('Allergies', _allergiesCtrl, editing: _editing,
+                hint: 'e.g. Penicillin, Dust'),
+              _field('Chronic Diseases', _chronicCtrl, editing: _editing,
+                hint: 'e.g. Diabetes Type 2'),
+              _field('Current Medications', _medsCtrl, editing: _editing,
+                hint: 'e.g. Metformin 500mg'),
+              _field('Notes', _notesCtrl, editing: _editing, maxLines: 2),
+              if (_editing) ...[
+                _toggle('Smoking', _smokingStatus,
+                  onChanged: (v) => setState(() => _smokingStatus = v)),
+                _toggle('Alcohol', _alcoholConsumption,
+                  onChanged: (v) => setState(() => _alcoholConsumption = v)),
+              ] else ...[
+                _infoRow('🚭', 'Smoking', p.smokingStatus ? 'Yes' : 'No'),
+                _infoRow('🥛', 'Alcohol', p.alcoholConsumption ? 'Yes' : 'No'),
+              ],
+            ]),
+            const SizedBox(height: 16),
+            _buildAccountInfo(p),
+            const SizedBox(height: 32),
+          ]),
+        ),
+        if (_editing)
+          Positioned(
+            bottom: 0, left: 0, right: 0,
+            child: _SaveBar(saving: profileState.isSaving, onSave: _save),
+          ),
+      ]),
+    );
+  }
+
+  // ── Header card ─────────────────────────────────────────────────────────────
+
+  Widget _buildHeader(UserFullProfile p) {
+    final initials = p.fullName.trim().split(' ') is List
+        ? (() {
+            final parts = p.fullName.trim().split(' ');
+            return parts.length >= 2
+                ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+                : p.fullName.substring(0, p.fullName.length >= 2 ? 2 : 1).toUpperCase();
+          })()
+        : '??';
+
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
-      padding: const EdgeInsets.all(24),
+      padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
           colors: [DesignTokens.primary, DesignTokens.primaryDark],
@@ -262,395 +333,218 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [BoxShadow(
           color: DesignTokens.primary.withValues(alpha: 0.35),
-          blurRadius: 24, offset: const Offset(0, 10),
+          blurRadius: 20, offset: const Offset(0, 8),
         )],
       ),
-      child: Row(
-        children: [
-          Stack(children: [
-            Container(
-              width: 72, height: 72,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                shape: BoxShape.circle,
-                border: Border.all(color: Colors.white.withValues(alpha: 0.4), width: 2),
-              ),
-              child: const Center(child: Text('👤', style: TextStyle(fontSize: 36))),
-            ),
-            if (_editing)
-              Positioned(
-                right: 0, bottom: 0,
-                child: GestureDetector(
-                  onTap: () {},
-                  child: Container(
-                    width: 24, height: 24,
-                    decoration: BoxDecoration(
-                      color: DesignTokens.primary,
-                      shape: BoxShape.circle,
-                      border: Border.all(color: Colors.white, width: 1.5),
-                    ),
-                    child: const Icon(Icons.camera_alt_rounded, color: Colors.white, size: 13),
-                  ),
-                ),
-              )
-            else
-              Positioned(
-                right: 0, bottom: 0,
-                child: Container(
-                  width: 22, height: 22,
-                  decoration: const BoxDecoration(color: DesignTokens.success, shape: BoxShape.circle),
-                  child: const Icon(Icons.check_rounded, color: Colors.white, size: 14),
-                ),
-              ),
-          ]),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(_data.name, style: const TextStyle(
-                  color: Colors.white, fontSize: 20,
-                  fontWeight: FontWeight.w900, letterSpacing: -0.3,
-                )),
-                const SizedBox(height: 4),
-                Text('Age ${_data.age} • ${_data.gender} • Blood: ${_data.bloodGroup.split(' ').first}${_data.bloodGroup.contains('Pos') ? '+' : '-'}',
-                  style: const TextStyle(color: Colors.white70, fontSize: 13)),
-                const SizedBox(height: 8),
-                Row(children: [
-                  const Icon(Icons.location_on_rounded, size: 12, color: Colors.white70),
-                  const SizedBox(width: 3),
-                  Expanded(child: Text(_data.village,
-                    style: const TextStyle(color: Colors.white70, fontSize: 12),
-                    overflow: TextOverflow.ellipsis)),
-                ]),
-              ],
-            ),
-          ),
-          if (_editing)
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.2),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Text('Editing', style: TextStyle(
-                color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
-            ),
-        ],
-      ),
-    );
-  }
-
-  // ── Stats ───────────────────────────────────────────────────────────────────
-
-  Widget _buildStats() {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
       child: Row(children: [
-        _StatCard(emoji: '❤️', label: 'Health Score', value: '78/100'),
-        const SizedBox(width: 10),
-        _StatCard(emoji: '🧬', label: 'Predictions', value: '12'),
-        const SizedBox(width: 10),
-        _StatCard(emoji: '📋', label: 'Records', value: '5'),
-      ]),
-    );
-  }
-
-  // ── Personal section ────────────────────────────────────────────────────────
-
-  Widget _buildPersonalSection() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _SectionHeader(emoji: '👤', title: 'Personal Information', editing: _editing),
-      const SizedBox(height: 12),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(children: [
-          _EditableRow(label: 'Full Name', emoji: '👤', editing: _editing,
-            controller: _nameCtrl, staticValue: _data.name,
-            validator: (v) => (v == null || v.trim().isEmpty) ? 'Required' : null),
-          _EditableRow(label: 'Age', emoji: '🎂', editing: _editing,
-            controller: _ageCtrl, staticValue: '${_data.age} years',
-            keyboardType: TextInputType.number,
-            validator: (v) {
-              if (v == null || v.isEmpty) return 'Required';
-              final n = int.tryParse(v);
-              if (n == null || n < 1 || n > 120) return 'Invalid age';
-              return null;
-            }),
-          _DropdownRow(label: 'Gender', emoji: '⚧️', editing: _editing,
-            value: _draft.gender, options: _genders,
-            staticValue: _data.gender,
-            onChanged: (v) => setState(() => _draft = _draft.copyWith(gender: v))),
-          _DropdownRow(label: 'Blood Group', emoji: '🩸', editing: _editing,
-            value: _draft.bloodGroup, options: _bloodGroups,
-            staticValue: _data.bloodGroup,
-            onChanged: (v) => setState(() => _draft = _draft.copyWith(bloodGroup: v))),
-          _EditableRow(label: 'Phone', emoji: '📱', editing: _editing,
-            controller: _phoneCtrl, staticValue: _data.phone,
-            keyboardType: TextInputType.phone),
-          _EditableRow(label: 'Village', emoji: '🏡', editing: _editing,
-            controller: _villageCtrl, staticValue: _data.village),
-        ]),
-      ),
-    ]);
-  }
-
-  // ── Medical section ─────────────────────────────────────────────────────────
-
-  Widget _buildMedicalSection() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _SectionHeader(emoji: '🏥', title: 'Medical Information', editing: _editing),
-      const SizedBox(height: 12),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(children: [
-          _EditableRow(label: 'Chronic Conditions', emoji: '💊', editing: _editing,
-            controller: _chronicCtrl, staticValue: _data.chronicConditions),
-          _EditableRow(label: 'Allergies', emoji: '⚠️', editing: _editing,
-            controller: _allergiesCtrl, staticValue: _data.allergies),
-          _EditableRow(label: 'Current Medications', emoji: '💉', editing: _editing,
-            controller: _medsCtrl, staticValue: _data.currentMedications),
-          _EditableRow(label: 'Emergency Contact', emoji: '📞', editing: _editing,
-            controller: _emergencyCtrl, staticValue: _data.emergencyContact),
-        ]),
-      ),
-    ]);
-  }
-
-  // ── Lifestyle section ───────────────────────────────────────────────────────
-
-  Widget _buildLifestyleSection() {
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      _SectionHeader(emoji: '🏃', title: 'Lifestyle', editing: _editing),
-      const SizedBox(height: 12),
-      Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        child: Column(children: [
-          _DropdownRow(label: 'Smoking', emoji: '🚭', editing: _editing,
-            value: _draft.smoking, options: _smokingOpts,
-            staticValue: _data.smoking,
-            onChanged: (v) => setState(() => _draft = _draft.copyWith(smoking: v))),
-          _DropdownRow(label: 'Alcohol', emoji: '🥛', editing: _editing,
-            value: _draft.alcohol, options: _alcoholOpts,
-            staticValue: _data.alcohol,
-            onChanged: (v) => setState(() => _draft = _draft.copyWith(alcohol: v))),
-          _DropdownRow(label: 'Exercise', emoji: '🏋️', editing: _editing,
-            value: _draft.exercise, options: _exerciseOpts,
-            staticValue: _data.exercise,
-            onChanged: (v) => setState(() => _draft = _draft.copyWith(exercise: v))),
-          _EditableRow(label: 'Sleep', emoji: '😴', editing: _editing,
-            controller: _sleepCtrl, staticValue: _data.sleep),
-        ]),
-      ),
-    ]);
-  }
-}
-
-// ── Reusable widgets ──────────────────────────────────────────────────────────
-
-class _StatCard extends StatelessWidget {
-  final String emoji, label, value;
-  const _StatCard({required this.emoji, required this.label, required this.value});
-
-  @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Container(
-        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-        decoration: BoxDecoration(
-          color: DesignTokens.surface,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(color: DesignTokens.border),
-          boxShadow: [BoxShadow(
-            color: DesignTokens.primary.withValues(alpha: 0.05),
-            blurRadius: 8, offset: const Offset(0, 3),
-          )],
+        CircleAvatar(
+          radius: 34,
+          backgroundColor: Colors.white.withValues(alpha: 0.2),
+          child: Text(initials, style: const TextStyle(
+            color: Colors.white, fontWeight: FontWeight.w900, fontSize: 20)),
         ),
-        child: Column(children: [
-          Text(emoji, style: const TextStyle(fontSize: 22)),
-          const SizedBox(height: 6),
-          Text(value, style: const TextStyle(
-            fontWeight: FontWeight.w900, fontSize: 16,
-            color: DesignTokens.textStrong, letterSpacing: -0.5,
-          )),
-          const SizedBox(height: 2),
-          Text(label, style: const TextStyle(
-            color: DesignTokens.textMuted, fontSize: 10, fontWeight: FontWeight.w600),
-            textAlign: TextAlign.center, maxLines: 1, overflow: TextOverflow.ellipsis),
-        ]),
-      ),
-    );
-  }
-}
-
-class _SectionHeader extends StatelessWidget {
-  final String emoji, title;
-  final bool editing;
-  const _SectionHeader({required this.emoji, required this.title, this.editing = false});
-
-  @override
-  Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(children: [
-        Text(emoji, style: const TextStyle(fontSize: 18)),
-        const SizedBox(width: 8),
-        Text(title, style: const TextStyle(
-          fontSize: 16, fontWeight: FontWeight.w800,
-          color: DesignTokens.textStrong, letterSpacing: -0.3,
-        )),
-        if (editing) ...[
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-            decoration: BoxDecoration(
-              color: DesignTokens.primaryContainer,
-              borderRadius: BorderRadius.circular(8),
+        const SizedBox(width: 16),
+        Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(p.fullName, style: const TextStyle(
+            color: Colors.white, fontSize: 20,
+            fontWeight: FontWeight.w900, letterSpacing: -0.3)),
+          const SizedBox(height: 3),
+          Text(p.email, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          if (p.phone != null && p.phone!.isNotEmpty) ...[
+            const SizedBox(height: 2),
+            Text(p.phone!, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+          ],
+          if (p.role != null) ...[
+            const SizedBox(height: 6),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 3),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.2),
+                borderRadius: BorderRadius.circular(20),
+              ),
+              child: Text(p.role!.toUpperCase(), style: const TextStyle(
+                color: Colors.white, fontSize: 10, fontWeight: FontWeight.w700,
+                letterSpacing: 0.8)),
             ),
-            child: const Text('editable', style: TextStyle(
-              fontSize: 10, color: DesignTokens.primary, fontWeight: FontWeight.w700)),
-          ),
-        ],
+          ],
+        ])),
       ]),
     );
   }
-}
 
-/// Switches between a read-only row and a TextFormField when [editing].
-class _EditableRow extends StatelessWidget {
-  final String label, emoji, staticValue;
-  final bool editing;
-  final TextEditingController controller;
-  final TextInputType keyboardType;
-  final String? Function(String?)? validator;
+  // ── Section wrapper ──────────────────────────────────────────────────────────
 
-  const _EditableRow({
-    required this.label,
-    required this.emoji,
-    required this.staticValue,
-    required this.editing,
-    required this.controller,
-    this.keyboardType = TextInputType.text,
-    this.validator,
-  });
+  Widget _buildSection(String emoji, String title, List<Widget> children) {
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Row(children: [
+          Text(emoji, style: const TextStyle(fontSize: 18)),
+          const SizedBox(width: 8),
+          Text(title, style: const TextStyle(
+            fontSize: 15, fontWeight: FontWeight.w800,
+            color: DesignTokens.textStrong, letterSpacing: -0.2)),
+          if (_editing) ...[
+            const SizedBox(width: 8),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
+              decoration: BoxDecoration(
+                color: DesignTokens.primaryContainer,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: const Text('editable', style: TextStyle(
+                fontSize: 10, color: DesignTokens.primary, fontWeight: FontWeight.w700)),
+            ),
+          ],
+        ]),
+      ),
+      const SizedBox(height: 10),
+      Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16),
+        child: Column(children: children),
+      ),
+    ]);
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  // ── Account info (read-only) ─────────────────────────────────────────────────
+
+  Widget _buildAccountInfo(UserFullProfile p) {
+    return _buildSection('🔐', 'Account Info', [
+      if (p.bloodGroup != null) _infoRow('🩸', 'Blood Group', p.bloodGroup!),
+      if (p.gender != null) _infoRow('⚧️', 'Gender', p.gender!),
+      if (p.maritalStatus != null) _infoRow('💍', 'Marital Status', p.maritalStatus!),
+      if (p.occupation != null) _infoRow('💼', 'Occupation', p.occupation!),
+      if (p.heightCm != null) _infoRow('📏', 'Height', '${p.heightCm} cm'),
+      if (p.weightKg != null) _infoRow('⚖️', 'Weight', '${p.weightKg} kg'),
+      if (p.bio != null && p.bio!.isNotEmpty) _infoRow('📝', 'Bio', p.bio!),
+    ]);
+  }
+
+  // ── Reusable field widgets ───────────────────────────────────────────────────
+
+  Widget _field(
+    String label,
+    TextEditingController ctrl, {
+    required bool editing,
+    TextInputType keyboardType = TextInputType.text,
+    String? hint,
+    int maxLines = 1,
+    String? Function(String?)? validator,
+  }) {
     if (!editing) {
-      return _InfoRow(label: label, value: staticValue, emoji: emoji);
+      final value = ctrl.text.trim();
+      if (value.isEmpty) return const SizedBox.shrink();
+      return _infoRow('', label, value);
     }
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.fromLTRB(16, 8, 12, 8),
-      decoration: BoxDecoration(
-        color: DesignTokens.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: DesignTokens.primary.withValues(alpha: 0.4), width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 16)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: TextFormField(
-              controller: controller,
-              keyboardType: keyboardType,
-              validator: validator,
-              style: const TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w700,
-                color: DesignTokens.textStrong,
-              ),
-              decoration: InputDecoration(
-                labelText: label,
-                labelStyle: const TextStyle(
-                  fontSize: 12, color: DesignTokens.textMuted, fontWeight: FontWeight.w500),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                errorBorder: InputBorder.none,
-                focusedErrorBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-            ),
+      child: TextFormField(
+        controller: ctrl,
+        keyboardType: keyboardType,
+        maxLines: maxLines,
+        validator: validator,
+        style: const TextStyle(fontSize: 14, color: DesignTokens.textStrong),
+        decoration: InputDecoration(
+          labelText: label,
+          hintText: hint,
+          filled: true,
+          fillColor: DesignTokens.surface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: DesignTokens.border),
           ),
-          const Icon(Icons.edit_rounded, size: 14, color: DesignTokens.primary),
-        ],
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: DesignTokens.primary.withValues(alpha: 0.4)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: DesignTokens.primary, width: 1.8),
+          ),
+          errorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: DesignTokens.danger),
+          ),
+          focusedErrorBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: DesignTokens.danger, width: 1.8),
+          ),
+          labelStyle: const TextStyle(color: DesignTokens.textMuted, fontSize: 13),
+        ),
       ),
     );
   }
-}
 
-/// Switches between a read-only row and a DropdownButtonFormField when [editing].
-class _DropdownRow extends StatelessWidget {
-  final String label, emoji, staticValue, value;
-  final bool editing;
-  final List<String> options;
-  final ValueChanged<String?> onChanged;
-
-  const _DropdownRow({
-    required this.label,
-    required this.emoji,
-    required this.staticValue,
-    required this.editing,
-    required this.value,
-    required this.options,
-    required this.onChanged,
-  });
-
-  @override
-  Widget build(BuildContext context) {
+  Widget _dropdown(
+    String label,
+    List<String> options,
+    String? value, {
+    required bool editing,
+    required ValueChanged<String?> onChanged,
+  }) {
     if (!editing) {
-      return _InfoRow(label: label, value: staticValue, emoji: emoji);
+      if (value == null || value.isEmpty) return const SizedBox.shrink();
+      return _infoRow('', label, value);
     }
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
-      padding: const EdgeInsets.fromLTRB(16, 4, 4, 4),
-      decoration: BoxDecoration(
-        color: DesignTokens.surface,
-        borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: DesignTokens.primary.withValues(alpha: 0.4), width: 1.5),
-      ),
-      child: Row(
-        children: [
-          Text(emoji, style: const TextStyle(fontSize: 16)),
-          const SizedBox(width: 12),
-          Expanded(
-            child: DropdownButtonFormField<String>(
-              initialValue: options.contains(value) ? value : options.first,
-              items: options.map((o) => DropdownMenuItem(value: o, child: Text(o,
-                style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700,
-                  color: DesignTokens.textStrong)))).toList(),
-              onChanged: onChanged,
-              decoration: InputDecoration(
-                labelText: label,
-                labelStyle: const TextStyle(
-                  fontSize: 12, color: DesignTokens.textMuted, fontWeight: FontWeight.w500),
-                border: InputBorder.none,
-                enabledBorder: InputBorder.none,
-                focusedBorder: InputBorder.none,
-                isDense: true,
-                contentPadding: EdgeInsets.zero,
-              ),
-              icon: const Icon(Icons.keyboard_arrow_down_rounded,
-                color: DesignTokens.primary, size: 20),
-              dropdownColor: DesignTokens.surface,
-              borderRadius: BorderRadius.circular(14),
-            ),
+      child: DropdownButtonFormField<String>(
+        value: options.contains(value) ? value : null,
+        items: options.map((o) => DropdownMenuItem(
+          value: o,
+          child: Text(o, style: const TextStyle(fontSize: 14)),
+        )).toList(),
+        onChanged: onChanged,
+        decoration: InputDecoration(
+          labelText: label,
+          filled: true,
+          fillColor: DesignTokens.surface,
+          contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: DesignTokens.border),
           ),
-        ],
+          enabledBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: BorderSide(color: DesignTokens.primary.withValues(alpha: 0.4)),
+          ),
+          focusedBorder: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(14),
+            borderSide: const BorderSide(color: DesignTokens.primary, width: 1.8),
+          ),
+          labelStyle: const TextStyle(color: DesignTokens.textMuted, fontSize: 13),
+        ),
+        dropdownColor: DesignTokens.surface,
+        borderRadius: BorderRadius.circular(14),
+        icon: const Icon(Icons.keyboard_arrow_down_rounded, color: DesignTokens.primary),
       ),
     );
   }
-}
 
-/// Read-only info row (view mode).
-class _InfoRow extends StatelessWidget {
-  final String label, value, emoji;
-  const _InfoRow({required this.label, required this.value, required this.emoji});
+  Widget _toggle(String label, bool value, {required ValueChanged<bool> onChanged}) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+      decoration: BoxDecoration(
+        color: DesignTokens.surface,
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: DesignTokens.primary.withValues(alpha: 0.4)),
+      ),
+      child: Row(children: [
+        Text(label, style: const TextStyle(
+          fontSize: 14, color: DesignTokens.textStrong, fontWeight: FontWeight.w600)),
+        const Spacer(),
+        Switch(
+          value: value,
+          onChanged: onChanged,
+          activeColor: DesignTokens.primary,
+        ),
+      ]),
+    );
+  }
 
-  @override
-  Widget build(BuildContext context) {
+  Widget _infoRow(String emoji, String label, String value) {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
@@ -660,8 +554,10 @@ class _InfoRow extends StatelessWidget {
         border: Border.all(color: DesignTokens.border),
       ),
       child: Row(children: [
-        Text(emoji, style: const TextStyle(fontSize: 16)),
-        const SizedBox(width: 12),
+        if (emoji.isNotEmpty) ...[
+          Text(emoji, style: const TextStyle(fontSize: 16)),
+          const SizedBox(width: 10),
+        ],
         Expanded(child: Text(label, style: const TextStyle(
           color: DesignTokens.textMuted, fontSize: 13, fontWeight: FontWeight.w500))),
         Flexible(child: Text(value, style: const TextStyle(
@@ -672,7 +568,8 @@ class _InfoRow extends StatelessWidget {
   }
 }
 
-/// Sticky save bar that floats above the bottom of the screen.
+// ── Save bar ───────────────────────────────────────────────────────────────────
+
 class _SaveBar extends StatelessWidget {
   final bool saving;
   final VoidCallback onSave;
@@ -681,8 +578,7 @@ class _SaveBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: EdgeInsets.fromLTRB(16, 12, 16,
-          12 + MediaQuery.of(context).padding.bottom),
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 12 + MediaQuery.of(context).padding.bottom),
       decoration: BoxDecoration(
         color: DesignTokens.surface,
         boxShadow: [BoxShadow(
@@ -723,8 +619,7 @@ class _SaveBar extends StatelessWidget {
                 : const Row(mainAxisAlignment: MainAxisAlignment.center, children: [
                     Icon(Icons.save_rounded, size: 18),
                     SizedBox(width: 8),
-                    Text('Save Changes', style: TextStyle(
-                      fontSize: 16, fontWeight: FontWeight.w700)),
+                    Text('Save Changes', style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700)),
                   ]),
           ),
         ),
