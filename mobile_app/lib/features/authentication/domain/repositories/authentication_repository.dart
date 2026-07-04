@@ -18,7 +18,9 @@ abstract class AuthenticationRepository {
   Future<UserEntity> loginAsGuest();
 
   /// Send a forgot-password OTP to [email].
-  Future<void> forgotPassword({required String email});
+  /// Returns the OTP string in development mode (for testing without SMTP),
+  /// null in production.
+  Future<String?> forgotPassword({required String email});
 
   /// Verify the OTP for [email]. Returns a reset token on success.
   Future<String> verifyOtp({required String email, required String otp});

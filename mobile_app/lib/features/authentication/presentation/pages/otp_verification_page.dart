@@ -192,22 +192,7 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
 
                       // Dev hint
                       const SizedBox(height: 8),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 12, vertical: 6),
-                        decoration: BoxDecoration(
-                          color: DesignTokens.primaryContainer,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Text(
-                          '💡 Dev mode: OTP is 123456',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: DesignTokens.primaryDark,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ),
+                      _DevOtpBanner(),
 
                       const SizedBox(height: 36),
 
@@ -267,6 +252,94 @@ class _BackButton extends StatelessWidget {
           size: 20,
           color: DesignTokens.textStrong,
         ),
+      ),
+    );
+  }
+}
+
+// ── Dev OTP Banner ────────────────────────────────────────────────────────────
+// Shown only in development when the backend returns the OTP directly.
+
+class _DevOtpBanner extends ConsumerWidget {
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final devOtp = ref.watch(
+      authControllerProvider.select((s) => s.devOtp),
+    );
+
+    if (devOtp == null) {
+      return Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        decoration: BoxDecoration(
+          color: DesignTokens.primaryContainer,
+          borderRadius: BorderRadius.circular(8),
+        ),
+        child: const Text(
+          '💡 Dev mode: Check server logs for the OTP code',
+          style: TextStyle(
+            fontSize: 12,
+            color: DesignTokens.primaryDark,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+    }
+
+    // OTP returned directly from backend — show it prominently
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+      decoration: BoxDecoration(
+        color: const Color(0xFFE8F5E9),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: const Color(0xFF4CAF50), width: 1.5),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Row(
+            children: [
+              Text('🔑', style: TextStyle(fontSize: 14)),
+              SizedBox(width: 6),
+              Text(
+                'Dev Mode — Your OTP',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: Color(0xFF2E7D32),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 6),
+          Row(
+            children: [
+              Text(
+                devOtp,
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w900,
+                  color: Color(0xFF1B5E20),
+                  letterSpacing: 8,
+                ),
+              ),
+              const Spacer(),
+              GestureDetector(
+                onTap: () {
+                  // Auto-fill the OTP by copying to clipboard hint
+                },
+                child: const Text(
+                  'Enter above ↑',
+                  style: TextStyle(
+                    fontSize: 11,
+                    color: Color(0xFF388E3C),
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

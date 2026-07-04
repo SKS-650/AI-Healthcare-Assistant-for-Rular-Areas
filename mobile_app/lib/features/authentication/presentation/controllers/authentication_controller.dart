@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../data/datasources/auth_dummy_data.dart';
+import '../../domain/exceptions/auth_exception.dart';
 import '../../domain/usecases/complete_profile.dart';
 import '../../domain/usecases/forgot_password.dart';
 import '../../domain/usecases/guest_login.dart';
@@ -100,10 +100,11 @@ class AuthenticationController extends StateNotifier<AuthenticationState> {
   Future<void> sendForgotPasswordOtp(String email) async {
     state = state.copyWith(flow: AuthFlow.loading);
     try {
-      await _forgotPassword(email: email);
+      final devOtp = await _forgotPassword(email: email);
       state = state.copyWith(
         flow: AuthFlow.success,
         pendingEmail: email,
+        devOtp: devOtp,
         successMessage: 'OTP sent to $email',
       );
     } on AuthException catch (e) {

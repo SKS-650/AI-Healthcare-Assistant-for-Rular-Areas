@@ -12,6 +12,8 @@ class AuthenticationState extends Equatable {
   // For multi-step flows (forgot-password → OTP → reset)
   final String? pendingEmail;
   final String? resetToken;
+  // Dev-mode only: OTP returned directly from backend when SMTP is not set up
+  final String? devOtp;
 
   const AuthenticationState({
     this.flow = AuthFlow.idle,
@@ -20,6 +22,7 @@ class AuthenticationState extends Equatable {
     this.successMessage,
     this.pendingEmail,
     this.resetToken,
+    this.devOtp,
   });
 
   bool get isLoading => flow == AuthFlow.loading;
@@ -33,6 +36,7 @@ class AuthenticationState extends Equatable {
     String? successMessage,
     String? pendingEmail,
     String? resetToken,
+    String? devOtp,
   }) {
     return AuthenticationState(
       flow: flow ?? this.flow,
@@ -41,6 +45,7 @@ class AuthenticationState extends Equatable {
       successMessage: successMessage,
       pendingEmail: pendingEmail ?? this.pendingEmail,
       resetToken: resetToken ?? this.resetToken,
+      devOtp: devOtp ?? this.devOtp,
     );
   }
 
@@ -52,5 +57,6 @@ class AuthenticationState extends Equatable {
         successMessage,
         pendingEmail,
         resetToken,
+        devOtp,
       ];
 }

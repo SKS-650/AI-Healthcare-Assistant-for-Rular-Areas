@@ -1,4 +1,5 @@
 import '../models/user_model.dart';
+import '../../domain/exceptions/auth_exception.dart';
 
 /// In-memory fake back-end for local development.
 /// Replace with real Firebase / REST calls when the backend is ready.
@@ -132,10 +133,4 @@ class AuthDummyData {
   }
 }
 
-class AuthException implements Exception {
-  final String message;
-  const AuthException(this.message);
-
-  @override
-  String toString() => message;
-}
+// AuthException is defined in domain/exceptions/auth_exception.dart
