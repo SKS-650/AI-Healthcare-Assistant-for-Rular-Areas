@@ -104,26 +104,35 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
     return LoadingOverlay(
       isLoading: state.isLoading,
       child: Scaffold(
+        // Scaffold shrinks body when keyboard appears
+        resizeToAvoidBottomInset: true,
         body: AuthBackground(
           child: SafeArea(
             child: FadeTransition(
               opacity: _fade,
               child: SlideTransition(
                 position: _slide,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 28),
+                child: SingleChildScrollView(
+                  // Reverse so the button stays visible above keyboard
+                  keyboardDismissBehavior:
+                      ScrollViewKeyboardDismissBehavior.onDrag,
+                  padding: EdgeInsets.fromLTRB(
+                    28,
+                    16,
+                    28,
+                    MediaQuery.of(context).viewInsets.bottom + 24,
+                  ),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const SizedBox(height: 16),
                       _BackButton(),
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 32),
 
-                      // ── Illustration ────────────────────────────────────
+                      // ── Illustration ──────────────────────────────────
                       Center(
                         child: Container(
-                          width: 100,
-                          height: 100,
+                          width: 90,
+                          height: 90,
                           decoration: BoxDecoration(
                             gradient: const LinearGradient(
                               colors: [
@@ -134,21 +143,23 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
                             shape: BoxShape.circle,
                             boxShadow: [
                               BoxShadow(
-                                color: DesignTokens.primary.withValues(alpha: 0.15),
+                                color: DesignTokens.primary
+                                    .withValues(alpha: 0.15),
                                 blurRadius: 24,
                                 offset: const Offset(0, 8),
                               ),
                             ],
                           ),
                           child: const Center(
-                            child: Text('📱', style: TextStyle(fontSize: 46)),
+                            child:
+                                Text('📱', style: TextStyle(fontSize: 42)),
                           ),
                         ),
                       ),
 
-                      const SizedBox(height: 32),
+                      const SizedBox(height: 28),
 
-                      // ── Header ──────────────────────────────────────────
+                      // ── Header ────────────────────────────────────────
                       const Text(
                         'Check your email',
                         style: TextStyle(
@@ -198,20 +209,18 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
                         ),
                       ),
 
-                      const SizedBox(height: 40),
+                      const SizedBox(height: 36),
 
-                      // ── OTP input ────────────────────────────────────────
+                      // ── OTP input ──────────────────────────────────────
                       OtpInput(
                         length: 6,
                         onChanged: (v) => setState(() => _otp = v),
-                        onCompleted: (v) {
-                          setState(() => _otp = v);
-                        },
+                        onCompleted: (v) => setState(() => _otp = v),
                       ),
 
-                      const SizedBox(height: 36),
+                      const SizedBox(height: 32),
 
-                      // ── Verify button ────────────────────────────────────
+                      // ── Verify button ──────────────────────────────────
                       PrimaryAuthButton(
                         label: 'Verify OTP',
                         onPressed: state.isLoading ? null : _verify,
@@ -219,18 +228,15 @@ class _OtpVerificationPageState extends ConsumerState<OtpVerificationPage>
                         icon: Icons.verified_rounded,
                       ),
 
-                      const SizedBox(height: 28),
+                      const SizedBox(height: 24),
 
-                      // ── Resend timer ─────────────────────────────────────
+                      // ── Resend timer ───────────────────────────────────
                       Center(
                         child: ResendTimer(
                           seconds: 60,
                           onResend: _resend,
                         ),
                       ),
-
-                      const Spacer(),
-                      const SizedBox(height: 24),
                     ],
                   ),
                 ),
