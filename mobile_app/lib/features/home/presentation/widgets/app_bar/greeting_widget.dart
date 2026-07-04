@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../../features/authentication/presentation/providers/authentication_provider.dart';
 import '../../../../../shared/design_system/design_tokens.dart';
 
-class GreetingWidget extends StatelessWidget {
+class GreetingWidget extends ConsumerWidget {
   const GreetingWidget({super.key});
 
   String _greeting() {
@@ -19,36 +21,64 @@ class GreetingWidget extends StatelessWidget {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final authState = ref.watch(authControllerProvider);
+    final user = authState.user;
+    final isGuest = user?.isGuest ?? false;
+
+    // Derive initials from name or fall back to guest icon
+    String initials = '?';
+    String displayName = 'Guest';
+    if (user != null && !isGuest) {
+      displayName = user.name ?? user.email.split('@').first;
+      final parts = displayName.trim().split(' ');
+      initials = parts.length >= 2
+          ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+          : displayName.substring(0, displayName.length >= 2 ? 2 : 1)
+              .toUpperCase();
+    }
+
     return Row(
       children: [
+        // Avatar
         Container(
           width: 40,
           height: 40,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [Color(0xFF926EFF), Color(0xFF6B47E8)],
+            gradient: LinearGradient(
+              colors: isGuest
+                  ? [DesignTokens.textSubtle, DesignTokens.textMuted]
+                  : const [Color(0xFF926EFF), Color(0xFF6B47E8)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(12),
             boxShadow: [
               BoxShadow(
-                color: DesignTokens.primary.withValues(alpha: 0.35),
+                color: (isGuest ? DesignTokens.textMuted : DesignTokens.primary)
+                    .withValues(alpha: 0.28),
                 blurRadius: 8,
                 offset: const Offset(0, 3),
               ),
             ],
           ),
-          child: const Center(
-            child: Text('JD',
-                style: TextStyle(
-                    color: Colors.white,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 14)),
+          child: Center(
+            child: isGuest
+                ? const Icon(Icons.person_rounded,
+                    color: Colors.white, size: 22)
+                : Text(
+                    initials,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontWeight: FontWeight.w800,
+                      fontSize: 14,
+                    ),
+                  ),
           ),
         ),
+
         const SizedBox(width: 10),
+
         Expanded(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,22 +86,34 @@ class GreetingWidget extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  Text(_greeting(),
-                      style: const TextStyle(
-                          fontSize: 12,
-                          color: DesignTokens.textMuted,
-                          fontWeight: FontWeight.w500)),
+                  Text(
+                    isGuest ? 'Browsing as' : _greeting(),
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: DesignTokens.textMuted,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   const SizedBox(width: 4),
-                  Text(_emoji(), style: const TextStyle(fontSize: 12)),
+                  Text(
+                    isGuest ? '👤' : _emoji(),
+                    style: const TextStyle(fontSize: 12),
+                  ),
                 ],
               ),
-              const Text('John Doe',
-                  style: TextStyle(
-                      fontSize: 17,
-                      fontWeight: FontWeight.w800,
-                      height: 1.2,
-                      letterSpacing: -0.3,
-                      color: DesignTokens.textStrong)),
+              Text(
+                isGuest ? 'Guest User' : displayName,
+                style: TextStyle(
+                  fontSize: 17,
+                  fontWeight: FontWeight.w800,
+                  height: 1.2,
+                  letterSpacing: -0.3,
+                  color: isGuest
+                      ? DesignTokens.textMuted
+                      : DesignTokens.textStrong,
+                ),
+                overflow: TextOverflow.ellipsis,
+              ),
             ],
           ),
         ),

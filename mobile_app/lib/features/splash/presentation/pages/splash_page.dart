@@ -54,9 +54,11 @@ class _SplashPageState extends State<SplashPage>
 
     _ctrl.forward();
 
+    // The auth splash (AuthSplashPage) is now the initial route at '/'.
+    // This legacy SplashPage is kept for reference but not used in routing.
     Future.delayed(const Duration(milliseconds: 2600), () {
       if (mounted) {
-        Navigator.of(context).pushReplacementNamed(RouteNames.home);
+        Navigator.of(context).pushReplacementNamed(RouteNames.welcome);
       }
     });
   }

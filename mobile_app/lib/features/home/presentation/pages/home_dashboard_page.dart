@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../routing/route_names.dart';
 import '../../../../shared/design_system/design_tokens.dart';
+import '../../../authentication/presentation/providers/authentication_provider.dart';
 import '../controller/dashboard_state.dart';
 import '../providers/dashboard_provider.dart';
 import '../widgets/app_bar/dashboard_app_bar.dart';
@@ -11,6 +12,7 @@ import '../widgets/bottom_navigation/home_bottom_navigation.dart';
 import '../widgets/common/loading_widget.dart';
 import '../widgets/common/section_title.dart';
 import '../widgets/emergency/emergency_card.dart';
+import '../widgets/guest/guest_banner.dart';
 import '../widgets/health_score/health_score_card.dart';
 import '../widgets/health_tips/tips_slider.dart';
 import '../widgets/hospitals/hospital_card.dart';
@@ -56,6 +58,10 @@ class HomeDashboardPage extends ConsumerWidget {
       );
     }
 
+    final isGuest = ref.watch(
+      authControllerProvider.select((s) => s.user?.isGuest ?? false),
+    );
+
     return RefreshIndicator(
       key: const ValueKey('loaded'),
       color: DesignTokens.primary,
@@ -73,6 +79,9 @@ class HomeDashboardPage extends ConsumerWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const SizedBox(height: 4),
+
+                    // ── Guest call-to-action banner ──────────────────────
+                    if (isGuest) const GuestBanner(),
 
                     if (state.weather != null)
                       WeatherCard(weather: state.weather!),

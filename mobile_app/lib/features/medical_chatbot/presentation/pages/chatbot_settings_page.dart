@@ -34,7 +34,7 @@ class ChatbotSettingsPage extends ConsumerWidget {
         ),
         title: const Row(
           children: [
-            Text('âš™ï¸', style: TextStyle(fontSize: 18)),
+            Text('\u2699\uFE0F', style: TextStyle(fontSize: 18)), // ⚙️
             SizedBox(width: 8),
             Text(
               'Chatbot Settings',
@@ -51,8 +51,8 @@ class ChatbotSettingsPage extends ConsumerWidget {
         padding: const EdgeInsets.all(16),
         children: [
 
-          // Language section
-          _SectionHeader(emoji: 'ðŸŒ', title: 'Language'),
+          // ── Language ──────────────────────────────────────────────────────
+          const _SectionHeader(emoji: '\uD83C\uDF0D', title: 'Language'), // 🌍
           const SizedBox(height: 8),
           Container(
             decoration: BoxDecoration(
@@ -70,18 +70,19 @@ class ChatbotSettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // Voice section
-          _SectionHeader(emoji: 'ðŸ”Š', title: 'Voice'),
+          // ── Voice ─────────────────────────────────────────────────────────
+          const _SectionHeader(emoji: '\uD83D\uDD0A', title: 'Voice'), // 🔊
           const SizedBox(height: 8),
           _SettingCard(
             children: [
               _ToggleTile(
-                emoji: 'ðŸ—£ï¸',
+                emoji: '\uD83D\uDDE3\uFE0F', // 🗣️
                 title: 'Voice responses',
                 subtitle: 'Read AI replies aloud',
                 value: settings.voiceResponsesEnabled,
                 onChanged: (v) => controller.updateSettings(
-                  ChatbotSettingsModel.fromEntity(settings).copyWith(voiceResponsesEnabled: v),
+                  ChatbotSettingsModel.fromEntity(settings)
+                      .copyWith(voiceResponsesEnabled: v),
                 ),
               ),
               const _Divider(),
@@ -89,7 +90,7 @@ class ChatbotSettingsPage extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: Row(
                   children: [
-                    const Text('âš¡', style: TextStyle(fontSize: 16)),
+                    const Text('\u26A1', style: TextStyle(fontSize: 16)), // ⚡
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -118,7 +119,8 @@ class ChatbotSettingsPage extends ConsumerWidget {
                       child: VoiceSpeedSlider(
                         value: settings.voiceSpeed,
                         onChanged: (v) => controller.updateSettings(
-                          ChatbotSettingsModel.fromEntity(settings).copyWith(voiceSpeed: v),
+                          ChatbotSettingsModel.fromEntity(settings)
+                              .copyWith(voiceSpeed: v),
                         ),
                       ),
                     ),
@@ -130,8 +132,8 @@ class ChatbotSettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // Display section
-          _SectionHeader(emoji: 'ðŸ–‹ï¸', title: 'Display'),
+          // ── Display ───────────────────────────────────────────────────────
+          const _SectionHeader(emoji: '\uD83D\uDD8B\uFE0F', title: 'Display'), // 🖋️
           const SizedBox(height: 8),
           _SettingCard(
             children: [
@@ -139,7 +141,8 @@ class ChatbotSettingsPage extends ConsumerWidget {
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
                 child: Row(
                   children: [
-                    const Text('ðŸ”¤', style: TextStyle(fontSize: 16)),
+                    const Text('\uD83D\uDD24', // 🔤
+                        style: TextStyle(fontSize: 16)),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Column(
@@ -166,7 +169,8 @@ class ChatbotSettingsPage extends ConsumerWidget {
                     FontSizeSelector(
                       value: settings.fontSize,
                       onChanged: (v) => controller.updateSettings(
-                        ChatbotSettingsModel.fromEntity(settings).copyWith(fontSize: v),
+                        ChatbotSettingsModel.fromEntity(settings)
+                            .copyWith(fontSize: v),
                       ),
                     ),
                   ],
@@ -177,18 +181,19 @@ class ChatbotSettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 24),
 
-          // Privacy section
-          _SectionHeader(emoji: 'ðŸ”’', title: 'Privacy'),
+          // ── Privacy ───────────────────────────────────────────────────────
+          const _SectionHeader(emoji: '\uD83D\uDD12', title: 'Privacy'), // 🔒
           const SizedBox(height: 8),
           _SettingCard(
             children: [
               _ToggleTile(
-                emoji: 'ðŸ“',
+                emoji: '\uD83D\uDCDD', // 📝
                 title: 'Save chat history',
                 subtitle: 'Keep conversations on this device',
                 value: settings.saveHistory,
                 onChanged: (v) => controller.updateSettings(
-                  ChatbotSettingsModel.fromEntity(settings).copyWith(saveHistory: v),
+                  ChatbotSettingsModel.fromEntity(settings)
+                      .copyWith(saveHistory: v),
                 ),
               ),
             ],
@@ -196,7 +201,7 @@ class ChatbotSettingsPage extends ConsumerWidget {
 
           const SizedBox(height: 32),
 
-          // Info note
+          // ── Info note ─────────────────────────────────────────────────────
           Container(
             padding: const EdgeInsets.all(14),
             decoration: BoxDecoration(
@@ -205,7 +210,8 @@ class ChatbotSettingsPage extends ConsumerWidget {
             ),
             child: const Row(
               children: [
-                Text('â„¹ï¸', style: TextStyle(fontSize: 16)),
+                Text('\u2139\uFE0F', // ℹ️
+                    style: TextStyle(fontSize: 16)),
                 SizedBox(width: 10),
                 Expanded(
                   child: Text(
@@ -227,6 +233,8 @@ class ChatbotSettingsPage extends ConsumerWidget {
     );
   }
 }
+
+// ── Sub-widgets ───────────────────────────────────────────────────────────────
 
 class _SectionHeader extends StatelessWidget {
   final String emoji;
@@ -308,7 +316,10 @@ class _ToggleTile extends StatelessWidget {
                 ),
                 Text(
                   subtitle,
-                  style: const TextStyle(color: DesignTokens.textMuted, fontSize: 12),
+                  style: const TextStyle(
+                    color: DesignTokens.textMuted,
+                    fontSize: 12,
+                  ),
                 ),
               ],
             ),
@@ -316,7 +327,8 @@ class _ToggleTile extends StatelessWidget {
           Switch(
             value: value,
             onChanged: onChanged,
-            activeColor: DesignTokens.primary,
+            activeThumbColor: DesignTokens.primary,
+            activeTrackColor: DesignTokens.primaryMuted,
           ),
         ],
       ),
@@ -329,6 +341,11 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const Divider(height: 1, color: DesignTokens.borderMuted, indent: 16, endIndent: 16);
+    return const Divider(
+      height: 1,
+      color: DesignTokens.borderMuted,
+      indent: 16,
+      endIndent: 16,
+    );
   }
 }
