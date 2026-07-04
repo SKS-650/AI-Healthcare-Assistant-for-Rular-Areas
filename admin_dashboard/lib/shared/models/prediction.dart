@@ -1,0 +1,4 @@
+class Prediction {
+  // Placeholder model.
+}
+

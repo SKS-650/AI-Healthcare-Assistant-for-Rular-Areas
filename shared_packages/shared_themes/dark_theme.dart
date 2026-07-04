@@ -1,0 +1,1 @@
+const darkThemeName = 'dark';

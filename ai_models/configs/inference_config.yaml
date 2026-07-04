@@ -1,0 +1,4 @@
+inference:
+  default_language: en
+  confidence_threshold: 0.6
+  enable_emergency_detection: true

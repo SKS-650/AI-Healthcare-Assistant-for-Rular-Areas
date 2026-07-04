@@ -1,0 +1,10 @@
+models:
+  disease_prediction:
+    type: classifier
+    artifact_path: saved_models/disease_prediction
+  emergency_detection:
+    type: classifier
+    artifact_path: saved_models/emergency_detection
+  chatbot:
+    type: conversational
+    artifact_path: saved_models/chatbot

@@ -1,0 +1,15 @@
+{
+  "script": "train_chatbot.py",
+  "method": "template_fallback",
+  "model": {
+    "file": null
+  },
+  "templates": [
+    "I can share general health information. For emergencies, call your local emergency number.",
+    "Describe your symptoms (age, duration, severity). I can suggest possible causes and next steps.",
+    "If you have chest pain, trouble breathing, fainting, or severe bleeding, seek urgent care immediately."
+  ],
+  "meta": {
+    "num_pairs": 0
+  }
+}

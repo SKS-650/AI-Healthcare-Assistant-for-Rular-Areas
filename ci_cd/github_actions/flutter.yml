@@ -1,0 +1,14 @@
+name: Flutter CI
+
+on:
+  push:
+    paths:
+      - "mobile_app/**"
+      - "admin_dashboard/**"
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: echo "Flutter analysis placeholder."

@@ -1,0 +1,8 @@
+# include: package:flutter_lints/flutter_lints.dart
+
+# linter:
+#   rules:
+#     # Add project-specific lints here.
+#     # This file is a placeholder to keep the requested structure.
+#     avoid_print: false
+

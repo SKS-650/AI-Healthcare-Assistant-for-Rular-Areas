@@ -1,0 +1,22 @@
+{
+  "method": "most_frequent_baseline",
+  "model": {
+    "file": null
+  },
+  "meta": {
+    "script": "train_disease_model.py",
+    "dataset_files": {
+      "diseases_csv": "datasets/diseases.csv",
+      "symptoms_csv": "datasets/symptoms.csv"
+    },
+    "dataset_hashes": {
+      "datasets/diseases.csv": "91dd851bf1530b352a4515c49bd9486660a5e7693d23dda850a3c66364f0d93b",
+      "datasets/symptoms.csv": "3915db2d7c4344160b12a42ba6b9045d2af98e3f7e3cc1615ff78ebdac7d0780"
+    },
+    "label_dist_top20": {},
+    "most_frequent": null
+  },
+  "artifacts": {
+    "most_frequent": null
+  }
+}
