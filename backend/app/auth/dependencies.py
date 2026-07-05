@@ -1,7 +1,7 @@
 """FastAPI security dependencies for the auth module.
 
 Usage example in a route:
-    from backend.app.auth.dependencies import get_current_user, require_role
+    from app.auth.dependencies import get_current_user, require_role
 
     @router.get("/me")
     async def me(user = Depends(get_current_user)):
@@ -23,8 +23,8 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, Request, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
-from backend.app.auth.constants import Role
-from backend.app.auth.exceptions import (
+from app.auth.constants import Role
+from app.auth.exceptions import (
     AccountInactiveError,
     InsufficientPermissionsError,
     TokenExpiredError,
@@ -32,12 +32,12 @@ from backend.app.auth.exceptions import (
     TokenRevokedError,
     auth_error_to_http,
 )
-from backend.app.auth.jwt_handler import decode_access_token
-from backend.app.auth.models import UserModel
-from backend.app.auth.permissions import has_permission, require_permission
-from backend.app.auth import service as auth_service
+from app.auth.jwt_handler import decode_access_token
+from app.auth.models import UserModel
+from app.auth.permissions import has_permission, require_permission
+from app.auth import service as auth_service
 
-from backend.app.database.connection import get_async_session as _get_db
+from app.database.connection import get_async_session as _get_db
 
 _bearer = HTTPBearer(auto_error=False)
 

@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any, Optional
 
-from backend.app.models.chat import ChatMessage, ChatResponse
+from app.models.chat import ChatMessage, ChatResponse
 
 
 class ChatbotService:

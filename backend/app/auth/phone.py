@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from string import Template
 
-from backend.app.services.sms_service import SmsService
+from app.services.sms_service import SmsService
 
 logger = logging.getLogger(__name__)
 

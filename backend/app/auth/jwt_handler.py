@@ -12,15 +12,15 @@ import uuid
 from datetime import datetime, timezone
 from typing import Any
 
-from backend.app.auth.constants import (
+from app.auth.constants import (
     ACCESS_TOKEN_EXPIRE_SECONDS,
     REFRESH_TOKEN_EXPIRE_SECONDS,
     TOKEN_TYPE_ACCESS,
     TOKEN_TYPE_REFRESH,
 )
-from backend.app.auth.exceptions import TokenExpiredError, TokenInvalidError
-from backend.app.config.settings import settings
-from backend.app.security.jwt import (
+from app.auth.exceptions import TokenExpiredError, TokenInvalidError
+from app.config.settings import settings
+from app.security.jwt import (
     JWTExpiredError,
     JWTInvalidError,
     create_access_token as _create_jwt,

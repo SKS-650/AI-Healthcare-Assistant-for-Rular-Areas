@@ -37,14 +37,17 @@ class Settings:
     # ── Database ──────────────────────────────────────────────────────────────
     @property
     def database_url(self) -> str:
-        url = os.getenv(
-            "DATABASE_URL",
-            "postgresql+asyncpg://postgres:postgres@localhost:5432/healthcare_db",
-        )
-        # Ensure asyncpg driver
-        if url.startswith("postgresql://"):
-            url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        return url
+        url = os.getenv("DATABASE_URL")
+        if url:
+            if url.startswith("postgresql://"):
+                url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
+            return url
+
+        environment = os.getenv("ENVIRONMENT", "development").lower()
+        if environment in {"development", "test", "local"}:
+            return "sqlite+aiosqlite:///./app.db"
+
+        return "postgresql+asyncpg://postgres:postgres@localhost:5432/healthcare_db"
 
     @property
     def mongodb_url(self) -> str:

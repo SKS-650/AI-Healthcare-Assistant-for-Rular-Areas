@@ -13,7 +13,7 @@ from typing import Optional
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.auth.models import (
+from app.auth.models import (
     EmailVerificationModel,
     OTPCodeModel,
     PasswordResetModel,

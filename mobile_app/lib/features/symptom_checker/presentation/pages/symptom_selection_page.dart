@@ -1,252 +1,406 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../data/datasources/symptom_dummy_data.dart';
 
-import '../../../../../shared/design_system/design_tokens.dart';
-import '../providers/symptom_provider.dart';
-
-class SymptomSelectionPage extends ConsumerWidget {
-  const SymptomSelectionPage({super.key});
+class SymptomSelectionPage extends StatefulWidget {
+  final List<String> initialSymptoms;
+  const SymptomSelectionPage({Key? key, this.initialSymptoms = const []}) : super(key: key);
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final state = ref.watch(symptomControllerProvider);
-    final notifier = ref.read(symptomControllerProvider.notifier);
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        // Header card
-        Container(
-          margin: const EdgeInsets.fromLTRB(16, 4, 16, 12),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [DesignTokens.primary, DesignTokens.primaryDark],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(18),
-            boxShadow: [
-              BoxShadow(
-                color: DesignTokens.primary.withValues(alpha: 0.3),
-                blurRadius: 16,
-                offset: const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Row(
-            children: [
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '🩺 What are you feeling?',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    SizedBox(height: 4),
-                    Text(
-                      'Select all symptoms you are\nexperiencing right now.',
-                      style: TextStyle(color: Colors.white70, fontSize: 12, height: 1.4),
-                    ),
-                  ],
-                ),
-              ),
-              Column(
-                children: [
-                  Text(
-                    '${state.selectedSymptoms.length}',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 28,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                  const Text(
-                    'selected',
-                    style: TextStyle(color: Colors.white70, fontSize: 11),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-
-        // Symptom list
-        Expanded(
-          child: state.availableSymptoms.isEmpty
-              ? const Center(
-                  child: CircularProgressIndicator(
-                    color: DesignTokens.primary,
-                    strokeWidth: 2.5,
-                  ),
-                )
-              : ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 8),
-                  itemCount: state.availableSymptoms.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 8),
-                  itemBuilder: (context, index) {
-                    final symptom = state.availableSymptoms[index];
-                    final isSelected = state.selectedSymptoms
-                        .any((s) => s.symptom.id == symptom.id);
-                    return _SymptomTile(
-                      name: symptom.name,
-                      category: symptom.category,
-                      isSelected: isSelected,
-                      onTap: () => notifier.toggleSymptomSelection(symptom),
-                    );
-                  },
-                ),
-        ),
-
-        // Bottom action
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 8, 16, 16),
-          child: SizedBox(
-            width: double.infinity,
-            height: 52,
-            child: FilledButton.icon(
-              onPressed:
-                  state.selectedSymptoms.isEmpty ? null : () => notifier.nextStep(),
-              icon: const Icon(Icons.arrow_forward_rounded),
-              label: Text(
-                state.selectedSymptoms.isEmpty
-                    ? 'Select at least one symptom'
-                    : 'Next: Rate Severity (${state.selectedSymptoms.length} selected)',
-                style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 14),
-              ),
-              style: FilledButton.styleFrom(
-                backgroundColor: DesignTokens.primary,
-                disabledBackgroundColor: DesignTokens.border,
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
-              ),
-            ),
-          ),
-        ),
-      ],
-    );
-  }
+  State<SymptomSelectionPage> createState() => _SymptomSelectionPageState();
 }
 
-class _SymptomTile extends StatelessWidget {
-  final String name, category;
-  final bool isSelected;
-  final VoidCallback onTap;
+class _SymptomSelectionPageState extends State<SymptomSelectionPage>
+    with SingleTickerProviderStateMixin {
+  late List<String> _selected;
+  String _query = '';
+  String _activeCategory = 'All';
+  late TabController _tabCtrl;
 
-  const _SymptomTile({
-    required this.name,
-    required this.category,
-    required this.isSelected,
-    required this.onTap,
-  });
+  static const _primary = Color(0xFF6C63FF);
+  static const _bg = Color(0xFFF8F7FF);
 
-  String _categoryEmoji(String cat) {
-    switch (cat.toLowerCase()) {
-      case 'respiratory': return '🫁';
-      case 'digestive': return '🤢';
-      case 'neurological': return '🧠';
-      case 'cardiovascular': return '❤️';
-      case 'musculoskeletal': return '🦴';
-      case 'skin': return '🩹';
-      case 'general': return '🌡️';
-      case 'ent': return '👂';
-      default: return '🩺';
+  // All categories derived from the data
+  late final List<String> _categories;
+  late final Map<String, List<Map<String, dynamic>>> _categorized;
+
+  @override
+  void initState() {
+    super.initState();
+    _selected = List.from(widget.initialSymptoms);
+    _categorized = _buildCategorized();
+    _categories = ['All', ..._categorized.keys.toList()..sort()];
+    _tabCtrl = TabController(length: _categories.length, vsync: this);
+    _tabCtrl.addListener(() {
+      if (!_tabCtrl.indexIsChanging) {
+        setState(() => _activeCategory = _categories[_tabCtrl.index]);
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _tabCtrl.dispose();
+    super.dispose();
+  }
+
+  Map<String, List<Map<String, dynamic>>> _buildCategorized() {
+    final all = SymptomDummyData.allSymptomsFull;
+    final map = <String, List<Map<String, dynamic>>>{};
+    for (final s in all) {
+      final cat = s['category'] as String;
+      map.putIfAbsent(cat, () => []).add(s);
     }
+    // Sort within each category
+    for (final cat in map.keys) {
+      map[cat]!.sort((a, b) => (a['name'] as String).compareTo(b['name'] as String));
+    }
+    return map;
+  }
+
+  List<Map<String, dynamic>> get _filtered {
+    final allItems = _activeCategory == 'All'
+        ? SymptomDummyData.allSymptomsFull
+        : (_categorized[_activeCategory] ?? []);
+    if (_query.isEmpty) return allItems;
+    final q = _query.toLowerCase();
+    return allItems.where((s) {
+      final name = (s['name'] as String).toLowerCase();
+      final display = (s['display'] as String).toLowerCase();
+      return name.contains(q) || display.contains(q);
+    }).toList();
   }
 
   @override
   Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: isSelected
-              ? DesignTokens.primaryContainer
-              : DesignTokens.surface,
-          borderRadius: BorderRadius.circular(14),
-          border: Border.all(
-            color: isSelected
-                ? DesignTokens.primary.withValues(alpha: 0.5)
-                : DesignTokens.border,
-            width: isSelected ? 1.5 : 1,
-          ),
-          boxShadow: isSelected
-              ? [
-                  BoxShadow(
-                    color: DesignTokens.primary.withValues(alpha: 0.12),
-                    blurRadius: 10,
-                    offset: const Offset(0, 3),
-                  ),
-                ]
-              : null,
+    final filtered = _filtered;
+    return Scaffold(
+      backgroundColor: _bg,
+      body: Column(
+        children: [
+          _buildHeader(),
+          _buildSearchBar(),
+          _buildCategoryTabs(),
+          _buildSelectedBanner(),
+          Expanded(child: _buildSymptomGrid(filtered)),
+          _buildConfirmButton(),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_primary, Color(0xFF8B83FF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(8, 8, 16, 16),
+          child: Row(
+            children: [
+              IconButton(
+                icon: const Icon(Icons.arrow_back_ios_rounded, color: Colors.white),
+                onPressed: () => Navigator.pop(context, _selected),
+              ),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text('Select Symptoms', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
+                    Text('230+ medical symptoms available', style: TextStyle(color: Colors.white70, fontSize: 12)),
+                  ],
+                ),
+              ),
+              if (_selected.isNotEmpty)
+                GestureDetector(
+                  onTap: () => setState(() => _selected.clear()),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                    child: Text('Clear (${_selected.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
+                  ),
+                ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSearchBar() {
+    return Container(
+      color: Colors.white,
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      child: TextField(
+        onChanged: (v) => setState(() => _query = v),
+        decoration: InputDecoration(
+          hintText: 'Search symptoms (e.g. fever, cough, headache)...',
+          hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 14),
+          prefixIcon: const Icon(Icons.search_rounded, color: _primary, size: 22),
+          suffixIcon: _query.isNotEmpty
+              ? IconButton(
+                  icon: const Icon(Icons.close_rounded, size: 18),
+                  onPressed: () => setState(() => _query = ''),
+                )
+              : null,
+          filled: true,
+          fillColor: _bg,
+          border: OutlineInputBorder(borderRadius: BorderRadius.circular(14), borderSide: BorderSide.none),
+          contentPadding: const EdgeInsets.symmetric(vertical: 14),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildCategoryTabs() {
+    return Container(
+      color: Colors.white,
+      child: TabBar(
+        controller: _tabCtrl,
+        isScrollable: true,
+        labelColor: _primary,
+        unselectedLabelColor: Colors.grey.shade500,
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
+        unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
+        indicator: UnderlineTabIndicator(
+          borderSide: const BorderSide(color: _primary, width: 3),
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+        ),
+        padding: const EdgeInsets.only(left: 8),
+        tabAlignment: TabAlignment.start,
+        tabs: _categories.map((c) {
+          final count = c == 'All'
+              ? SymptomDummyData.allSymptomsFull.length
+              : (_categorized[c]?.length ?? 0);
+          return Tab(
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(c),
+                const SizedBox(width: 4),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
+                  decoration: BoxDecoration(
+                    color: _activeCategory == c ? _primary.withOpacity(0.15) : Colors.grey.shade100,
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  child: Text('$count',
+                      style: TextStyle(fontSize: 10, color: _activeCategory == c ? _primary : Colors.grey.shade500, fontWeight: FontWeight.w600)),
+                ),
+              ],
+            ),
+          );
+        }).toList(),
+      ),
+    );
+  }
+
+  Widget _buildSelectedBanner() {
+    if (_selected.isEmpty) return const SizedBox.shrink();
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      color: _primary.withOpacity(0.06),
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
         child: Row(
           children: [
-            Text(_categoryEmoji(category),
-                style: const TextStyle(fontSize: 20)),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    name,
-                    style: TextStyle(
-                      fontWeight: FontWeight.w700,
-                      fontSize: 14,
-                      color: isSelected
-                          ? DesignTokens.primaryDark
-                          : DesignTokens.textStrong,
-                    ),
-                  ),
-                  Text(
-                    category,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isSelected
-                          ? DesignTokens.primary
-                          : DesignTokens.textMuted,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+              decoration: BoxDecoration(color: _primary, borderRadius: BorderRadius.circular(20)),
+              child: Text('${_selected.length}', style: const TextStyle(color: Colors.white, fontSize: 11, fontWeight: FontWeight.w700)),
             ),
-            AnimatedSwitcher(
-              duration: const Duration(milliseconds: 200),
-              child: isSelected
-                  ? Container(
-                      key: const ValueKey('checked'),
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: DesignTokens.primary,
-                        shape: BoxShape.circle,
-                      ),
-                      child: const Icon(Icons.check_rounded,
-                          color: Colors.white, size: 14),
-                    )
-                  : Container(
-                      key: const ValueKey('unchecked'),
-                      width: 24,
-                      height: 24,
-                      decoration: BoxDecoration(
-                        color: DesignTokens.surfaceMuted,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: DesignTokens.border),
-                      ),
-                    ),
+            const SizedBox(width: 8),
+            ..._selected.map((s) => Padding(
+              padding: const EdgeInsets.only(right: 6),
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                decoration: BoxDecoration(
+                  color: _primary,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text(_toDisplay(s), style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w500)),
+                  const SizedBox(width: 4),
+                  GestureDetector(
+                    onTap: () => setState(() => _selected.remove(s)),
+                    child: const Icon(Icons.close_rounded, color: Colors.white, size: 14),
+                  ),
+                ]),
+              ),
+            )),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildSymptomGrid(List<Map<String, dynamic>> items) {
+    if (items.isEmpty) {
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(Icons.search_off_rounded, size: 64, color: Colors.grey.shade300),
+            const SizedBox(height: 12),
+            Text('No symptoms found for "$_query"', style: TextStyle(color: Colors.grey.shade500, fontSize: 14)),
+            const SizedBox(height: 6),
+            Text('Try a different keyword', style: TextStyle(color: Colors.grey.shade400, fontSize: 12)),
+          ],
+        ),
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
+      itemCount: items.length,
+      itemBuilder: (ctx, i) {
+        final item = items[i];
+        final modelName = item['name'] as String;
+        final display = item['display'] as String;
+        final category = item['category'] as String;
+        final icon = item['icon'] as IconData;
+        final catColor = _categoryColor(category);
+        final isSelected = _selected.contains(modelName);
+
+        return Padding(
+          padding: const EdgeInsets.only(bottom: 8),
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 200),
+            decoration: BoxDecoration(
+              color: isSelected ? _primary.withOpacity(0.06) : Colors.white,
+              borderRadius: BorderRadius.circular(14),
+              border: Border.all(
+                color: isSelected ? _primary.withOpacity(0.4) : Colors.transparent,
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: isSelected
+                      ? _primary.withOpacity(0.1)
+                      : Colors.black.withOpacity(0.03),
+                  blurRadius: isSelected ? 12 : 6,
+                  offset: const Offset(0, 2),
+                ),
+              ],
+            ),
+            child: ListTile(
+              contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
+              leading: Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: isSelected ? _primary.withOpacity(0.15) : catColor.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Icon(icon, color: isSelected ? _primary : catColor, size: 22),
+              ),
+              title: Text(
+                display,
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+                  color: isSelected ? const Color(0xFF333360) : const Color(0xFF555580),
+                ),
+              ),
+              subtitle: Text(
+                category,
+                style: TextStyle(fontSize: 11, color: isSelected ? _primary.withOpacity(0.7) : Colors.grey.shade400),
+              ),
+              trailing: AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                width: 26,
+                height: 26,
+                decoration: BoxDecoration(
+                  color: isSelected ? _primary : Colors.transparent,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: isSelected ? _primary : Colors.grey.shade300, width: 2),
+                ),
+                child: isSelected
+                    ? const Icon(Icons.check_rounded, color: Colors.white, size: 14)
+                    : null,
+              ),
+              onTap: () {
+                setState(() {
+                  if (isSelected) {
+                    _selected.remove(modelName);
+                  } else {
+                    _selected.add(modelName);
+                  }
+                });
+              },
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildConfirmButton() {
+    return Container(
+      padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, -4))],
+      ),
+      child: ElevatedButton(
+        onPressed: _selected.isEmpty ? null : () => Navigator.pop(context, _selected),
+        style: ElevatedButton.styleFrom(
+          backgroundColor: _primary,
+          disabledBackgroundColor: Colors.grey.shade200,
+          elevation: 0,
+          minimumSize: const Size(double.infinity, 54),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            const Icon(Icons.check_circle_rounded, color: Colors.white, size: 20),
+            const SizedBox(width: 8),
+            Text(
+              _selected.isEmpty
+                  ? 'Select at least one symptom'
+                  : 'Confirm ${_selected.length} Symptom${_selected.length == 1 ? '' : 's'}',
+              style: TextStyle(
+                color: _selected.isEmpty ? Colors.grey.shade400 : Colors.white,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
             ),
           ],
         ),
       ),
     );
+  }
+
+  String _toDisplay(String modelName) {
+    return modelName.split(' ').map((w) {
+      if (w.isEmpty) return w;
+      return w[0].toUpperCase() + w.substring(1);
+    }).join(' ');
+  }
+
+  Color _categoryColor(String category) {
+    const map = {
+      'General': Color(0xFF6C63FF),
+      'Respiratory': Color(0xFF48CAE4),
+      'Cardiovascular': Color(0xFFE63946),
+      'Neurological': Color(0xFF9B5DE5),
+      'Digestive': Color(0xFFFF9F1C),
+      'Musculoskeletal': Color(0xFF06D6A0),
+      'Skin': Color(0xFFFF6B9D),
+      'ENT': Color(0xFF4CC9F0),
+      'Eyes': Color(0xFF7209B7),
+      'Urinary': Color(0xFF4361EE),
+      'Mental Health': Color(0xFF3A86FF),
+      'Reproductive': Color(0xFFFF477E),
+      'Immune': Color(0xFF2EC4B6),
+    };
+    return map[category] ?? const Color(0xFF6C63FF);
   }
 }

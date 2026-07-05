@@ -33,7 +33,20 @@ MARITAL_STATUSES: tuple[str, ...] = ("single", "married", "divorced", "widowed",
 
 # ─── Languages ───────────────────────────────────────────────────────────────
 
-SUPPORTED_LANGUAGES: tuple[str, ...] = ("en", "hi", "ne", "bho")
+SUPPORTED_LANGUAGES: tuple[str, ...] = (
+    "en",    # English
+    "hi",    # Hindi
+    "ne",    # Nepali
+    "bho",   # Bhojpuri
+    "bn",    # Bengali
+    "te",    # Telugu
+    "mr",    # Marathi
+    "ta",    # Tamil
+    "gu",    # Gujarati
+    "kn",    # Kannada
+    "pa",    # Punjabi
+    "other", # Other
+)
 
 # ─── Address ─────────────────────────────────────────────────────────────────
 

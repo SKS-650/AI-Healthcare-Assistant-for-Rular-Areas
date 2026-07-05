@@ -10,10 +10,10 @@ from typing import Optional
 from fastapi import APIRouter, Depends, File, Query, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.auth.dependencies import CurrentUser, get_current_user, require_role
-from backend.app.auth.constants import Role
-from backend.app.users import controller
-from backend.app.users.schemas import (
+from app.auth.dependencies import CurrentUser, get_current_user, require_role
+from app.auth.constants import Role
+from app.users import controller
+from app.users.schemas import (
     AddressListResponse,
     AddressResponse,
     CreateAddressRequest,
@@ -35,7 +35,7 @@ from backend.app.users.schemas import (
     UserSummary,
 )
 
-from backend.app.database.connection import get_async_session as get_db
+from app.database.connection import get_async_session as get_db
 
 router = APIRouter(prefix="/users", tags=["User Management"])
 

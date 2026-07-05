@@ -9,7 +9,7 @@ from __future__ import annotations
 import logging
 from string import Template
 
-from backend.app.services.email_service import EmailService
+from app.services.email_service import EmailService
 
 logger = logging.getLogger(__name__)
 

@@ -4,7 +4,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../../config/api_config.dart';
-import '../../../authentication/data/repositories/authentication_repository_impl.dart';
 import '../../../authentication/presentation/providers/authentication_provider.dart';
 
 // ── Data models ───────────────────────────────────────────────────────────────
@@ -146,10 +145,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
   /// Gets the stored access token from the auth repository singleton.
   String? get _token {
     final repo = _ref.read(authRepositoryProvider);
-    if (repo is AuthenticationRepositoryImpl) {
-      return repo.accessToken;
-    }
-    return null;
+    return repo.accessToken;
   }
 
   Map<String, String> get _headers {
@@ -162,6 +158,38 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
 
   /// Load the full profile from the backend. Call this when the profile page opens.
   Future<void> loadProfile() async {
+    // ── Guest user: show meaningful static profile without API calls ──────────
+    final repo = _ref.read(authRepositoryProvider);
+    final currentUser = await repo.getCurrentUser();
+    if (currentUser.isGuest) {
+      state = state.copyWith(
+        isLoading: false,
+        profile: const UserFullProfile(
+          userId: 'guest',
+          fullName: 'Guest User',
+          email: 'guest@health.ai',
+          phone: null,
+          role: 'guest',
+          preferredLanguage: 'English',
+          gender: 'prefer not to say',
+          bloodGroup: null,
+          heightCm: null,
+          weightKg: null,
+          occupation: 'Not specified',
+          maritalStatus: null,
+          bio: 'Browsing as a guest. Sign up to save your health data and access full features.',
+          allergies: [],
+          chronicDiseases: [],
+          currentMedications: [],
+          smokingStatus: false,
+          alcoholConsumption: false,
+          medicalNotes: 'Create an account to track your medical history.',
+        ),
+      );
+      return;
+    }
+
+    // ── Authenticated user: fetch from backend ─────────────────────────────────
     state = state.copyWith(isLoading: true, error: null);
     try {
       // Parallel: fetch account summary + profile details + medical info
@@ -257,7 +285,7 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
         'full_name': fullName,
         if (phone != null && phone.isNotEmpty) 'phone': phone,
         if (preferredLanguage != null && preferredLanguage.isNotEmpty)
-          'preferred_language': preferredLanguage,
+          'preferred_language': _languageToCode(preferredLanguage),
       };
       final accountResp = await http.put(
         Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me'),
@@ -361,6 +389,16 @@ class UserProfileNotifier extends StateNotifier<UserProfileState> {
 }
 
 // ── Provider ──────────────────────────────────────────────────────────────────
+
+/// Maps a display language name to the locale code the backend expects.
+String _languageToCode(String display) {
+  const map = {
+    'English': 'en', 'Hindi': 'hi', 'Bengali': 'bn', 'Telugu': 'te',
+    'Marathi': 'mr', 'Tamil': 'ta', 'Gujarati': 'gu', 'Kannada': 'kn',
+    'Punjabi': 'pa', 'Nepali': 'ne', 'Bhojpuri': 'bho', 'Other': 'other',
+  };
+  return map[display] ?? display.toLowerCase();
+}
 
 final userProfileProvider =
     StateNotifierProvider<UserProfileNotifier, UserProfileState>((ref) {

@@ -126,6 +126,7 @@ class UserModel(Base):
     phone_verifications= relationship("PhoneVerificationModel",back_populates="user", cascade="all, delete-orphan")
     password_resets    = relationship("PasswordResetModel",    back_populates="user", cascade="all, delete-orphan")
     sessions           = relationship("UserSessionModel",      back_populates="user", cascade="all, delete-orphan")
+    symptom_checks     = relationship("SymptomCheckHistory",   back_populates="user", cascade="all, delete-orphan", lazy="dynamic")
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"

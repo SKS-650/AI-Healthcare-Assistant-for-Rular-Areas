@@ -8,7 +8,7 @@ import os
 import secrets
 import string
 
-from backend.app.auth.constants import OTP_LENGTH
+from app.auth.constants import OTP_LENGTH
 
 
 def generate_otp(length: int = OTP_LENGTH) -> str:

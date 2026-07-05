@@ -7,16 +7,16 @@ import uuid
 from datetime import date, datetime, timezone
 from typing import Any
 
-from backend.app.auth.models import UserModel
-from backend.app.users.constants import ALLOWED_IMAGE_EXTENSIONS, MAX_PROFILE_IMAGE_SIZE_MB
-from backend.app.users.exceptions import ImageTooLargeError, InvalidImageTypeError
-from backend.app.users.models import (
+from app.auth.models import UserModel
+from app.users.constants import ALLOWED_IMAGE_EXTENSIONS, MAX_PROFILE_IMAGE_SIZE_MB
+from app.users.exceptions import ImageTooLargeError, InvalidImageTypeError
+from app.users.models import (
     EmergencyContactModel,
     MedicalInformationModel,
     UserAddressModel,
     UserProfileModel,
 )
-from backend.app.users.schemas import (
+from app.users.schemas import (
     AddressResponse,
     EmergencyContactResponse,
     FullUserDetailResponse,

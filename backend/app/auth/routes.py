@@ -10,15 +10,15 @@ from typing import Any
 from fastapi import APIRouter, Depends, Request, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.auth import controller
-from backend.app.auth.dependencies import (
+from app.auth import controller
+from app.auth.dependencies import (
     AdminUser,
     CurrentUser,
     get_current_user,
     require_role,
 )
-from backend.app.auth.constants import Role
-from backend.app.auth.schemas import (
+from app.auth.constants import Role
+from app.auth.schemas import (
     ChangeRoleRequest,
     EmailVerifyRequest,
     EmailVerifyResponse,
@@ -45,7 +45,7 @@ from backend.app.auth.schemas import (
     VerifyResetOTPResponse,
 )
 
-from backend.app.database.connection import get_async_session as get_db
+from app.database.connection import get_async_session as get_db
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 

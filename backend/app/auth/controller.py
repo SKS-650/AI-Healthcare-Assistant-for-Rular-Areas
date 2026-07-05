@@ -15,11 +15,11 @@ from typing import Any
 from fastapi import HTTPException, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.auth import service
-from backend.app.auth.constants import ACCESS_TOKEN_EXPIRE_SECONDS
-from backend.app.auth.exceptions import AuthError, auth_error_to_http
-from backend.app.auth.models import UserModel
-from backend.app.auth.schemas import (
+from app.auth import service
+from app.auth.constants import ACCESS_TOKEN_EXPIRE_SECONDS
+from app.auth.exceptions import AuthError, auth_error_to_http
+from app.auth.models import UserModel
+from app.auth.schemas import (
     ChangeRoleRequest,
     EmailVerifyRequest,
     EmailVerifyResponse,
@@ -257,7 +257,7 @@ async def handle_forgot_password_otp(
     SMTP server.
     """
     try:
-        from backend.app.auth.schemas import ForgotPasswordOTPRequest as _Req
+        from app.auth.schemas import ForgotPasswordOTPRequest as _Req
         email = payload.email if hasattr(payload, "email") else payload["email"]
         dev_otp = await service.send_password_reset_otp(db, email)
         await db.commit()

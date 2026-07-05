@@ -11,15 +11,15 @@ import logging
 from fastapi import HTTPException, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.auth.models import UserModel
-from backend.app.users import service
-from backend.app.users.exceptions import UserError, user_error_to_http
-from backend.app.users.permissions import (
+from app.auth.models import UserModel
+from app.users import service
+from app.users.exceptions import UserError, user_error_to_http
+from app.users.permissions import (
     assert_can_update_user,
     assert_can_view_user,
     assert_is_admin,
 )
-from backend.app.users.schemas import (
+from app.users.schemas import (
     AddressListResponse,
     AddressResponse,
     CreateAddressRequest,
@@ -40,7 +40,7 @@ from backend.app.users.schemas import (
     UserProfileResponse,
     UserSummary,
 )
-from backend.app.users.utils import (
+from app.users.utils import (
     address_to_response,
     contact_to_response,
     medical_info_to_response,

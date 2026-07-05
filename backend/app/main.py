@@ -8,8 +8,8 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from backend.app.config.settings import settings
-from backend.app.core.startup import initialize_application, on_shutdown, on_startup
+from app.config.settings import settings
+from app.core.startup import initialize_application, on_shutdown, on_startup
 
 
 @asynccontextmanager
@@ -56,11 +56,13 @@ def create_app() -> FastAPI:
     app.mount("/uploads", StaticFiles(directory=str(uploads_dir)), name="uploads")
 
     # ── Register routers ──────────────────────────────────────────────────────
-    from backend.app.auth.routes import router as auth_router
-    from backend.app.users.routes import router as users_router
+    from app.auth.routes import router as auth_router
+    from app.users.routes import router as users_router
+    from app.symptom_checker.routes import router as symptom_checker_router
 
     app.include_router(auth_router, prefix=settings.api_prefix)
     app.include_router(users_router, prefix=settings.api_prefix)
+    app.include_router(symptom_checker_router, prefix=settings.api_prefix)
 
     # ── Health check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["Health"])

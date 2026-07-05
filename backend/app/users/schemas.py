@@ -8,7 +8,7 @@ from typing import Any, List, Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
-from backend.app.users.constants import (
+from app.users.constants import (
     ADDRESS_TYPES,
     ALL_ROLES,
     BLOOD_GROUPS,

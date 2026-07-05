@@ -9,7 +9,7 @@ from __future__ import annotations
 import re
 from datetime import date
 
-from backend.app.users.constants import (
+from app.users.constants import (
     BLOOD_GROUPS,
     GENDERS,
     MARITAL_STATUSES,
@@ -20,7 +20,7 @@ from backend.app.users.constants import (
     RELATIONSHIPS,
     SUPPORTED_LANGUAGES,
 )
-from backend.app.users.exceptions import InvalidProfileDataError
+from app.users.exceptions import InvalidProfileDataError
 
 _PHONE_RE = re.compile(r"^\+?[1-9]\d{7,14}$")
 _EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")

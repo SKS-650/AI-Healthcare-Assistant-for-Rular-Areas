@@ -65,12 +65,42 @@ class _ProfileCompletionPageState
       _user = args;
       _nameCtrl.text = args.name ?? '';
       _phoneCtrl.text = args.phone ?? '';
-      _selectedGender = args.gender;
-      _selectedLanguage = args.language;
+      // Normalize gender value to match the display list (title-case)
+      _selectedGender = _normalizeGender(args.gender);
+      // Normalize language: map locale codes ('en') to display names ('English')
+      _selectedLanguage = _normalizeLanguage(args.language);
       _selectedAge = args.age;
     }
     // Fallback: check controller state
     _user ??= ref.read(authControllerProvider).user;
+  }
+
+  /// Maps a raw gender string (any case) to the display value in [_genders],
+  /// or returns null if it doesn't match any entry.
+  String? _normalizeGender(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    final lower = raw.toLowerCase();
+    for (final g in _genders) {
+      if (g.toLowerCase() == lower) return g;
+    }
+    return null;
+  }
+
+  /// Maps a language locale code or full name to the display value in
+  /// [_languages], or returns null if nothing matches.
+  String? _normalizeLanguage(String? raw) {
+    if (raw == null || raw.isEmpty) return null;
+    // Check direct match first (already a display name)
+    if (_languages.contains(raw)) return raw;
+    // Map common locale codes to display names
+    const codeToName = {
+      'en': 'English', 'hi': 'Hindi', 'bn': 'Bengali', 'te': 'Telugu',
+      'mr': 'Marathi', 'ta': 'Tamil', 'gu': 'Gujarati', 'kn': 'Kannada',
+      'pa': 'Punjabi',
+    };
+    final mapped = codeToName[raw.toLowerCase()];
+    if (mapped != null && _languages.contains(mapped)) return mapped;
+    return null;
   }
 
   @override

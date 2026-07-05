@@ -2,8 +2,8 @@
 
 from __future__ import annotations
 
-from backend.app.auth.constants import ROLE_PERMISSIONS, Role
-from backend.app.auth.exceptions import InsufficientPermissionsError, InvalidRoleError
+from app.auth.constants import ROLE_PERMISSIONS, Role
+from app.auth.exceptions import InsufficientPermissionsError, InvalidRoleError
 
 
 def get_permissions_for_role(role: str) -> list[str]:

@@ -13,7 +13,8 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   String? _refreshToken;
   bool _seenOnboarding = false;
 
-  /// Exposes the current access token so other providers can make authenticated requests.
+  /// The current access token, or null if not authenticated.
+  @override
   String? get accessToken => _accessToken;
 
   @override
@@ -87,14 +88,22 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
       throw _mapError(response);
     }
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    _cachedUser = UserEntity(
-      id: data['user_id']?.toString() ?? '',
-      email: data['email']?.toString() ?? email,
-      name: name,
-      isProfileComplete: false,
-    );
-    return _cachedUser!;
+    // Auto-login after registration so we have an access token immediately.
+    // The register endpoint doesn't return tokens, so we call login().
+    try {
+      return await login(email: email, password: password);
+    } catch (_) {
+      // If auto-login fails (e.g. email verification required), return a
+      // minimal user from the register response so the UI can proceed.
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      _cachedUser = UserEntity(
+        id: data['user_id']?.toString() ?? '',
+        email: data['email']?.toString() ?? email,
+        name: name,
+        isProfileComplete: false,
+      );
+      return _cachedUser!;
+    }
   }
 
   @override
@@ -172,6 +181,27 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     }
   }
 
+  /// Maps a display language name (from the profile completion dropdown) to
+  /// the locale code the backend expects.  Falls through to lowercase if no
+  /// explicit mapping exists (e.g. already a code like 'en').
+  static String _languageToCode(String display) {
+    const map = {
+      'English': 'en',
+      'Hindi': 'hi',
+      'Bengali': 'bn',
+      'Telugu': 'te',
+      'Marathi': 'mr',
+      'Tamil': 'ta',
+      'Gujarati': 'gu',
+      'Kannada': 'kn',
+      'Punjabi': 'pa',
+      'Nepali': 'ne',
+      'Bhojpuri': 'bho',
+      'Other': 'other',
+    };
+    return map[display] ?? display.toLowerCase();
+  }
+
   @override
   Future<UserEntity> completeProfile({
     required String userId,
@@ -184,7 +214,8 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     final payload = <String, dynamic>{
       'full_name': name,
       if (phone != null && phone.isNotEmpty) 'phone': phone,
-      if (language != null && language.isNotEmpty) 'preferred_language': language,
+      if (language != null && language.isNotEmpty)
+        'preferred_language': _languageToCode(language),
     };
 
     final meResponse = await http.put(

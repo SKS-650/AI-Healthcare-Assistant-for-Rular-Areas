@@ -8,7 +8,7 @@ from typing import Optional
 
 from pydantic import BaseModel, EmailStr, Field, field_validator, model_validator
 
-from backend.app.auth.constants import ALL_ROLES, Role
+from app.auth.constants import ALL_ROLES, Role
 
 # ─── Helpers ─────────────────────────────────────────────────────────────────
 

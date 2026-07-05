@@ -6,9 +6,9 @@ user-resource-specific ownership checks.
 
 from __future__ import annotations
 
-from backend.app.auth.models import UserModel
-from backend.app.users.constants import UserRole
-from backend.app.users.exceptions import (
+from app.auth.models import UserModel
+from app.users.constants import UserRole
+from app.users.exceptions import (
     AddressOwnershipError,
     EmergencyContactOwnershipError,
     UserInactiveError,

@@ -13,8 +13,8 @@ from sqlalchemy import func, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
-from backend.app.auth.models import UserModel
-from backend.app.users.models import (
+from app.auth.models import UserModel
+from app.users.models import (
     EmergencyContactModel,
     MedicalInformationModel,
     UserAddressModel,

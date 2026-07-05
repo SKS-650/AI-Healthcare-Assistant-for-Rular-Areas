@@ -29,7 +29,7 @@ from sqlalchemy import (
 from sqlalchemy.orm import relationship
 
 # Re-use the shared Base from auth so Alembic sees all tables together
-from backend.app.auth.models import Base, UserModel
+from app.auth.models import Base, UserModel
 
 
 def _utcnow() -> datetime:

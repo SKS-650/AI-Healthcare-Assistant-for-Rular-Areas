@@ -13,8 +13,8 @@ from datetime import datetime, timedelta, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.auth import repository as repo
-from backend.app.auth.constants import (
+from app.auth import repository as repo
+from app.auth.constants import (
     ACCESS_TOKEN_EXPIRE_SECONDS,
     EMAIL_VERIFICATION_EXPIRE_SECONDS,
     OTP_EXPIRE_SECONDS,
@@ -23,12 +23,12 @@ from backend.app.auth.constants import (
     PHONE_VERIFICATION_EXPIRE_SECONDS,
     REFRESH_TOKEN_EXPIRE_SECONDS,
 )
-from backend.app.auth.email import (
+from app.auth.email import (
     send_email_verification,
     send_otp_email,
     send_password_reset_email,
 )
-from backend.app.auth.exceptions import (
+from app.auth.exceptions import (
     AccountInactiveError,
     AccountNotVerifiedError,
     EmailAlreadyExistsError,
@@ -47,14 +47,14 @@ from backend.app.auth.exceptions import (
     RefreshTokenNotFoundError,
     TokenRevokedError,
 )
-from backend.app.auth.jwt_handler import (
+from app.auth.jwt_handler import (
     create_access_token,
     create_refresh_token,
     decode_refresh_token,
     hash_token,
     token_expires_at,
 )
-from backend.app.auth.models import (
+from app.auth.models import (
     EmailVerificationModel,
     OTPCodeModel,
     PasswordResetModel,
@@ -63,7 +63,7 @@ from backend.app.auth.models import (
     UserModel,
     UserSessionModel,
 )
-from backend.app.auth.otp import (
+from app.auth.otp import (
     generate_otp,
     generate_secure_token,
     hash_otp,
@@ -71,15 +71,15 @@ from backend.app.auth.otp import (
     verify_otp,
     verify_secure_token,
 )
-from backend.app.auth.password import hash_password, verify_password
-from backend.app.auth.phone import send_phone_otp
-from backend.app.auth.session import (
+from app.auth.password import hash_password, verify_password
+from app.auth.phone import send_phone_otp
+from app.auth.session import (
     create_session_record,
     invalidate_session,
     touch_session,
     validate_session,
 )
-from backend.app.config.settings import settings
+from app.config.settings import settings
 
 logger = logging.getLogger(__name__)
 
@@ -378,7 +378,7 @@ async def logout(db: AsyncSession, raw_refresh_token: str) -> None:
         # Deactivate the session tied to this refresh token
         if rt.id:
             from sqlalchemy import update as _update
-            from backend.app.auth.models import UserSessionModel as _SM
+            from app.auth.models import UserSessionModel as _SM
             await db.execute(
                 _update(_SM)
                 .where(_SM.refresh_token_id == rt.id)
@@ -542,7 +542,7 @@ async def revoke_session(db: AsyncSession, user_id: str, session_id: str) -> Non
     """Deactivate a specific session belonging to the user."""
     session = await repo.get_session_by_id(db, session_id)
     if session is None or session.user_id != user_id:
-        from backend.app.auth.exceptions import SessionNotFoundError
+        from app.auth.exceptions import SessionNotFoundError
         raise SessionNotFoundError("Session not found.")
     await repo.deactivate_session(db, session_id)
 

@@ -158,6 +158,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   @override
   Widget build(BuildContext context) {
     final profileState = ref.watch(userProfileProvider);
+    final isGuest = profileState.profile?.role == 'guest';
 
     // Respond to save errors
     ref.listen<UserProfileState>(userProfileProvider, (_, next) {
@@ -194,7 +195,8 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         ]),
         actions: [
           if (!_editing) ...[
-            if (p != null)
+            // Guests cannot edit profile — show sign-up prompt instead
+            if (p != null && !isGuest)
               IconButton(
                 icon: const Icon(Icons.edit_rounded, color: DesignTokens.primary, size: 20),
                 tooltip: 'Edit profile',
@@ -213,11 +215,11 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           ],
         ],
       ),
-      body: _buildBody(profileState),
+      body: _buildBody(profileState, isGuest: isGuest),
     );
   }
 
-  Widget _buildBody(UserProfileState profileState) {
+  Widget _buildBody(UserProfileState profileState, {bool isGuest = false}) {
     if (profileState.isLoading) {
       return const Center(
         child: CircularProgressIndicator(color: DesignTokens.primary),
@@ -254,6 +256,46 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         SingleChildScrollView(
           padding: EdgeInsets.only(bottom: _editing ? 90 : 24),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            // ── Guest banner ───────────────────────────────────────────────
+            if (isGuest)
+              Container(
+                margin: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [Color(0xFFF3E5F5), Color(0xFFE8EAF6)],
+                  ),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: DesignTokens.primary.withValues(alpha: 0.4)),
+                ),
+                child: Row(children: [
+                  const Text('👋', style: TextStyle(fontSize: 22)),
+                  const SizedBox(width: 12),
+                  Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                    const Text('You\'re browsing as a Guest',
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.w800,
+                        color: DesignTokens.primaryDark)),
+                    const SizedBox(height: 3),
+                    const Text('Sign up to save your health data and unlock all features.',
+                      style: TextStyle(fontSize: 12, color: DesignTokens.textMuted)),
+                    const SizedBox(height: 8),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pushNamedAndRemoveUntil(
+                        RouteNames.register, (r) => false),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: DesignTokens.primary,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: const Text('Create Account',
+                          style: TextStyle(fontSize: 12, color: Colors.white,
+                            fontWeight: FontWeight.w700)),
+                      ),
+                    ),
+                  ])),
+                ]),
+              ),
             _buildHeader(p),
             const SizedBox(height: 20),
             _buildSection('👤', 'Personal', [
@@ -313,14 +355,10 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
   // ── Header card ─────────────────────────────────────────────────────────────
 
   Widget _buildHeader(UserFullProfile p) {
-    final initials = p.fullName.trim().split(' ') is List
-        ? (() {
-            final parts = p.fullName.trim().split(' ');
-            return parts.length >= 2
-                ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
-                : p.fullName.substring(0, p.fullName.length >= 2 ? 2 : 1).toUpperCase();
-          })()
-        : '??';
+    final parts = p.fullName.trim().split(' ');
+    final initials = parts.length >= 2
+        ? '${parts[0][0]}${parts[1][0]}'.toUpperCase()
+        : p.fullName.substring(0, p.fullName.length >= 2 ? 2 : 1).toUpperCase();
 
     return Container(
       margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),

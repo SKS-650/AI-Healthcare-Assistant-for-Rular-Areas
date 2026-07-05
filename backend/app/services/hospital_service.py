@@ -11,7 +11,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any, Optional
 
-from backend.app.models.hospital import Hospital
+from app.models.hospital import Hospital
 
 
 class HospitalService:

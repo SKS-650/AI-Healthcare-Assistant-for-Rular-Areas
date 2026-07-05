@@ -12,13 +12,13 @@ from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.app.auth.models import UserModel
-from backend.app.users import repository as repo
-from backend.app.users.constants import (
+from app.auth.models import UserModel
+from app.users import repository as repo
+from app.users.constants import (
     MAX_ADDRESSES_PER_USER,
     MAX_EMERGENCY_CONTACTS_PER_USER,
 )
-from backend.app.users.exceptions import (
+from app.users.exceptions import (
     AddressLimitExceededError,
     AddressNotFoundError,
     AddressOwnershipError,
@@ -32,13 +32,13 @@ from backend.app.users.exceptions import (
     ProfileNotFoundError,
     UserNotFoundError,
 )
-from backend.app.users.models import (
+from app.users.models import (
     EmergencyContactModel,
     MedicalInformationModel,
     UserAddressModel,
     UserProfileModel,
 )
-from backend.app.users.schemas import (
+from app.users.schemas import (
     CreateAddressRequest,
     CreateEmergencyContactRequest,
     CreateMedicalInfoRequest,
@@ -49,7 +49,7 @@ from backend.app.users.schemas import (
     UpdateProfileRequest,
     UpdateUserRequest,
 )
-from backend.app.users.validators import (
+from app.users.validators import (
     validate_blood_group,
     validate_coordinates,
     validate_date_of_birth,
@@ -78,7 +78,7 @@ async def get_user(db: AsyncSession, user_id: str) -> UserModel:
 
 async def get_full_user_detail(db: AsyncSession, user_id: str):
     """Return user + all sub-records for the detail endpoint."""
-    from backend.app.users.utils import build_full_user_detail
+    from app.users.utils import build_full_user_detail
 
     user = await get_user(db, user_id)
     profile = await repo.get_profile_by_user_id(db, user_id)
@@ -118,7 +118,7 @@ async def update_user(
         # Uniqueness check
         existing = await repo.get_user_by_phone(db, payload.phone)
         if existing and existing.id != user_id:
-            from backend.app.users.exceptions import UserAlreadyExistsError
+            from app.users.exceptions import UserAlreadyExistsError
             raise UserAlreadyExistsError("Phone number already in use.")
         fields["phone"] = payload.phone
 
@@ -265,7 +265,7 @@ async def update_address(
     if address is None:
         raise AddressNotFoundError("Address not found.")
 
-    from backend.app.users.permissions import assert_owns_address
+    from app.users.permissions import assert_owns_address
     assert_owns_address(current_user, address.user_id)
 
     validate_coordinates(payload.latitude, payload.longitude)
@@ -284,7 +284,7 @@ async def delete_address(
     if address is None:
         raise AddressNotFoundError("Address not found.")
 
-    from backend.app.users.permissions import assert_owns_address
+    from app.users.permissions import assert_owns_address
     assert_owns_address(current_user, address.user_id)
 
     await repo.delete_address(db, address_id)
@@ -334,7 +334,7 @@ async def update_emergency_contact(
     if contact is None:
         raise EmergencyContactNotFoundError("Emergency contact not found.")
 
-    from backend.app.users.permissions import assert_owns_contact
+    from app.users.permissions import assert_owns_contact
     assert_owns_contact(current_user, contact.user_id)
 
     fields = payload.model_dump(exclude_none=True)
@@ -356,7 +356,7 @@ async def delete_emergency_contact(
     if contact is None:
         raise EmergencyContactNotFoundError("Emergency contact not found.")
 
-    from backend.app.users.permissions import assert_owns_contact
+    from app.users.permissions import assert_owns_contact
     assert_owns_contact(current_user, contact.user_id)
 
     await repo.delete_emergency_contact(db, contact_id)

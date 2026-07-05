@@ -4,6 +4,9 @@ abstract class AuthenticationRepository {
   /// Returns the currently cached user, or [UserEntity.empty] if none.
   Future<UserEntity> getCurrentUser();
 
+  /// The current access token, or null if not authenticated.
+  String? get accessToken;
+
   /// Sign in with email + password. Throws [AuthException] on failure.
   Future<UserEntity> login({required String email, required String password});
 

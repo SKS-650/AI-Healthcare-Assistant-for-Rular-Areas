@@ -22,17 +22,24 @@ _AsyncSessionLocal: async_sessionmaker | None = None
 def _get_engine() -> AsyncEngine:
     global _engine
     if _engine is None:
-        from backend.app.config.settings import settings
+        from app.config.settings import settings
         db_url = settings.database_url
         if db_url.startswith("postgresql://"):
             db_url = db_url.replace("postgresql://", "postgresql+asyncpg://", 1)
-        _engine = create_async_engine(
-            db_url,
-            echo=settings.debug,
-            pool_pre_ping=True,
-            pool_size=5,
-            max_overflow=10,
-        )
+
+        engine_kwargs: dict[str, Any] = {
+            "echo": settings.debug,
+        }
+        if db_url.startswith("sqlite"):
+            engine_kwargs["connect_args"] = {"check_same_thread": False}
+        else:
+            engine_kwargs.update({
+                "pool_pre_ping": True,
+                "pool_size": 5,
+                "max_overflow": 10,
+            })
+
+        _engine = create_async_engine(db_url, **engine_kwargs)
     return _engine
 
 
@@ -67,12 +74,13 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
 async def init_db() -> None:
     """Verify DB connectivity on startup. Tables are managed by Alembic."""
     from sqlalchemy import text
+
     try:
         async with _get_engine().connect() as conn:
             await conn.execute(text("SELECT 1"))
         logger.info("Database connection verified.")
     except Exception as e:
-        logger.error("Database connection failed: %s", e)
+        logger.warning("Database connection check failed: %s", e)
         raise
 
 

@@ -35,7 +35,7 @@ def _load_env() -> None:
 
 def _configure_logging() -> None:
     try:
-        from backend.app.config.logging import configure_logging
+        from app.config.logging import configure_logging
         configure_logging()
     except Exception:
         import logging as _log
@@ -47,19 +47,22 @@ def _configure_logging() -> None:
 
 async def on_startup() -> None:
     """Async tasks after server starts."""
-    from backend.app.database.connection import init_db, _get_engine
+    from app.database.connection import init_db, _get_engine
     logger.info("Running startup tasks...")
-    await init_db()
+
+    try:
+        await init_db()
+    except Exception as e:
+        logger.warning("Database initialization skipped during startup: %s", e)
 
     # In development, auto-create all tables if they don't exist yet.
-    # This avoids having to run alembic migrations manually during development.
     import os
     if os.getenv("ENVIRONMENT", "development").lower() in {"development", "test"}:
         try:
-            # Import all models so SQLAlchemy knows every table
-            import backend.app.auth.models   # noqa: F401
-            import backend.app.users.models  # noqa: F401
-            from backend.app.auth.models import Base
+            import app.auth.models   # noqa: F401
+            import app.users.models  # noqa: F401
+            import app.symptom_checker.models  # noqa: F401
+            from app.auth.models import Base
             engine = _get_engine()
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
@@ -67,12 +70,58 @@ async def on_startup() -> None:
         except Exception as e:
             logger.warning("Auto table creation failed (non-fatal): %s", e)
 
+    # ── Validate symptom checker model on every startup ──────────────────
+    _validate_symptom_model()
+
     logger.info("Startup complete.")
+
+
+def _validate_symptom_model() -> None:
+    """Ensure the loaded symptom checker model has exactly 230 features.
+
+    If the model is not loaded or has wrong feature count, log a clear error
+    so the operator knows to restart after running train_large_dataset.py.
+    This prevents the '15 vs 230 features' runtime error reaching users.
+    """
+    try:
+        from app.symptom_checker.service import symptom_checker_service
+        if not symptom_checker_service.is_model_loaded():
+            logger.error(
+                "Symptom checker model failed to load on startup. "
+                "Run train_large_dataset.py then restart the server."
+            )
+            return
+
+        n = len(symptom_checker_service.predictor.feature_names)
+        expected = 230
+        if n != expected:
+            logger.error(
+                "STARTUP MISMATCH: symptom model has %d features, expected %d. "
+                "Artifacts were likely overwritten by the legacy train.py. "
+                "Re-run train_large_dataset.py, then restart.", n, expected
+            )
+            # Force a fresh reload from disk to pick up any corrected artifacts
+            symptom_checker_service.reload_model()
+            n2 = len(symptom_checker_service.predictor.feature_names)
+            if n2 == expected:
+                logger.info("Model reloaded successfully: %d features.", n2)
+            else:
+                logger.error(
+                    "Reload still has %d features. "
+                    "Please regenerate artifacts with train_large_dataset.py.", n2
+                )
+        else:
+            logger.info(
+                "Symptom checker model OK: %d features, %d diseases.",
+                n, len(symptom_checker_service.predictor.model.classes_)
+            )
+    except Exception as e:
+        logger.warning("Could not validate symptom checker model: %s", e)
 
 
 async def on_shutdown() -> None:
     """Async tasks on server shutdown."""
-    from backend.app.database.connection import close_db
+    from app.database.connection import close_db
     logger.info("Shutting down...")
     await close_db()
     logger.info("Shutdown complete.")

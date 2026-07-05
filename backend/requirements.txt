@@ -10,6 +10,7 @@ python-dotenv==1.0.1
 # ─── Database ─────────────────────────────────────────────────────────────────
 sqlalchemy[asyncio]==2.0.30
 asyncpg==0.29.0                # async PostgreSQL driver
+aiosqlite==0.20.0              # SQLite async driver for local development
 alembic==1.13.1
 
 # ─── Caching ──────────────────────────────────────────────────────────────────

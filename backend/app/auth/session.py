@@ -5,9 +5,9 @@ from __future__ import annotations
 import uuid
 from datetime import datetime, timezone
 
-from backend.app.auth.constants import SESSION_EXPIRE_SECONDS
-from backend.app.auth.exceptions import SessionExpiredError, SessionNotFoundError
-from backend.app.auth.models import UserSessionModel
+from app.auth.constants import SESSION_EXPIRE_SECONDS
+from app.auth.exceptions import SessionExpiredError, SessionNotFoundError
+from app.auth.models import UserSessionModel
 
 
 def create_session_record(

@@ -14,7 +14,7 @@ from __future__ import annotations
 from dataclasses import asdict
 from typing import Any, Optional
 
-from backend.app.models.prediction import PredictionResult
+from app.models.prediction import PredictionResult
 
 
 class PredictionService:
