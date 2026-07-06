@@ -10,3 +10,4 @@ datasets/raw/
 saved_models/**/*.pkl
 saved_models/**/*.joblib
 saved_models/**/*.onnx
+ai_models/symptom_checker/artifacts/trained_models/*.pkl
