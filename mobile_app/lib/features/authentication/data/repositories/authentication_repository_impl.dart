@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 
@@ -27,42 +28,61 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/login'),
-      headers: {'Content-Type': 'application/json'},
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-        'device_info': 'flutter_app',
-      }),
-    );
+    try {
+      final response = await http
+          .post(
+            Uri.parse('${ApiConfig.baseUrl}/api/v1/auth/login'),
+            headers: {'Content-Type': 'application/json'},
+            body: jsonEncode({
+              'email': email,
+              'password': password,
+              'device_info': 'flutter_app',
+            }),
+          )
+          .timeout(
+            Duration(seconds: ApiConfig.connectionTimeout),
+            onTimeout: () {
+              throw SocketException(
+                'Connection timed out. Please check your internet connection.',
+              );
+            },
+          );
 
-    if (response.statusCode != 200) {
-      throw _mapError(response);
-    }
+      if (response.statusCode != 200) {
+        throw _mapError(response);
+      }
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-    _accessToken = data['tokens']?['access_token']?.toString();
-    _refreshToken = data['tokens']?['refresh_token']?.toString();
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
+      _accessToken = data['tokens']?['access_token']?.toString();
+      _refreshToken = data['tokens']?['refresh_token']?.toString();
 
-    final meResponse = await http.get(
-      Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me'),
-      headers: _authHeaders(),
-    );
+      final meResponse = await http
+          .get(
+            Uri.parse('${ApiConfig.baseUrl}/api/v1/users/me'),
+            headers: _authHeaders(),
+          )
+          .timeout(Duration(seconds: ApiConfig.connectionTimeout));
 
-    if (meResponse.statusCode == 200) {
-      final meData = jsonDecode(meResponse.body) as Map<String, dynamic>;
-      _cachedUser = _mapUserFromSummary(meData);
+      if (meResponse.statusCode == 200) {
+        final meData = jsonDecode(meResponse.body) as Map<String, dynamic>;
+        _cachedUser = _mapUserFromSummary(meData);
+        return _cachedUser!;
+      }
+
+      _cachedUser = UserEntity(
+        id: data['user_id']?.toString() ?? '',
+        email: data['email']?.toString() ?? email,
+        name: data['full_name']?.toString() ?? '',
+        isProfileComplete: false,
+      );
       return _cachedUser!;
+    } on SocketException {
+      throw AuthException(
+        'Cannot connect to server. Please check your internet connection and ensure the backend is running.',
+      );
+    } catch (e) {
+      throw AuthException('Login failed: $e');
     }
-
-    _cachedUser = UserEntity(
-      id: data['user_id']?.toString() ?? '',
-      email: data['email']?.toString() ?? email,
-      name: data['full_name']?.toString() ?? '',
-      isProfileComplete: false,
-    );
-    return _cachedUser!;
   }
 
   @override

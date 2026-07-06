@@ -13,6 +13,13 @@ class ApiConfig {
   // When running on an Android emulator, use 'http://10.0.2.2:8000'.
   // You can also override at build time: flutter run --dart-define=BACKEND_URL=http://...
   static const _devLanIp = '192.168.18.26';
+  
+  // Set to true when testing on emulator, false for physical device
+  static const _useEmulator = false;
+  
+  // Increase timeout for mobile connections (in seconds)
+  static const connectionTimeout = 30;
+  static const receiveTimeout = 30;
 
   static String get baseUrl {
     const override = String.fromEnvironment('BACKEND_URL');
@@ -21,10 +28,11 @@ class ApiConfig {
     if (Platform.isAndroid) {
       // 10.0.2.2 works only on the official Android emulator.
       // On a physical device the dev machine's LAN IP must be used.
-      // Emulator check: the host is 10.0.2.2 which is only reachable inside the emulator's virtual network.
-      return 'http://$_devLanIp:8000';
+      return _useEmulator ? 'http://10.0.2.2:8000' : 'http://$_devLanIp:8000';
     }
-    if (Platform.isIOS) return 'http://$_devLanIp:8000';
+    if (Platform.isIOS) {
+      return _useEmulator ? 'http://localhost:8000' : 'http://$_devLanIp:8000';
+    }
     return 'http://127.0.0.1:8000';
   }
 
