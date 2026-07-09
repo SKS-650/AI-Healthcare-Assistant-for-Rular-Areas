@@ -6,7 +6,8 @@ __pycache__/
 .ipynb_checkpoints/
 .env
 logs/*.log
-datasets/raw/
+# Training and source datasets can be large and should not be committed.
+datasets/
 saved_models/**/*.pkl
 saved_models/**/*.joblib
 saved_models/**/*.onnx

@@ -51,7 +51,7 @@ def _json_dumps(obj: Dict[str, Any]) -> bytes:
 
 
 def _sign_hs256(secret: str, signing_input: str) -> str:
-    mac = hmac.new(secret.encode("utf-8"), signing_input.encode("utf-8"), hashlib.sha256)
+    mac = hmac.HMAC(secret.encode("utf-8"), signing_input.encode("utf-8"), hashlib.sha256)
     return _b64url_encode(mac.digest())
 
 

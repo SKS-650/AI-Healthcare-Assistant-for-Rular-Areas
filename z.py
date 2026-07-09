@@ -1,0 +1,1 @@
+# and once the user is logged in the make him able to  logout  and edit his profile from the home page and make the profile fully edditable and put the real data instead of dummy data for the logged user and at the every time if the different user is log in then show his own information rather that the dummy info

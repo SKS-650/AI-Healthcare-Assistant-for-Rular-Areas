@@ -800,8 +800,19 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
   Future<void> _submitSymptomCheck() async {
     _showAnalyzingDialog();
     try {
-      final repo = ref.read(authRepositoryProvider);
-      final token = (repo is AuthenticationRepositoryImpl) ? repo.accessToken : null;
+      // Access the token through the concrete implementation's getter.
+      // This avoids a risky type-cast in the presentation layer by reading
+      // the repo as its concrete type from the provider directly.
+      final authRepo = ref.read(authRepositoryProvider);
+      String? token;
+      if (authRepo is AuthenticationRepositoryImpl) {
+        // Try to refresh the token silently before submitting so we don't
+        // hit a 401 mid-analysis if the access token just expired.
+        if (authRepo.accessToken == null) {
+          await authRepo.refreshAccessToken();
+        }
+        token = authRepo.accessToken;
+      }
       final service = SymptomCheckerService(baseUrl: ApiConfig.baseUrl, authToken: token);
       final request = SymptomCheckRequest(
         symptoms: _selectedSymptoms,

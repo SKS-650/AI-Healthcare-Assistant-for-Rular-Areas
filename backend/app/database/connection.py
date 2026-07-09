@@ -69,6 +69,10 @@ async def get_async_session() -> AsyncGenerator[AsyncSession, None]:
             await session.close()
 
 
+# Alias for backward compatibility
+get_session = get_async_session
+
+
 # ─── Lifecycle ────────────────────────────────────────────────────────────────
 
 async def init_db() -> None:

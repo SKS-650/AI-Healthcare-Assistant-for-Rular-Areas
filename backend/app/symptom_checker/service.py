@@ -115,16 +115,39 @@ class SymptomCheckerService:
         except:
             return []
     
+    def _get_classes(self) -> list:
+        """Safely retrieve disease class labels from the loaded predictor.
+
+        The sklearn estimator lives at ``predictor.model.model`` (the wrapper
+        holds a ``RandomForestSymptomChecker`` whose inner sklearn object is
+        ``model.model``).  We probe both levels so the code works regardless
+        of whether the wrapper is used or the estimator is stored directly.
+        """
+        predictor = self.predictor
+        # Level 1 – predictor has classes_ directly (rare but possible)
+        if hasattr(predictor, "classes_"):
+            return list(predictor.classes_)
+        # Level 2 – predictor.model is the sklearn-compatible wrapper
+        wrapper = getattr(predictor, "model", None)
+        if wrapper is None:
+            return []
+        if hasattr(wrapper, "classes_"):
+            return list(wrapper.classes_)
+        # Level 3 – wrapper.model is the raw sklearn estimator
+        inner = getattr(wrapper, "model", None)
+        if inner is not None and hasattr(inner, "classes_"):
+            return list(inner.classes_)
+        return []
+
     def get_available_diseases(self) -> List[str]:
         """Get list of diseases the model can predict."""
         if not self.is_model_loaded():
             return []
-        
         try:
-            return self.predictor.model.classes_.tolist()
-        except:
+            return self._get_classes()
+        except Exception:
             return []
-    
+
     def get_model_info(self) -> Dict:
         """Get information about loaded model."""
         if not self.is_model_loaded():
@@ -132,16 +155,17 @@ class SymptomCheckerService:
                 "loaded": False,
                 "message": "Model not loaded"
             }
-        
+
         try:
             from symptom_checker.config.config import config
-            
+
+            classes = self._get_classes()
             return {
                 "loaded": True,
                 "model_name": config.MODEL_NAME,
                 "model_version": config.MODEL_VERSION,
                 "n_symptoms": len(self.predictor.symptom_vocabulary),
-                "n_diseases": len(self.predictor.model.classes_) if self.predictor.model else 0,
+                "n_diseases": len(classes),
                 "n_features": len(self.predictor.feature_names),
             }
         except Exception:

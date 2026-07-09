@@ -62,6 +62,8 @@ async def on_startup() -> None:
             import app.auth.models   # noqa: F401
             import app.users.models  # noqa: F401
             import app.symptom_checker.models  # noqa: F401
+            # Chatbot tables — import models so metadata is populated
+            import app.medical_chatbot.database.models  # noqa: F401
             from app.auth.models import Base
             engine = _get_engine()
             async with engine.begin() as conn:
@@ -113,7 +115,7 @@ def _validate_symptom_model() -> None:
         else:
             logger.info(
                 "Symptom checker model OK: %d features, %d diseases.",
-                n, len(symptom_checker_service.predictor.model.classes_)
+                n, len(symptom_checker_service._get_classes())
             )
     except Exception as e:
         logger.warning("Could not validate symptom checker model: %s", e)

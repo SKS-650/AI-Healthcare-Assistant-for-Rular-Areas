@@ -1,1 +1,103 @@
-services: {}
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: healthcare_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-postgres}
+      POSTGRES_DB: ${POSTGRES_DB:-healthcare_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - healthcare_network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: healthcare_redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - healthcare_network
+
+  # Backend API
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: healthcare_backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-postgres}@postgres:5432/${POSTGRES_DB:-healthcare_db}
+      
+      # Redis
+      REDIS_URL: redis://redis:6379/0
+      
+      # App
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      DEBUG: ${DEBUG:-false}
+      API_PREFIX: /api/v1
+      APP_BASE_URL: ${APP_BASE_URL:-http://localhost:8000}
+      
+      # JWT
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ALGORITHM: HS256
+      
+      # Medical Chatbot AI
+      CHATBOT_LLM_PROVIDER: ${CHATBOT_LLM_PROVIDER:-gemini}
+      CHATBOT_LLM_API_KEY: ${CHATBOT_LLM_API_KEY}
+      CHATBOT_LLM_MODEL: ${CHATBOT_LLM_MODEL:-gemini-pro}
+      CHATBOT_LLM_MAX_TOKENS: ${CHATBOT_LLM_MAX_TOKENS:-1000}
+      CHATBOT_LLM_TEMPERATURE: ${CHATBOT_LLM_TEMPERATURE:-0.7}
+      
+      # Email (Optional)
+      SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/app
+      - ./datasets:/app/datasets:ro
+      - backend_uploads:/app/uploads
+      - backend_logs:/app/logs
+    networks:
+      - healthcare_network
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+  backend_uploads:
+    driver: local
+  backend_logs:
+    driver: local
+
+networks:
+  healthcare_network:
+    driver: bridge

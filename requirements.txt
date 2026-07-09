@@ -35,6 +35,12 @@ scipy>=1.7.0                   # Scientific computing
 python-dateutil>=2.8.2         # Date/time utilities
 pyyaml>=6.0                    # YAML configuration files
 
+# ─── AI & LLM APIs ──────────────────────────────────────────────────────────
+openai>=1.12.0                 # OpenAI API client
+google-generativeai>=0.3.0     # Google Gemini API client
+anthropic>=0.18.0              # Anthropic Claude API client (optional)
+tiktoken>=0.6.0                # Token counting for OpenAI models
+
 # ─── Testing ────────────────────────────────────────────────────────────────
 pytest==8.2.0                  # Testing framework
 pytest-asyncio==0.23.6         # Async test support

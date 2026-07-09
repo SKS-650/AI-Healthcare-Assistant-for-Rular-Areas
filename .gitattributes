@@ -7,3 +7,4 @@
 *.css text eol=lf
 *.md text eol=lf
 ai_models/symptom_checker/artifacts/trained_models/random_forest_symptom_checker.pkl filter=lfs diff=lfs merge=lfs -text
+datasets/disease_dataset_for_llm/processed_dataset.csv filter=lfs diff=lfs merge=lfs -text

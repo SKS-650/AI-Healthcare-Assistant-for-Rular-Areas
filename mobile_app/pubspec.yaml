@@ -101,6 +101,7 @@ dependencies:
 
   equatable: ^2.0.6
   http: ^1.2.2
+  shared_preferences: ^2.2.3
 
   # State Management
   flutter_riverpod: ^2.5.1

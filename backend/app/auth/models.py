@@ -127,6 +127,10 @@ class UserModel(Base):
     password_resets    = relationship("PasswordResetModel",    back_populates="user", cascade="all, delete-orphan")
     sessions           = relationship("UserSessionModel",      back_populates="user", cascade="all, delete-orphan")
     symptom_checks     = relationship("SymptomCheckHistory",   back_populates="user", cascade="all, delete-orphan", lazy="dynamic")
+    
+    # Medical Chatbot relationships
+    conversations      = relationship("Conversation",          back_populates="user", cascade="all, delete-orphan", lazy="dynamic")
+    chatbot_sessions   = relationship("ChatbotSession",        back_populates="user", cascade="all, delete-orphan", lazy="dynamic")
 
     def __repr__(self) -> str:
         return f"<User {self.email}>"
