@@ -1,45 +1,78 @@
 import 'package:flutter/material.dart';
-
 import '../../../../../shared/design_system/design_tokens.dart';
 
+/// Bottom chat input matching screenshot:
+/// [mic btn] [ text field ] [emoji btn] | [send/voice btn]
 class ChatInputField extends StatefulWidget {
   final bool enabled;
   final ValueChanged<String> onSend;
+  final VoidCallback? onVoice;
 
   const ChatInputField({
     super.key,
     required this.enabled,
     required this.onSend,
+    this.onVoice,
   });
 
   @override
   State<ChatInputField> createState() => _ChatInputFieldState();
 }
 
-class _ChatInputFieldState extends State<ChatInputField> {
-  final _controller = TextEditingController();
+class _ChatInputFieldState extends State<ChatInputField>
+    with SingleTickerProviderStateMixin {
+  final _ctrl = TextEditingController();
   bool _hasText = false;
+  int  _hintIdx = 0;
+
+  // 4-language rotating hints
+  static const _hints = [
+    '💬 Ask me anything… (English)',
+    '💬 कुछ भी पूछें… (हिंदी)',
+    '💬 केहि पनि सोध्नुहोस्… (नेपाली)',
+    '💬 कुछ भी पूछा… (भोजपुरी)',
+  ];
+
+  late final AnimationController _hintAnim;
+  late final Animation<double>   _hintFade;
 
   @override
   void initState() {
     super.initState();
-    _controller.addListener(() {
-      final hasText = _controller.text.trim().isNotEmpty;
-      if (hasText != _hasText) setState(() => _hasText = hasText);
+    _ctrl.addListener(() {
+      final has = _ctrl.text.trim().isNotEmpty;
+      if (has != _hasText) setState(() => _hasText = has);
+    });
+    _hintAnim = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 400));
+    _hintFade = CurvedAnimation(parent: _hintAnim, curve: Curves.easeInOut);
+    _hintAnim.value = 1.0;
+
+    // Rotate hint every 3 s when empty
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 3));
+      if (!mounted) return false;
+      if (_hasText) return true;
+      await _hintAnim.reverse();
+      if (!mounted) return false;
+      setState(() => _hintIdx = (_hintIdx + 1) % _hints.length);
+      await _hintAnim.forward();
+      return true;
     });
   }
 
   @override
   void dispose() {
-    _controller.dispose();
+    _ctrl.dispose();
+    _hintAnim.dispose();
     super.dispose();
   }
 
   void _send() {
-    final text = _controller.text.trim();
-    if (text.isEmpty) return;
-    widget.onSend(text);
-    _controller.clear();
+    final t = _ctrl.text.trim();
+    if (t.isEmpty || !widget.enabled) return;
+    widget.onSend(t);
+    _ctrl.clear();
   }
 
   @override
@@ -49,9 +82,13 @@ class _ChatInputFieldState extends State<ChatInputField> {
     return Container(
       decoration: BoxDecoration(
         color: isDark ? DesignTokens.darkSurface : DesignTokens.surface,
-        border: Border(
-          top: BorderSide(color: DesignTokens.border, width: 1),
-        ),
+        border: const Border(top: BorderSide(color: DesignTokens.border, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 10, offset: const Offset(0, -3),
+          ),
+        ],
       ),
       padding: const EdgeInsets.fromLTRB(12, 8, 12, 8),
       child: SafeArea(
@@ -59,68 +96,92 @@ class _ChatInputFieldState extends State<ChatInputField> {
         child: Row(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            // Attachment button
-            _CircleButton(
-              icon: Icons.add_rounded,
-              onTap: widget.enabled ? () {} : null,
-              color: DesignTokens.textMuted,
-              bgColor: isDark
-                  ? DesignTokens.darkSurfaceMuted
-                  : DesignTokens.surfaceMuted,
-            ),
-            const SizedBox(width: 8),
-            // Text input
+            // ── Text + mic + emoji row ────────────────────────────────────
             Expanded(
               child: Container(
                 constraints: const BoxConstraints(maxHeight: 120),
                 decoration: BoxDecoration(
-                  color: isDark
-                      ? DesignTokens.darkSurfaceMuted
-                      : DesignTokens.surfaceMuted,
-                  borderRadius: BorderRadius.circular(24),
+                  color: isDark ? DesignTokens.darkSurfaceMuted : DesignTokens.surfaceMuted,
+                  borderRadius: BorderRadius.circular(26),
                   border: Border.all(
-                    color: isDark ? DesignTokens.darkBorder : DesignTokens.border,
+                    color: _hasText
+                        ? DesignTokens.primary.withValues(alpha: 0.55)
+                        : DesignTokens.border,
+                    width: _hasText ? 1.5 : 1.0,
                   ),
                 ),
                 child: Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    Expanded(
-                      child: TextField(
-                        controller: _controller,
-                        enabled: widget.enabled,
-                        textInputAction: TextInputAction.send,
-                        minLines: 1,
-                        maxLines: 5,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          color: DesignTokens.textStrong,
-                        ),
-                        decoration: const InputDecoration(
-                          hintText: 'Describe your symptoms...',
-                          hintStyle: TextStyle(
-                            color: DesignTokens.textSubtle,
-                            fontSize: 14,
-                          ),
-                          border: InputBorder.none,
-                          enabledBorder: InputBorder.none,
-                          focusedBorder: InputBorder.none,
-                          contentPadding: EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 12,
-                          ),
-                        ),
-                        onSubmitted: widget.enabled ? (_) => _send() : null,
+                    // Mic inside field (shortcut to voice)
+                    Padding(
+                      padding: const EdgeInsets.only(left: 5, bottom: 7),
+                      child: _CircleBtn(
+                        icon: Icons.mic_outlined,
+                        onTap: (widget.enabled && widget.onVoice != null)
+                            ? widget.onVoice
+                            : null,
+                        color: DesignTokens.primary,
+                        bgColor: DesignTokens.primaryContainer,
+                        size: 32,
                       ),
                     ),
-                    // Mic button inside text field
+
+                    // Text area with animated hint
+                    Expanded(
+                      child: Stack(
+                        children: [
+                          if (!_hasText)
+                            Positioned.fill(
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Padding(
+                                  padding: const EdgeInsets.only(left: 8),
+                                  child: FadeTransition(
+                                    opacity: _hintFade,
+                                    child: Text(
+                                      _hints[_hintIdx],
+                                      style: const TextStyle(
+                                          color: DesignTokens.textSubtle, fontSize: 13),
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          TextField(
+                            controller: _ctrl,
+                            enabled: widget.enabled,
+                            maxLines: null,
+                            keyboardType: TextInputType.multiline,
+                            textInputAction: TextInputAction.newline,
+                            style: TextStyle(
+                              fontSize: 14,
+                              height: 1.4,
+                              color: isDark
+                                  ? DesignTokens.darkTextStrong
+                                  : DesignTokens.textStrong,
+                            ),
+                            decoration: const InputDecoration(
+                              border: InputBorder.none,
+                              hintText: null,
+                              contentPadding: EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 10),
+                            ),
+                            onSubmitted: (_) => _send(),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Emoji picker button
                     Padding(
-                      padding: const EdgeInsets.only(right: 6, bottom: 6),
-                      child: _CircleButton(
-                        icon: Icons.mic_outlined,
-                        onTap: widget.enabled ? () {} : null,
-                        color: DesignTokens.textMuted,
-                        bgColor: Colors.transparent,
+                      padding: const EdgeInsets.only(right: 5, bottom: 7),
+                      child: _CircleBtn(
+                        icon: Icons.emoji_emotions_outlined,
+                        onTap: widget.enabled ? () => _showEmojiPicker(context) : null,
+                        color: DesignTokens.warning,
+                        bgColor: DesignTokens.warningContainer,
                         size: 32,
                       ),
                     ),
@@ -128,50 +189,91 @@ class _ChatInputFieldState extends State<ChatInputField> {
                 ),
               ),
             ),
+
             const SizedBox(width: 8),
-            // Send button
-            AnimatedContainer(
+
+            // ── Send / voice big button ───────────────────────────────────
+            AnimatedSwitcher(
               duration: const Duration(milliseconds: 200),
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                gradient: _hasText && widget.enabled
-                    ? const LinearGradient(
-                        colors: [DesignTokens.primary, DesignTokens.secondary],
-                        begin: Alignment.topLeft,
-                        end: Alignment.bottomRight,
-                      )
-                    : null,
-                color: !_hasText || !widget.enabled
-                    ? DesignTokens.surfaceMuted
-                    : null,
-                shape: BoxShape.circle,
-                boxShadow: _hasText && widget.enabled
-                    ? [
-                        BoxShadow(
-                          color: DesignTokens.primary.withValues(alpha: 0.3),
-                          blurRadius: 10,
-                          offset: const Offset(0, 3),
-                        ),
-                      ]
-                    : null,
-              ),
-              child: Material(
-                color: Colors.transparent,
-                shape: const CircleBorder(),
-                child: InkWell(
-                  customBorder: const CircleBorder(),
-                  onTap: (_hasText && widget.enabled) ? _send : null,
-                  child: Icon(
-                    Icons.send_rounded,
-                    size: 18,
-                    color: _hasText && widget.enabled
-                        ? Colors.white
-                        : DesignTokens.textSubtle,
-                  ),
-                ),
-              ),
+              transitionBuilder: (child, anim) =>
+                  ScaleTransition(scale: anim, child: child),
+              child: _hasText
+                  ? _CircleBtn(
+                      key: const ValueKey('send'),
+                      icon: Icons.send_rounded,
+                      onTap: widget.enabled ? _send : null,
+                      color: Colors.white,
+                      bgColor: DesignTokens.primary,
+                      size: 46,
+                      gradient: DesignTokens.purpleGradient,
+                    )
+                  : _CircleBtn(
+                      key: const ValueKey('voice'),
+                      icon: Icons.mic_rounded,
+                      onTap: (widget.enabled && widget.onVoice != null)
+                          ? widget.onVoice
+                          : null,
+                      color: Colors.white,
+                      bgColor: DesignTokens.aqua,
+                      size: 46,
+                      gradient: DesignTokens.aquaGradient,
+                    ),
             ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showEmojiPicker(BuildContext ctx) {
+    const emojis = [
+      '😊', '😷', '🤒', '🤕', '💊', '🌡️', '🏥', '🩺', '💉',
+      '🥗', '🏃', '🤰', '👶', '🚨', '🧠', '❤️', '🍎', '💧',
+      '😴', '🤧', '🤢', '😰', '💪', '🫁', '🦷', '👁️', '🫀',
+    ];
+    showModalBottomSheet(
+      context: ctx,
+      backgroundColor: Colors.transparent,
+      builder: (_) => Container(
+        decoration: const BoxDecoration(
+          color: DesignTokens.surface,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(22)),
+        ),
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40, height: 4,
+              margin: const EdgeInsets.only(bottom: 12),
+              decoration: BoxDecoration(
+                color: DesignTokens.border, borderRadius: BorderRadius.circular(2)),
+            ),
+            const Text('😊 Quick Emoji',
+                style: TextStyle(fontWeight: FontWeight.w700,
+                    fontSize: 14, color: DesignTokens.textStrong)),
+            const SizedBox(height: 12),
+            Wrap(
+              spacing: 8, runSpacing: 8,
+              children: emojis.map((e) => GestureDetector(
+                    onTap: () {
+                      _ctrl.text += e;
+                      _ctrl.selection = TextSelection.collapsed(
+                          offset: _ctrl.text.length);
+                      Navigator.pop(ctx);
+                    },
+                    child: Container(
+                      width: 48, height: 48,
+                      decoration: BoxDecoration(
+                        color: DesignTokens.primaryContainer,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Center(
+                          child: Text(e, style: const TextStyle(fontSize: 24))),
+                    ),
+                  )).toList(),
+            ),
+            const SizedBox(height: 8),
           ],
         ),
       ),
@@ -179,35 +281,59 @@ class _ChatInputFieldState extends State<ChatInputField> {
   }
 }
 
-class _CircleButton extends StatelessWidget {
+// ─────────────────────────────────────────────────────────────────────────────
+// Reusable circle button
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _CircleBtn extends StatelessWidget {
   final IconData icon;
   final VoidCallback? onTap;
-  final Color color;
-  final Color bgColor;
+  final Color color, bgColor;
   final double size;
+  final List<Color>? gradient;
 
-  const _CircleButton({
+  const _CircleBtn({
+    super.key,
     required this.icon,
     required this.onTap,
     required this.color,
     required this.bgColor,
-    this.size = 44,
+    this.size = 40,
+    this.gradient,
   });
 
   @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      width: size,
-      height: size,
-      child: Material(
-        color: bgColor,
-        shape: const CircleBorder(),
-        child: InkWell(
-          customBorder: const CircleBorder(),
-          onTap: onTap,
-          child: Icon(icon, size: size * 0.45, color: color),
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 150),
+          width: size, height: size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            gradient: gradient != null
+                ? LinearGradient(
+                    colors: onTap != null
+                        ? gradient!
+                        : [Colors.grey.shade300, Colors.grey.shade400],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  )
+                : null,
+            color: gradient == null
+                ? (onTap != null ? bgColor : Colors.grey.shade200)
+                : null,
+            boxShadow: onTap != null && gradient != null
+                ? [
+                    BoxShadow(
+                      color: gradient!.first.withValues(alpha: 0.35),
+                      blurRadius: 8, offset: const Offset(0, 3),
+                    ),
+                  ]
+                : null,
+          ),
+          child: Icon(icon,
+              color: onTap != null ? color : Colors.grey.shade400,
+              size: size * 0.44),
         ),
-      ),
-    );
-  }
+      );
 }

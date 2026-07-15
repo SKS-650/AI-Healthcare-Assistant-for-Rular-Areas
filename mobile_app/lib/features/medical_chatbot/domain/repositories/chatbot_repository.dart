@@ -5,6 +5,7 @@ import '../entities/suggestion.dart';
 
 abstract class ChatbotRepository {
   Future<Conversation> loadConversation();
+  Future<void> selectConversation(Conversation conversation);
   Future<ChatMessage> sendDummyMessage(String message);
   Future<List<Suggestion>> getSuggestions();
   Future<List<Conversation>> loadChatHistory();
