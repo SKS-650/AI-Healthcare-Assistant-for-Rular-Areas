@@ -42,7 +42,7 @@ class DarkTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: DesignTokens.darkBackground,
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         centerTitle: false,
         backgroundColor: DesignTokens.darkBackground,
         foregroundColor: DesignTokens.darkTextStrong,
@@ -53,7 +53,7 @@ class DarkTheme {
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.light,
         ),
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           color: DesignTokens.darkTextStrong,
           fontSize: 18,
           fontWeight: FontWeight.w800,
@@ -65,7 +65,7 @@ class DarkTheme {
         color: DesignTokens.darkSurface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DesignTokens.cardRadius),
-          side: BorderSide(color: DesignTokens.darkBorder),
+          side: const BorderSide(color: DesignTokens.darkBorder),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -84,17 +84,17 @@ class DarkTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: DesignTokens.darkBorder),
+          borderSide: const BorderSide(color: DesignTokens.darkBorder),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: DesignTokens.darkBorder),
+          borderSide: const BorderSide(color: DesignTokens.darkBorder),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: DesignTokens.primaryLight, width: 1.5),
+          borderSide: const BorderSide(color: DesignTokens.primaryLight, width: 1.5),
         ),
-        labelStyle: TextStyle(color: DesignTokens.darkTextMuted),
+        labelStyle: const TextStyle(color: DesignTokens.darkTextMuted),
         hintStyle: TextStyle(color: DesignTokens.darkTextMuted.withValues(alpha: 0.6)),
       ),
     );

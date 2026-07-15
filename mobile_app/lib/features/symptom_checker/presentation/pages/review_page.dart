@@ -35,11 +35,11 @@ class ReviewPage extends ConsumerWidget {
                 ),
               ],
             ),
-            child: Row(
+            child: const Row(
               children: [
-                const Text('✅', style: TextStyle(fontSize: 24)),
-                const SizedBox(width: 10),
-                const Expanded(
+                Text('✅', style: TextStyle(fontSize: 24)),
+                SizedBox(width: 10),
+                Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [

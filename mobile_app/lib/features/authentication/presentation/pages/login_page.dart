@@ -383,10 +383,10 @@ class _BackButton extends StatelessWidget {
 class _SocialLoginRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    return Row(
+    return const Row(
       children: [
         Expanded(child: _SocialButton(label: 'Google', emoji: '🇬')),
-        const SizedBox(width: 12),
+        SizedBox(width: 12),
         Expanded(child: _SocialButton(label: 'Apple', emoji: '')),
       ],
     );

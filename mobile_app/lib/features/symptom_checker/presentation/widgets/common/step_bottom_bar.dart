@@ -21,7 +21,7 @@ class StepBottomBar extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
       decoration: BoxDecoration(
         color: DesignTokens.background,
-        border: Border(
+        border: const Border(
           top: BorderSide(color: DesignTokens.border),
         ),
         boxShadow: [

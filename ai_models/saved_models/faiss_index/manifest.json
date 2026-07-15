@@ -1,0 +1,9 @@
+{
+  "dim": 384,
+  "total": 16238,
+  "categories": [
+    "symptom_lookup",
+    "disease_symptom",
+    "medquad"
+  ]
+}

@@ -139,7 +139,7 @@ class _GuestModePageState extends ConsumerState<GuestModePage>
                             Container(
                               width: 130,
                               height: 130,
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 color: DesignTokens.surfaceMuted,
                                 shape: BoxShape.circle,
                               ),

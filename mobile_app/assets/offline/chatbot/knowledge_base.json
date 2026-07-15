@@ -1,0 +1,107 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-07-14",
+  "description": "Offline medical knowledge base for the AI Healthcare Chatbot",
+  "categories": [
+    "emergency", "fever", "cough", "headache", "diabetes",
+    "blood_pressure", "malaria", "nutrition", "child_health",
+    "mental_health", "pregnancy", "first_aid"
+  ],
+  "entries": [
+    {
+      "id": "em_001",
+      "category": "emergency",
+      "keywords": ["emergency", "critical", "heart attack", "stroke", "unconscious"],
+      "question": "What should I do in a medical emergency?",
+      "answer": "Call 108 (Ambulance) or 112 (Emergency) immediately. Stay calm and follow operator instructions. Do NOT move someone with a suspected spinal injury.",
+      "severity": "critical"
+    },
+    {
+      "id": "fv_001",
+      "category": "fever",
+      "keywords": ["fever", "high temperature", "chills", "hot"],
+      "question": "How do I manage fever at home?",
+      "answer": "Stay hydrated with 8-10 glasses of water/day. Rest in a cool room. Take Paracetamol 500mg every 6 hours for adults. Use lukewarm sponge bath. See doctor if fever > 39.4°C or lasts more than 3 days.",
+      "severity": "medium"
+    },
+    {
+      "id": "cg_001",
+      "category": "cough",
+      "keywords": ["cough", "sore throat", "phlegm"],
+      "question": "How to treat cough at home?",
+      "answer": "Honey + ginger tea helps soothe cough. Try steam inhalation with eucalyptus oil. Gargle with salt water. Stay hydrated. Seek care if coughing blood or with high fever.",
+      "severity": "low"
+    },
+    {
+      "id": "db_001",
+      "category": "diabetes",
+      "keywords": ["diabetes", "blood sugar", "insulin"],
+      "question": "How do I manage diabetes?",
+      "answer": "Monitor blood sugar daily. Take medication/insulin as prescribed. Follow low-GI diet. Exercise 30 minutes daily. Check feet daily for wounds. HbA1c check every 3 months.",
+      "severity": "medium"
+    },
+    {
+      "id": "bp_001",
+      "category": "blood_pressure",
+      "keywords": ["blood pressure", "hypertension", "bp"],
+      "question": "How to manage high blood pressure?",
+      "answer": "Reduce salt intake to less than 5g/day. Follow DASH diet. Exercise 30 min/day 5 days/week. Quit smoking. Limit alcohol. Manage stress. Never stop medication without doctor advice.",
+      "severity": "medium"
+    },
+    {
+      "id": "ml_001",
+      "category": "malaria",
+      "keywords": ["malaria", "mosquito", "fever chills"],
+      "question": "How to prevent malaria?",
+      "answer": "Sleep under insecticide-treated mosquito nets. Use DEET-based repellent. Wear long-sleeved clothing at dusk/dawn. Eliminate stagnant water near home. Seek care immediately for fever with chills.",
+      "severity": "high"
+    },
+    {
+      "id": "nt_001",
+      "category": "nutrition",
+      "keywords": ["diet", "nutrition", "food", "vitamins"],
+      "question": "What is a balanced diet?",
+      "answer": "Eat 3-5 servings of vegetables and 2-4 servings of fruit daily. Drink 6-8 glasses of clean water. Choose whole grains over refined carbs. Include lean protein like lentils, eggs, fish.",
+      "severity": "low"
+    },
+    {
+      "id": "ch_001",
+      "category": "child_health",
+      "keywords": ["child", "baby", "infant", "vaccine", "vaccination"],
+      "question": "What are the key child vaccinations in India?",
+      "answer": "Birth: BCG, OPV, Hepatitis B. 6 weeks: DPT, IPV, Hib, Rotavirus, PCV. 9 months: Measles (MR vaccine). 18 months: DPT booster, OPV, MR 2nd dose. Monthly weight checks for children under 2.",
+      "severity": "low"
+    },
+    {
+      "id": "mh_001",
+      "category": "mental_health",
+      "keywords": ["depression", "anxiety", "stress", "mental", "sad"],
+      "question": "How can I support my mental health?",
+      "answer": "Talk to someone you trust. Maintain a regular sleep schedule. Exercise daily even if briefly. Limit social media. Practice deep breathing. iCall helpline: 9152987821. Vandrevala Foundation: 1860-2662-345.",
+      "severity": "medium"
+    },
+    {
+      "id": "pg_001",
+      "category": "pregnancy",
+      "keywords": ["pregnant", "pregnancy", "prenatal", "antenatal"],
+      "question": "What are pregnancy danger signs?",
+      "answer": "Go to hospital immediately for: severe headache + blurred vision, heavy vaginal bleeding, baby not moving for 12+ hours, high fever, swelling of face/hands. Take folic acid 400mcg/day.",
+      "severity": "high"
+    },
+    {
+      "id": "fa_001",
+      "category": "first_aid",
+      "keywords": ["wound", "cut", "burn", "bleeding", "first aid"],
+      "question": "How do I treat a wound?",
+      "answer": "1. Wash hands. 2. Apply pressure to stop bleeding. 3. Clean with water or saline. 4. Apply antiseptic. 5. Cover with bandage. For burns: cool with running water 10-20 min. Never apply ice, butter, or toothpaste.",
+      "severity": "medium"
+    }
+  ],
+  "emergency_numbers": {
+    "ambulance": "108",
+    "emergency": "112",
+    "mental_health_icall": "9152987821",
+    "vandrevala_foundation": "1860-2662-345",
+    "nimhans": "080-46110007"
+  }
+}

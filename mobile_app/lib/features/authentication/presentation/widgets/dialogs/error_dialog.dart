@@ -33,7 +33,7 @@ class ErrorDialog extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: DesignTokens.dangerContainer,
               shape: BoxShape.circle,
             ),

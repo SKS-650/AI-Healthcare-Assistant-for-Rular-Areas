@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
 import '../../domain/entities/disease.dart';
@@ -46,8 +46,8 @@ class DiseaseDetailPage extends StatelessWidget {
                 ),
               ),
               background: Container(
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
                     colors: [DesignTokens.primaryDark, DesignTokens.primary],
                     begin: Alignment.topLeft,
                     end: Alignment.bottomRight,

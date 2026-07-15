@@ -164,7 +164,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
                         const SizedBox(height: 32),
 
                         // ── Full Name ─────────────────────────────────────
-                        _FieldLabel(label: 'Full Name'),
+                        const _FieldLabel(label: 'Full Name'),
                         const SizedBox(height: 8),
                         AuthTextField(
                           controller: _nameCtrl,
@@ -180,7 +180,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
                         const SizedBox(height: 16),
 
                         // ── Email ─────────────────────────────────────────
-                        _FieldLabel(label: 'Email Address'),
+                        const _FieldLabel(label: 'Email Address'),
                         const SizedBox(height: 8),
                         AuthTextField(
                           controller: _emailCtrl,
@@ -196,7 +196,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
                         const SizedBox(height: 16),
 
                         // ── Password ──────────────────────────────────────
-                        _FieldLabel(label: 'Password'),
+                        const _FieldLabel(label: 'Password'),
                         const SizedBox(height: 8),
                         AuthTextField(
                           controller: _passwordCtrl,
@@ -256,7 +256,7 @@ class _RegisterPageState extends ConsumerState<RegisterPage>
                         const SizedBox(height: 16),
 
                         // ── Confirm Password ──────────────────────────────
-                        _FieldLabel(label: 'Confirm Password'),
+                        const _FieldLabel(label: 'Confirm Password'),
                         const SizedBox(height: 8),
                         AuthTextField(
                           controller: _confirmCtrl,

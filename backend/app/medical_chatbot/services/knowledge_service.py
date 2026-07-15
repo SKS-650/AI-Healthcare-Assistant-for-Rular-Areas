@@ -1,357 +1,351 @@
 """
-Knowledge Service - Loads and searches medical datasets
+Knowledge Service - Loads medical datasets + FAISS semantic search.
+
+Upgraded to use:
+  1. FAISS vector search (primary — semantic similarity)
+  2. Pandas keyword search (fallback when FAISS not built yet)
+  3. Translation service (translates non-English queries before search)
 """
-from typing import Optional, Dict, Any, List
-import pandas as pd
-from pathlib import Path
+from __future__ import annotations
+
 import re
+import sys
+from pathlib import Path
+from typing import Any, Dict, List, Optional
+
+import pandas as pd
 
 from ..utils.logger import logger
-from ..utils.exceptions import ChatbotException
+from ..utils.exceptions import ChatbotException  # noqa: F401
+
+# ── project root on sys.path so ai_models is importable ──────────────────────
+_PROJECT_ROOT = Path(__file__).parent.parent.parent.parent.parent
+if str(_PROJECT_ROOT) not in sys.path:
+    sys.path.insert(0, str(_PROJECT_ROOT))
+
+# ── FAISS index directory ─────────────────────────────────────────────────────
+_FAISS_INDEX_DIR = _PROJECT_ROOT / "ai_models" / "saved_models" / "faiss_index"
+
+# ── Expanded disease vocabulary (100+ terms) ──────────────────────────────────
+_DISEASE_KEYWORDS = [
+    "diabetes", "hypertension", "fever", "cold", "cough", "asthma",
+    "malaria", "dengue", "typhoid", "tuberculosis", "pneumonia",
+    "covid", "coronavirus", "headache", "migraine", "arthritis", "allergy",
+    "anemia", "anaemia", "diarrhea", "diarrhoea", "cholera", "hepatitis",
+    "jaundice", "kidney", "liver", "heart", "stroke", "epilepsy",
+    "depression", "anxiety", "schizophrenia", "bipolar", "insomnia",
+    "obesity", "cancer", "tumor", "ulcer", "gastritis", "constipation",
+    "appendicitis", "hernia", "fracture", "sprain", "burn", "wound",
+    "infection", "rash", "eczema", "psoriasis", "acne", "chickenpox",
+    "measles", "mumps", "rubella", "polio", "tetanus", "rabies",
+    "leptospirosis", "typhus", "plague", "ebola", "influenza", "flu",
+    "sinusitis", "tonsillitis", "bronchitis", "pleurisy", "empyema",
+    "meningitis", "encephalitis", "parkinson", "alzheimer", "dementia",
+    "osteoporosis", "gout", "lupus", "multiple sclerosis", "fibromyalgia",
+    "hypothyroidism", "hyperthyroidism", "goiter", "addison", "cushing",
+    "celiac", "crohn", "irritable bowel", "colitis", "appendix",
+    "gallstone", "gallbladder", "pancreatitis", "cirrhosis", "fatty liver",
+    "glaucoma", "cataract", "conjunctivitis", "stye", "uveitis",
+    "otitis", "tinnitus", "vertigo", "meniere", "labyrinthitis",
+    "pregnancy", "miscarriage", "ectopic", "preeclampsia", "gestational",
+    "endometriosis", "pcos", "fibroids", "menopause",
+    "prostate", "erectile", "infertility",
+    "scabies", "ringworm", "tinea", "athlete", "nail fungus",
+]
 
 
 class KnowledgeService:
-    """Service for loading and searching medical knowledge base"""
-    
-    def __init__(self, dataset_path: Optional[str] = None):
-        """
-        Initialize knowledge service
-        
-        Args:
-            dataset_path: Path to chatbot datasets (default: auto-detect)
-        """
-        if dataset_path:
-            self.dataset_path = Path(dataset_path)
-        else:
-            # Auto-detect dataset path
-            self.dataset_path = self._find_dataset_path()
-        
-        # Dataset storage
-        self.disease_symptoms_df: Optional[pd.DataFrame] = None
+    """Medical knowledge retrieval with FAISS + CSV fallback."""
+
+    def __init__(self, dataset_path: Optional[str] = None) -> None:
+        self.dataset_path = Path(dataset_path) if dataset_path else self._find_dataset_path()
+
+        # DataFrames
+        self.disease_symptoms_df:   Optional[pd.DataFrame] = None
         self.symptom_description_df: Optional[pd.DataFrame] = None
-        self.symptom_precaution_df: Optional[pd.DataFrame] = None
-        self.symptom_severity_df: Optional[pd.DataFrame] = None
-        self.medquad_df: Optional[pd.DataFrame] = None
-        
-        # Load datasets
+        self.symptom_precaution_df:  Optional[pd.DataFrame] = None
+        self.symptom_severity_df:    Optional[pd.DataFrame] = None
+        self.medquad_df:             Optional[pd.DataFrame] = None
+
+        # AI services (lazy)
+        self._faiss       = None
+        self._embeddings  = None
+        self._translator  = None
+        self._faiss_ready = False
+
         self._load_datasets()
-        
-        logger.info(f"Knowledge Service initialized with {self.get_stats()}")
-    
+        self._try_load_faiss()
+
+        logger.info(f"KnowledgeService ready — datasets={self.get_stats()}, faiss={self._faiss_ready}")
+
+    # ─── dataset path detection ───────────────────────────────────────────────
+
     def _find_dataset_path(self) -> Path:
-        """Auto-detect dataset path"""
-        # Try different possible locations
-        possible_paths = [
+        candidates = [
             Path("datasets/chatbot_dataset"),
             Path("../datasets/chatbot_dataset"),
             Path("../../datasets/chatbot_dataset"),
-            Path(__file__).parent.parent.parent.parent.parent / "datasets" / "chatbot_dataset"
+            _PROJECT_ROOT / "datasets" / "chatbot_dataset",
         ]
-        
-        for path in possible_paths:
-            if path.exists():
-                logger.info(f"Found dataset path: {path.absolute()}")
-                return path.absolute()
-        
-        # Default fallback
-        default_path = Path("datasets/chatbot_dataset")
-        logger.warning(f"Dataset path not found, using default: {default_path}")
-        return default_path
-    
-    def _load_datasets(self):
-        """Load all CSV datasets"""
+        for p in candidates:
+            if p.exists():
+                logger.info(f"Dataset path: {p.absolute()}")
+                return p.absolute()
+        default = Path("datasets/chatbot_dataset")
+        logger.warning(f"Dataset path not found, using default: {default}")
+        return default
+
+    # ─── CSV loading ──────────────────────────────────────────────────────────
+
+    def _load_datasets(self) -> None:
+        disease_path = self.dataset_path / "DiseaseSymptomPredictionDataset"
+        medquad_path = self.dataset_path / "MedQuAD_Dataset"
+
+        def _read(p: Path, label: str) -> Optional[pd.DataFrame]:
+            if p.exists():
+                df = pd.read_csv(p)
+                logger.info(f"Loaded {label}: {len(df)} rows")
+                return df
+            logger.warning(f"CSV not found: {p}")
+            return None
+
+        self.disease_symptoms_df    = _read(disease_path / "dataset.csv",                "disease_symptoms")
+        self.symptom_description_df = _read(disease_path / "symptom_Description.csv",    "symptom_descriptions")
+        self.symptom_precaution_df  = _read(disease_path / "symptom_precaution.csv",     "symptom_precautions")
+        self.symptom_severity_df    = _read(disease_path / "Symptom-severity.csv",       "symptom_severity")
+        self.medquad_df             = _read(medquad_path  / "medquad.csv",               "medquad")
+
+    # ─── FAISS lazy load ──────────────────────────────────────────────────────
+
+    def _try_load_faiss(self) -> None:
         try:
-            disease_path = self.dataset_path / "DiseaseSymptomPredictionDataset"
-            medquad_path = self.dataset_path / "MedQuAD_Dataset"
-            
-            # Load disease-symptom dataset
-            if (disease_path / "dataset.csv").exists():
-                self.disease_symptoms_df = pd.read_csv(disease_path / "dataset.csv")
-                logger.info(f"Loaded disease symptoms: {len(self.disease_symptoms_df)} records")
-            
-            # Load symptom descriptions
-            if (disease_path / "symptom_Description.csv").exists():
-                self.symptom_description_df = pd.read_csv(disease_path / "symptom_Description.csv")
-                logger.info(f"Loaded symptom descriptions: {len(self.symptom_description_df)} records")
-            
-            # Load symptom precautions
-            if (disease_path / "symptom_precaution.csv").exists():
-                self.symptom_precaution_df = pd.read_csv(disease_path / "symptom_precaution.csv")
-                logger.info(f"Loaded symptom precautions: {len(self.symptom_precaution_df)} records")
-            
-            # Load symptom severity
-            if (disease_path / "Symptom-severity.csv").exists():
-                self.symptom_severity_df = pd.read_csv(disease_path / "Symptom-severity.csv")
-                logger.info(f"Loaded symptom severity: {len(self.symptom_severity_df)} records")
-            
-            # Load MedQuAD dataset
-            if (medquad_path / "medquad.csv").exists():
-                self.medquad_df = pd.read_csv(medquad_path / "medquad.csv")
-                logger.info(f"Loaded MedQuAD: {len(self.medquad_df)} records")
-            
-        except Exception as e:
-            logger.error(f"Error loading datasets: {str(e)}", exc_info=True)
-            # Don't fail completely, just log the error
-    
+            from ai_models.vector_database.faiss_engine import get_faiss_engine
+            from ai_models.embeddings.embedding_service import get_embedding_service
+
+            self._faiss      = get_faiss_engine()
+            self._embeddings = get_embedding_service()
+
+            if _FAISS_INDEX_DIR.exists():
+                self._faiss_ready = self._faiss.load(_FAISS_INDEX_DIR)
+            else:
+                logger.info("FAISS index not built yet — run build_faiss_index.py")
+        except Exception as exc:
+            logger.warning(f"FAISS not available: {exc}")
+
+    def _get_translator(self):
+        if self._translator is None:
+            try:
+                from ai_models.translation.translator import get_translator
+                self._translator = get_translator()
+            except Exception:
+                pass
+        return self._translator
+
+    # ─── Semantic search (FAISS) ──────────────────────────────────────────────
+
+    def semantic_search(self, query: str, top_k: int = 3) -> List[Dict[str, Any]]:
+        """Vector search over the FAISS index.  Returns [] if index not loaded."""
+        if not self._faiss_ready or self._embeddings is None or self._faiss is None:
+            return []
+        try:
+            emb     = self._embeddings.embed(query)
+            results = self._faiss.search(emb, top_k=top_k, min_score=0.30)
+            return [
+                {
+                    "question": r.doc.text,
+                    "answer":   r.doc.answer or "",
+                    "category": r.doc.category,
+                    "score":    r.score,
+                }
+                for r in results
+            ]
+        except Exception as exc:
+            logger.debug(f"FAISS search error: {exc}")
+            return []
+
+    # ─── Disease search ───────────────────────────────────────────────────────
+
     def search_disease(self, disease_name: str) -> Optional[Dict[str, Any]]:
-        """
-        Search for disease information
-        
-        Args:
-            disease_name: Name of the disease
-            
-        Returns:
-            Dict with disease information or None
-        """
         if self.disease_symptoms_df is None:
             return None
-        
         try:
-            # Normalize disease name
-            disease_name = disease_name.strip().lower()
-            
-            # Search in disease column (case-insensitive)
-            mask = self.disease_symptoms_df['Disease'].str.lower().str.contains(disease_name, na=False)
+            name_lower = disease_name.strip().lower()
+            mask   = self.disease_symptoms_df["Disease"].str.lower().str.contains(name_lower, na=False)
             matches = self.disease_symptoms_df[mask]
-            
             if matches.empty:
                 return None
-            
-            # Get first match
-            disease_row = matches.iloc[0]
-            disease_exact_name = disease_row['Disease']
-            
-            # Get symptoms (non-null columns starting with 'Symptom')
-            symptom_cols = [col for col in disease_row.index if col.startswith('Symptom')]
-            symptoms = [disease_row[col] for col in symptom_cols if pd.notna(disease_row[col])]
-            
-            # Get description
-            description = self.get_symptom_description(disease_exact_name)
-            
-            # Get precautions
-            precautions = self.get_precautions(disease_exact_name)
-            
+
+            row  = matches.iloc[0]
+            exact = row["Disease"]
+            sym_cols  = [c for c in row.index if c.startswith("Symptom")]
+            symptoms  = [row[c] for c in sym_cols if pd.notna(row[c])]
+
             return {
-                "name": disease_exact_name,
-                "symptoms": symptoms,
-                "description": description,
-                "precautions": precautions
+                "name":        exact,
+                "symptoms":    symptoms,
+                "description": self.get_symptom_description(exact),
+                "precautions": self.get_precautions(exact),
             }
-            
-        except Exception as e:
-            logger.error(f"Error searching disease: {str(e)}")
+        except Exception as exc:
+            logger.error(f"search_disease error: {exc}")
             return None
-    
+
     def get_symptom_description(self, disease_name: str) -> Optional[str]:
-        """Get disease/symptom description"""
         if self.symptom_description_df is None:
             return None
-        
         try:
-            mask = self.symptom_description_df['Disease'].str.lower() == disease_name.lower()
-            matches = self.symptom_description_df[mask]
-            
-            if matches.empty:
-                return None
-            
-            return matches.iloc[0]['Description']
-            
-        except Exception as e:
-            logger.error(f"Error getting description: {str(e)}")
+            mask = self.symptom_description_df["Disease"].str.lower() == disease_name.lower()
+            m    = self.symptom_description_df[mask]
+            return m.iloc[0]["Description"] if not m.empty else None
+        except Exception:
             return None
-    
+
     def get_precautions(self, disease_name: str) -> List[str]:
-        """Get precautions for a disease"""
         if self.symptom_precaution_df is None:
             return []
-        
         try:
-            mask = self.symptom_precaution_df['Disease'].str.lower() == disease_name.lower()
-            matches = self.symptom_precaution_df[mask]
-            
-            if matches.empty:
+            mask = self.symptom_precaution_df["Disease"].str.lower() == disease_name.lower()
+            m    = self.symptom_precaution_df[mask]
+            if m.empty:
                 return []
-            
-            precaution_row = matches.iloc[0]
-            
-            # Get precautions (columns Precaution_1 to Precaution_4)
-            precautions = []
-            for i in range(1, 5):
-                col = f'Precaution_{i}'
-                if col in precaution_row.index and pd.notna(precaution_row[col]):
-                    precautions.append(precaution_row[col])
-            
-            return precautions
-            
-        except Exception as e:
-            logger.error(f"Error getting precautions: {str(e)}")
+            row  = m.iloc[0]
+            return [
+                row[f"Precaution_{i}"]
+                for i in range(1, 5)
+                if f"Precaution_{i}" in row.index and pd.notna(row[f"Precaution_{i}"])
+            ]
+        except Exception:
             return []
-    
-    def search_symptoms(self, symptom_query: str) -> List[str]:
-        """
-        Search for related symptoms
-        
-        Args:
-            symptom_query: Symptom search term
-            
-        Returns:
-            List of matching symptom names
-        """
+
+    def search_symptoms(self, query: str) -> List[str]:
         if self.disease_symptoms_df is None:
             return []
-        
         try:
-            symptom_query = symptom_query.lower()
-            
-            # Get all symptom columns
-            symptom_cols = [col for col in self.disease_symptoms_df.columns if col.startswith('Symptom')]
-            
-            # Find matching symptoms
-            matching_symptoms = set()
-            
-            for col in symptom_cols:
-                symptoms = self.disease_symptoms_df[col].dropna().unique()
-                for symptom in symptoms:
-                    if symptom_query in str(symptom).lower():
-                        matching_symptoms.add(symptom)
-            
-            return sorted(list(matching_symptoms))[:10]  # Limit to 10 results
-            
-        except Exception as e:
-            logger.error(f"Error searching symptoms: {str(e)}")
+            ql = query.lower()
+            sym_cols = [c for c in self.disease_symptoms_df.columns if c.startswith("Symptom")]
+            found: set = set()
+            for col in sym_cols:
+                for s in self.disease_symptoms_df[col].dropna().unique():
+                    if ql in str(s).lower():
+                        found.add(s)
+            return sorted(found)[:10]
+        except Exception:
             return []
-    
+
     def search_medquad(self, query: str, limit: int = 3) -> List[Dict[str, str]]:
-        """
-        Search MedQuAD medical Q&A dataset
-        
-        Args:
-            query: Search query
-            limit: Maximum number of results
-            
-        Returns:
-            List of relevant Q&A pairs
-        """
         if self.medquad_df is None:
             return []
-        
         try:
-            query = query.lower()
-            
-            # Search in question and answer columns
-            if 'question' in self.medquad_df.columns and 'answer' in self.medquad_df.columns:
-                mask = (
-                    self.medquad_df['question'].str.lower().str.contains(query, na=False) |
-                    self.medquad_df['answer'].str.lower().str.contains(query, na=False)
-                )
-                
-                matches = self.medquad_df[mask].head(limit)
-                
-                results = []
-                for _, row in matches.iterrows():
-                    results.append({
-                        "question": row['question'],
-                        "answer": row['answer']
-                    })
-                
-                return results
-            
+            ql = query.lower()
+            if "question" not in self.medquad_df.columns:
+                return []
+            mask = (
+                self.medquad_df["question"].str.lower().str.contains(ql, na=False) |
+                self.medquad_df.get("answer", pd.Series(dtype=str)).str.lower().str.contains(ql, na=False)
+            )
+            rows = self.medquad_df[mask].head(limit)
+            return [
+                {"question": r["question"], "answer": str(r.get("answer", ""))[:300]}
+                for _, r in rows.iterrows()
+            ]
+        except Exception:
             return []
-            
-        except Exception as e:
-            logger.error(f"Error searching MedQuAD: {str(e)}")
-            return []
-    
+
+    # ─── Main entry point ─────────────────────────────────────────────────────
+
     def get_relevant_knowledge(self, user_message: str) -> Dict[str, Any]:
         """
-        Get relevant knowledge for user message
-        
-        Args:
-            user_message: User's question
-            
-        Returns:
-            Dict with relevant knowledge
+        Return all relevant knowledge for a user message.
+
+        Steps:
+          1. Translate non-English to English (if translator available)
+          2. Try FAISS semantic search
+          3. Fallback: keyword disease search + MedQuAD
         """
-        knowledge = {
+        knowledge: Dict[str, Any] = {
             "disease_info": None,
             "symptom_info": None,
             "medquad_info": None,
-            "general_info": None
+            "general_info": None,
+            "semantic_results": [],
         }
-        
+
+        # Translate to English for search
+        search_query = user_message
+        translator = self._get_translator()
+        if translator:
+            try:
+                det = translator.detect(user_message)
+                if det.language_code not in ("en", "auto"):
+                    tr = translator.translate_to_english(user_message)
+                    if tr.success:
+                        search_query = tr.translated_text
+            except Exception:
+                pass
+
         try:
-            # Extract potential disease names (simple keyword matching)
-            common_diseases = [
-                "diabetes", "hypertension", "fever", "cold", "cough", "asthma",
-                "malaria", "dengue", "typhoid", "tuberculosis", "pneumonia",
-                "covid", "headache", "migraine", "arthritis", "allergy"
-            ]
-            
-            user_message_lower = user_message.lower()
-            
-            # Search for disease info
-            for disease in common_diseases:
-                if disease in user_message_lower:
-                    disease_info = self.search_disease(disease)
-                    if disease_info:
-                        knowledge["disease_info"] = disease_info
+            # 1. FAISS semantic search
+            semantic = self.semantic_search(search_query, top_k=3)
+            if semantic:
+                knowledge["semantic_results"] = semantic
+                best = semantic[0]
+                if best.get("answer"):
+                    knowledge["general_info"] = best["answer"][:400]
+
+            # 2. Disease keyword search
+            msg_lower = search_query.lower()
+            for kw in _DISEASE_KEYWORDS:
+                if kw in msg_lower:
+                    di = self.search_disease(kw)
+                    if di:
+                        knowledge["disease_info"] = di
                         break
-            
-            # Search for symptoms
-            symptoms = self.search_symptoms(user_message)
-            if symptoms:
-                knowledge["symptom_info"] = symptoms
-            
-            # Search MedQuAD for relevant Q&A
-            medquad_results = self.search_medquad(user_message, limit=2)
-            if medquad_results:
-                knowledge["medquad_info"] = medquad_results
-                # Format as general info
-                general_parts = []
-                for qa in medquad_results:
-                    general_parts.append(f"Q: {qa['question']}\nA: {qa['answer'][:200]}...")
-                knowledge["general_info"] = "\n\n".join(general_parts)
-            
-        except Exception as e:
-            logger.error(f"Error getting relevant knowledge: {str(e)}")
-        
+
+            # 3. Symptom search
+            syms = self.search_symptoms(search_query)
+            if syms:
+                knowledge["symptom_info"] = syms
+
+            # 4. MedQuAD keyword search (only if no FAISS result)
+            if not semantic:
+                medquad = self.search_medquad(search_query, limit=2)
+                if medquad:
+                    knowledge["medquad_info"] = medquad
+                    parts = [f"Q: {qa['question']}\nA: {qa['answer']}" for qa in medquad]
+                    knowledge["general_info"] = "\n\n".join(parts)
+
+        except Exception as exc:
+            logger.error(f"get_relevant_knowledge error: {exc}", exc_info=True)
+
         return knowledge
-    
-    def get_stats(self) -> Dict[str, int]:
-        """Get dataset statistics"""
-        stats = {
-            "diseases": len(self.disease_symptoms_df) if self.disease_symptoms_df is not None else 0,
-            "descriptions": len(self.symptom_description_df) if self.symptom_description_df is not None else 0,
-            "precautions": len(self.symptom_precaution_df) if self.symptom_precaution_df is not None else 0,
-            "medquad_entries": len(self.medquad_df) if self.medquad_df is not None else 0
+
+    # ─── Stats / health ───────────────────────────────────────────────────────
+
+    def get_stats(self) -> Dict[str, Any]:
+        return {
+            "diseases":        len(self.disease_symptoms_df)    if self.disease_symptoms_df    is not None else 0,
+            "descriptions":    len(self.symptom_description_df) if self.symptom_description_df is not None else 0,
+            "precautions":     len(self.symptom_precaution_df)  if self.symptom_precaution_df  is not None else 0,
+            "medquad_entries": len(self.medquad_df)             if self.medquad_df             is not None else 0,
+            "faiss_loaded":    self._faiss_ready,
+            "faiss_docs":      self._faiss.total_documents       if self._faiss                 is not None else 0,
         }
-        return stats
-    
+
     def is_loaded(self) -> bool:
-        """Check if datasets are loaded"""
         return any([
-            self.disease_symptoms_df is not None,
+            self.disease_symptoms_df    is not None,
             self.symptom_description_df is not None,
-            self.medquad_df is not None
+            self.medquad_df             is not None,
         ])
 
 
-# Singleton instance
+# ── Singleton ─────────────────────────────────────────────────────────────────
+
 _knowledge_service_instance: Optional[KnowledgeService] = None
 
 
 def get_knowledge_service() -> KnowledgeService:
-    """Get or create knowledge service instance"""
     global _knowledge_service_instance
-    
     if _knowledge_service_instance is None:
         _knowledge_service_instance = KnowledgeService()
-    
     return _knowledge_service_instance
-
-
-# Example usage:
-# knowledge = get_knowledge_service()
-# disease_info = knowledge.search_disease("diabetes")
-# symptoms = knowledge.search_symptoms("fever")
-# relevant = knowledge.get_relevant_knowledge("What are symptoms of diabetes?")

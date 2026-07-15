@@ -44,8 +44,18 @@ class QuickActionGrid extends StatelessWidget {
         Navigator.of(context).pushNamed(RouteNames.nearbyHealthcare);
       case 'education':
         Navigator.of(context).pushNamed(RouteNames.healthEducation);
+      case 'offline':
+        Navigator.of(context).pushNamed(RouteNames.offlineDashboard);
       case 'profile':
         Navigator.of(context).pushNamed(RouteNames.profile);
+        return;
+      /* case 'profile':
+        return const _ActionCfg(
+          emoji: '👤',
+          bg: Color(0xFFFFEAF3),
+          border: Color(0xFFFFB8D4),
+          iconGrad: [Color(0xFFFF5E9E), Color(0xFFE11D68)],
+        ); */
       default:
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(content: Text('Coming soon!')),
@@ -136,8 +146,8 @@ class _QuickActionItemState extends State<_QuickActionItem>
                     ],
                   ),
                   child: Center(
-                    child: Text(cfg.emoji,
-                        style: const TextStyle(fontSize: 24)),
+                    child:
+                        Text(cfg.emoji, style: const TextStyle(fontSize: 24)),
                   ),
                 ),
                 const SizedBox(height: 8),

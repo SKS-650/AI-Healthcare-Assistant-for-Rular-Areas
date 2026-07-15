@@ -43,7 +43,7 @@ class AuthDummyData {
     await _delay();
     final stored = _credentials[email.toLowerCase()];
     if (stored == null || stored != password) {
-      throw AuthException('Invalid email or password.');
+      throw const AuthException('Invalid email or password.');
     }
     return _users[email.toLowerCase()]!;
   }
@@ -56,7 +56,7 @@ class AuthDummyData {
     await _delay();
     final key = email.toLowerCase();
     if (_credentials.containsKey(key)) {
-      throw AuthException('An account with this email already exists.');
+      throw const AuthException('An account with this email already exists.');
     }
     final id = 'u_${DateTime.now().millisecondsSinceEpoch}';
     final user = UserModel(id: id, email: key, name: name);
@@ -85,7 +85,7 @@ class AuthDummyData {
     await _delay(700);
     final stored = _otpStore[email.toLowerCase()];
     if (stored == null || stored != otp) {
-      throw AuthException('Invalid or expired OTP.');
+      throw const AuthException('Invalid or expired OTP.');
     }
     final token = 'rt_${DateTime.now().millisecondsSinceEpoch}';
     _resetTokens[token] = email.toLowerCase();
@@ -99,7 +99,7 @@ class AuthDummyData {
   ) async {
     await _delay(800);
     final email = _resetTokens[resetToken];
-    if (email == null) throw AuthException('Invalid or expired reset token.');
+    if (email == null) throw const AuthException('Invalid or expired reset token.');
     _credentials[email] = newPassword;
     _resetTokens.remove(resetToken);
   }
@@ -116,7 +116,7 @@ class AuthDummyData {
     // Find and update user
     final entry = _users.entries.firstWhere(
       (e) => e.value.id == userId,
-      orElse: () => throw AuthException('User not found.'),
+      orElse: () => throw const AuthException('User not found.'),
     );
     final updated = UserModel(
       id: entry.value.id,

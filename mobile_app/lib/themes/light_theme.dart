@@ -7,7 +7,7 @@ class LightTheme {
   const LightTheme._();
 
   static ThemeData get data {
-    final colorScheme = ColorScheme(
+    const colorScheme = ColorScheme(
       brightness: Brightness.light,
       primary: DesignTokens.primary,
       onPrimary: Colors.white,
@@ -42,7 +42,7 @@ class LightTheme {
       useMaterial3: true,
       colorScheme: colorScheme,
       scaffoldBackgroundColor: DesignTokens.background,
-      appBarTheme: AppBarTheme(
+      appBarTheme: const AppBarTheme(
         centerTitle: false,
         backgroundColor: DesignTokens.background,
         foregroundColor: DesignTokens.textStrong,
@@ -53,7 +53,7 @@ class LightTheme {
           statusBarColor: Colors.transparent,
           statusBarIconBrightness: Brightness.dark,
         ),
-        titleTextStyle: const TextStyle(
+        titleTextStyle: TextStyle(
           color: DesignTokens.textStrong,
           fontSize: 18,
           fontWeight: FontWeight.w800,
@@ -65,7 +65,7 @@ class LightTheme {
         color: DesignTokens.surface,
         shape: RoundedRectangleBorder(
           borderRadius: BorderRadius.circular(DesignTokens.cardRadius),
-          side: BorderSide(color: DesignTokens.border),
+          side: const BorderSide(color: DesignTokens.border),
         ),
       ),
       filledButtonTheme: FilledButtonThemeData(
@@ -86,7 +86,7 @@ class LightTheme {
         style: OutlinedButton.styleFrom(
           foregroundColor: DesignTokens.primary,
           minimumSize: const Size(0, 48),
-          side: BorderSide(color: DesignTokens.primary),
+          side: const BorderSide(color: DesignTokens.primary),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(14),
           ),
@@ -104,27 +104,27 @@ class LightTheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: DesignTokens.border),
+          borderSide: const BorderSide(color: DesignTokens.border),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: DesignTokens.border),
+          borderSide: const BorderSide(color: DesignTokens.border),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: DesignTokens.primary, width: 1.5),
+          borderSide: const BorderSide(color: DesignTokens.primary, width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: DesignTokens.danger),
+          borderSide: const BorderSide(color: DesignTokens.danger),
         ),
-        labelStyle: TextStyle(color: DesignTokens.textMuted),
-        hintStyle: TextStyle(color: DesignTokens.textSubtle),
+        labelStyle: const TextStyle(color: DesignTokens.textMuted),
+        hintStyle: const TextStyle(color: DesignTokens.textSubtle),
       ),
       chipTheme: ChipThemeData(
         backgroundColor: DesignTokens.surfaceMuted,
         selectedColor: DesignTokens.primaryContainer,
-        side: BorderSide(color: DesignTokens.border),
+        side: const BorderSide(color: DesignTokens.border),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
         labelStyle: const TextStyle(
           fontSize: 13,
@@ -132,7 +132,7 @@ class LightTheme {
           color: DesignTokens.textStrong,
         ),
       ),
-      dividerTheme: DividerThemeData(
+      dividerTheme: const DividerThemeData(
         color: DesignTokens.border,
         thickness: 1,
         space: 0,

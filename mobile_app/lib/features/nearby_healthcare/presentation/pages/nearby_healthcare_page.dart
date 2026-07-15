@@ -178,7 +178,7 @@ class _NearbyHealthcarePageState extends State<NearbyHealthcarePage>
           Expanded(
             child: TabBarView(
               controller: _tabCtrl,
-              children: [
+              children: const [
                 _FacilitiesList(facilities: _hospitals),
                 _FacilitiesList(facilities: _pharmacies),
                 _FacilitiesList(facilities: _clinics),
@@ -345,7 +345,7 @@ class _FacilityCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 8),
                           if (facility.is24h)
-                            _InfoChip(
+                            const _InfoChip(
                               icon: Icons.access_time_rounded,
                               label: '24/7',
                               color: DesignTokens.green,

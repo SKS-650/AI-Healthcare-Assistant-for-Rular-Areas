@@ -107,7 +107,7 @@ class HttpHelper {
 
   /// Builds a detailed network exception message
   static Exception _buildNetworkException() {
-    return SocketException(
+    return const SocketException(
       'Cannot connect to server. Please ensure:\n'
       '1. Backend server is running\n'
       '2. Your device is on the same WiFi network\n'

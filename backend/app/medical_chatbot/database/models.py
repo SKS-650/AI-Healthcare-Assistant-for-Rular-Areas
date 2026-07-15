@@ -66,6 +66,7 @@ class Conversation(Base):
     __table_args__ = (
         Index("idx_conversation_user_created", "user_id", "created_at"),
         Index("idx_conversation_session", "session_id"),
+        {"extend_existing": True},
     )
 
     def __repr__(self) -> str:
@@ -100,6 +101,7 @@ class Message(Base):
         Index("idx_message_conversation_created", "conversation_id", "created_at"),
         Index("idx_message_sender", "sender"),
         Index("idx_message_emergency", "emergency_detected"),
+        {"extend_existing": True},
     )
 
     def __repr__(self) -> str:
@@ -126,6 +128,7 @@ class ChatbotFeedback(Base):
     __table_args__ = (
         Index("idx_feedback_conversation", "conversation_id"),
         Index("idx_feedback_rating", "rating"),
+        {"extend_existing": True},
     )
 
     def __repr__(self) -> str:
@@ -156,6 +159,7 @@ class ChatbotSession(Base):
     __table_args__ = (
         Index("idx_session_user_activity", "user_id", "last_activity"),
         Index("idx_session_active", "is_active"),
+        {"extend_existing": True},
     )
 
     def __repr__(self) -> str:

@@ -90,7 +90,7 @@ async def _register_and_verify(client: AsyncClient, db_session, email: str = GOO
     assert r.status_code == 201
     user_id = r.json()["user_id"]
 
-    from backend.app.auth import repository as auth_repo
+    from app.auth import repository as auth_repo
     await auth_repo.set_email_verified(db_session, user_id)
     await db_session.commit()
     return user_id

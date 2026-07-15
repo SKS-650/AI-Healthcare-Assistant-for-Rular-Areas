@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
@@ -13,9 +13,9 @@ class ResultPage extends ConsumerWidget {
         symptomControllerProvider.select((s) => s.predictionResult));
 
     if (result == null) {
-      return Scaffold(
+      return const Scaffold(
         backgroundColor: DesignTokens.background,
-        body: const Center(
+        body: Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [

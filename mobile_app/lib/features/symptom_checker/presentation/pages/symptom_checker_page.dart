@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../models/symptom_check_request.dart';
 import '../../services/symptom_checker_service.dart';
@@ -9,7 +9,7 @@ import '../../../authentication/data/repositories/authentication_repository_impl
 import '../../../authentication/presentation/providers/authentication_provider.dart';
 
 class SymptomCheckerPage extends ConsumerStatefulWidget {
-  const SymptomCheckerPage({Key? key}) : super(key: key);
+  const SymptomCheckerPage({super.key});
 
   @override
   ConsumerState<SymptomCheckerPage> createState() =>
@@ -28,9 +28,9 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
   double? _height;
   int _duration = 3;
   int _severity = 2;
-  List<String> _existingDiseases = [];
-  List<String> _medications = [];
-  List<String> _allergies = [];
+  final List<String> _existingDiseases = [];
+  final List<String> _medications = [];
+  final List<String> _allergies = [];
   bool _isPregnant = false;
 
   final _weightCtrl = TextEditingController();
@@ -175,7 +175,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
                     height: 2,
                     color: stepIndex < _currentStep
                         ? Colors.white
-                        : Colors.white.withOpacity(0.3),
+                        : Colors.white.withValues(alpha: 0.3),
                   ),
                 );
               }
@@ -189,7 +189,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
           Text(
             _steps[_currentStep]['subtitle'] as String,
             style: TextStyle(
-              color: Colors.white.withOpacity(0.9),
+              color: Colors.white.withValues(alpha: 0.9),
               fontSize: 13,
               letterSpacing: 0.3,
             ),
@@ -205,10 +205,10 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
       width: isActive ? 40 : 32,
       height: isActive ? 40 : 32,
       decoration: BoxDecoration(
-        color: isCompleted || isActive ? Colors.white : Colors.white.withOpacity(0.25),
+        color: isCompleted || isActive ? Colors.white : Colors.white.withValues(alpha: 0.25),
         shape: BoxShape.circle,
         boxShadow: isActive
-            ? [BoxShadow(color: Colors.black.withOpacity(0.2), blurRadius: 8, offset: const Offset(0, 3))]
+            ? [BoxShadow(color: Colors.black.withValues(alpha: 0.2), blurRadius: 8, offset: const Offset(0, 3))]
             : null,
       ),
       child: Center(
@@ -216,7 +216,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
             ? const Icon(Icons.check_rounded, color: _primaryColor, size: 18)
             : Icon(
                 _steps[index]['icon'] as IconData,
-                color: isActive ? _primaryColor : Colors.white.withOpacity(0.6),
+                color: isActive ? _primaryColor : Colors.white.withValues(alpha: 0.6),
                 size: isActive ? 20 : 16,
               ),
       ),
@@ -248,7 +248,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
             _buildInfoBanner(
               icon: Icons.info_outline_rounded,
               text: 'Our AI model analyzes 230+ symptoms across 800+ diseases using 96,000 training samples.',
-              color: _primaryColor.withOpacity(0.08),
+              color: _primaryColor.withValues(alpha: 0.08),
               iconColor: _primaryColor,
             ),
           ],
@@ -264,9 +264,9 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _primaryColor.withOpacity(0.2), width: 1.5),
+        border: Border.all(color: _primaryColor.withValues(alpha: 0.2), width: 1.5),
         boxShadow: [
-          BoxShadow(color: _primaryColor.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, 4)),
+          BoxShadow(color: _primaryColor.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -275,7 +275,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
             width: 72,
             height: 72,
             decoration: BoxDecoration(
-              color: _primaryColor.withOpacity(0.1),
+              color: _primaryColor.withValues(alpha: 0.1),
               shape: BoxShape.circle,
             ),
             child: const Icon(Icons.add_circle_outline_rounded, color: _primaryColor, size: 36),
@@ -304,7 +304,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
         color: _cardColor,
         borderRadius: BorderRadius.circular(20),
         boxShadow: [
-          BoxShadow(color: _primaryColor.withOpacity(0.07), blurRadius: 20, offset: const Offset(0, 4)),
+          BoxShadow(color: _primaryColor.withValues(alpha: 0.07), blurRadius: 20, offset: const Offset(0, 4)),
         ],
       ),
       child: Column(
@@ -346,7 +346,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
                     ),
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
-                      BoxShadow(color: _primaryColor.withOpacity(0.25), blurRadius: 8, offset: const Offset(0, 3)),
+                      BoxShadow(color: _primaryColor.withValues(alpha: 0.25), blurRadius: 8, offset: const Offset(0, 3)),
                     ],
                   ),
                   child: Row(
@@ -425,8 +425,8 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
                           data: SliderThemeData(
                             activeTrackColor: _primaryColor,
                             thumbColor: _primaryColor,
-                            overlayColor: _primaryColor.withOpacity(0.1),
-                            inactiveTrackColor: _primaryColor.withOpacity(0.2),
+                            overlayColor: _primaryColor.withValues(alpha: 0.1),
+                            inactiveTrackColor: _primaryColor.withValues(alpha: 0.2),
                             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
                           ),
                           child: Slider(
@@ -443,7 +443,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
                         height: 38,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: _primaryColor.withOpacity(0.1),
+                          color: _primaryColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -508,14 +508,14 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
                 duration: const Duration(milliseconds: 200),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: isSelected ? _primaryColor : _primaryColor.withOpacity(0.06),
+                  color: isSelected ? _primaryColor : _primaryColor.withValues(alpha: 0.06),
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: isSelected ? _primaryColor : Colors.transparent),
-                  boxShadow: isSelected ? [BoxShadow(color: _primaryColor.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))] : null,
+                  boxShadow: isSelected ? [BoxShadow(color: _primaryColor.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))] : null,
                 ),
                 child: Column(
                   children: [
-                    Icon(icons[g]!, color: isSelected ? Colors.white : _primaryColor.withOpacity(0.6), size: 22),
+                    Icon(icons[g]!, color: isSelected ? Colors.white : _primaryColor.withValues(alpha: 0.6), size: 22),
                     const SizedBox(height: 4),
                     Text(
                       g[0].toUpperCase() + g.substring(1),
@@ -568,8 +568,8 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
                           data: SliderThemeData(
                             activeTrackColor: _accentColor,
                             thumbColor: _accentColor,
-                            overlayColor: _accentColor.withOpacity(0.1),
-                            inactiveTrackColor: _accentColor.withOpacity(0.2),
+                            overlayColor: _accentColor.withValues(alpha: 0.1),
+                            inactiveTrackColor: _accentColor.withValues(alpha: 0.2),
                             thumbShape: const RoundSliderThumbShape(enabledThumbRadius: 10),
                           ),
                           child: Slider(
@@ -586,7 +586,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
                         height: 38,
                         alignment: Alignment.center,
                         decoration: BoxDecoration(
-                          color: _accentColor.withOpacity(0.1),
+                          color: _accentColor.withValues(alpha: 0.1),
                           borderRadius: BorderRadius.circular(10),
                         ),
                         child: Text(
@@ -621,10 +621,10 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
                               duration: const Duration(milliseconds: 200),
                               padding: const EdgeInsets.symmetric(vertical: 10),
                               decoration: BoxDecoration(
-                                color: isSelected ? color : color.withOpacity(0.06),
+                                color: isSelected ? color : color.withValues(alpha: 0.06),
                                 borderRadius: BorderRadius.circular(12),
                                 border: Border.all(color: isSelected ? color : Colors.transparent),
-                                boxShadow: isSelected ? [BoxShadow(color: color.withOpacity(0.3), blurRadius: 8, offset: const Offset(0, 3))] : null,
+                                boxShadow: isSelected ? [BoxShadow(color: color.withValues(alpha: 0.3), blurRadius: 8, offset: const Offset(0, 3))] : null,
                               ),
                               child: Column(
                                 children: [
@@ -693,7 +693,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
             _buildInfoBanner(
               icon: Icons.shield_outlined,
               text: 'Your data is only used for this analysis and is not stored on our servers.',
-              color: Colors.green.withOpacity(0.07),
+              color: Colors.green.withValues(alpha: 0.07),
               iconColor: Colors.green,
             ),
           ],
@@ -728,7 +728,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, -4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: Row(
         children: [
@@ -762,7 +762,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
                 elevation: 0,
                 padding: const EdgeInsets.symmetric(vertical: 16),
                 shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
-                shadowColor: (isLast ? Colors.green : _primaryColor).withOpacity(0.3),
+                shadowColor: (isLast ? Colors.green : _primaryColor).withValues(alpha: 0.3),
               ),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -853,8 +853,8 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
             children: [
               Container(
                 width: 72, height: 72,
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(colors: [_primaryColor, Color(0xFF8B83FF)]),
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(colors: [_primaryColor, Color(0xFF8B83FF)]),
                   shape: BoxShape.circle,
                 ),
                 child: const Padding(padding: EdgeInsets.all(16), child: CircularProgressIndicator(color: Colors.white, strokeWidth: 3)),
@@ -916,7 +916,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
       decoration: BoxDecoration(
         color: _cardColor,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 4))],
       ),
       child: child,
     );
@@ -959,7 +959,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: value ? Colors.pink.withOpacity(0.08) : _bgColor,
+          color: value ? Colors.pink.withValues(alpha: 0.08) : _bgColor,
           borderRadius: BorderRadius.circular(12),
           border: Border.all(color: value ? Colors.pink.shade200 : Colors.transparent),
         ),
@@ -1011,7 +1011,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
               },
               child: Container(
                 padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(color: color.withOpacity(0.15), borderRadius: BorderRadius.circular(10)),
+                decoration: BoxDecoration(color: color.withValues(alpha: 0.15), borderRadius: BorderRadius.circular(10)),
                 child: Icon(Icons.add_rounded, color: color, size: 20),
               ),
             ),
@@ -1024,7 +1024,7 @@ class _SymptomCheckerPageState extends ConsumerState<SymptomCheckerPage>
             runSpacing: 6,
             children: tags.map((t) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-              decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+              decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
               child: Row(mainAxisSize: MainAxisSize.min, children: [
                 Text(t, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w500)),
                 const SizedBox(width: 4),

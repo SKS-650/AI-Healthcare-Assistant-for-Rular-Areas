@@ -47,7 +47,7 @@ async def _create_and_login(
     assert r.status_code == 201, r.text
     user_id = r.json()["user_id"]
 
-    from backend.app.auth import repository as auth_repo
+    from app.auth import repository as auth_repo
     await auth_repo.set_email_verified(db_session, user_id)
     await db_session.commit()
 

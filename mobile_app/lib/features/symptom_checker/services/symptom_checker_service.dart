@@ -38,7 +38,7 @@ class SymptomCheckerService {
             body: jsonEncode(request.toJson()),
           )
           .timeout(
-            Duration(seconds: ApiConfig.connectionTimeout),
+            const Duration(seconds: ApiConfig.connectionTimeout),
             onTimeout: () {
               throw TimeoutException(
                 'Connection timed out. Please check your internet connection and ensure the backend server is running.',
@@ -79,7 +79,7 @@ class SymptomCheckerService {
             Uri.parse('$baseUrl/api/v1/symptom-checker/symptoms'),
             headers: _headers,
           )
-          .timeout(Duration(seconds: ApiConfig.connectionTimeout));
+          .timeout(const Duration(seconds: ApiConfig.connectionTimeout));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -102,7 +102,7 @@ class SymptomCheckerService {
             Uri.parse('$baseUrl/api/v1/symptom-checker/diseases'),
             headers: _headers,
           )
-          .timeout(Duration(seconds: ApiConfig.connectionTimeout));
+          .timeout(const Duration(seconds: ApiConfig.connectionTimeout));
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
@@ -124,7 +124,7 @@ class SymptomCheckerService {
           .get(
             Uri.parse('$baseUrl/api/v1/symptom-checker/health'),
           )
-          .timeout(Duration(seconds: ApiConfig.connectionTimeout));
+          .timeout(const Duration(seconds: ApiConfig.connectionTimeout));
 
       if (response.statusCode == 200) {
         return jsonDecode(response.body);

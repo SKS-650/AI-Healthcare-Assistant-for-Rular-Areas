@@ -3,7 +3,7 @@ import '../../data/datasources/symptom_dummy_data.dart';
 
 class SymptomSelectionPage extends StatefulWidget {
   final List<String> initialSymptoms;
-  const SymptomSelectionPage({Key? key, this.initialSymptoms = const []}) : super(key: key);
+  const SymptomSelectionPage({super.key, this.initialSymptoms = const []});
 
   @override
   State<SymptomSelectionPage> createState() => _SymptomSelectionPageState();
@@ -44,7 +44,7 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage>
   }
 
   Map<String, List<Map<String, dynamic>>> _buildCategorized() {
-    final all = SymptomDummyData.allSymptomsFull;
+    const all = SymptomDummyData.allSymptomsFull;
     final map = <String, List<Map<String, dynamic>>>{};
     for (final s in all) {
       final cat = s['category'] as String;
@@ -121,7 +121,7 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage>
                   onTap: () => setState(() => _selected.clear()),
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                    decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), borderRadius: BorderRadius.circular(20)),
+                    decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), borderRadius: BorderRadius.circular(20)),
                     child: Text('Clear (${_selected.length})', style: const TextStyle(color: Colors.white, fontSize: 12, fontWeight: FontWeight.w600)),
                   ),
                 ),
@@ -167,9 +167,9 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage>
         unselectedLabelColor: Colors.grey.shade500,
         labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w700),
         unselectedLabelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w400),
-        indicator: UnderlineTabIndicator(
-          borderSide: const BorderSide(color: _primary, width: 3),
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(3)),
+        indicator: const UnderlineTabIndicator(
+          borderSide: BorderSide(color: _primary, width: 3),
+          borderRadius: BorderRadius.vertical(top: Radius.circular(3)),
         ),
         padding: const EdgeInsets.only(left: 8),
         tabAlignment: TabAlignment.start,
@@ -186,7 +186,7 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage>
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(
-                    color: _activeCategory == c ? _primary.withOpacity(0.15) : Colors.grey.shade100,
+                    color: _activeCategory == c ? _primary.withValues(alpha: 0.15) : Colors.grey.shade100,
                     borderRadius: BorderRadius.circular(10),
                   ),
                   child: Text('$count',
@@ -205,7 +205,7 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage>
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
-      color: _primary.withOpacity(0.06),
+      color: _primary.withValues(alpha: 0.06),
       child: SingleChildScrollView(
         scrollDirection: Axis.horizontal,
         child: Row(
@@ -273,17 +273,17 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage>
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
             decoration: BoxDecoration(
-              color: isSelected ? _primary.withOpacity(0.06) : Colors.white,
+              color: isSelected ? _primary.withValues(alpha: 0.06) : Colors.white,
               borderRadius: BorderRadius.circular(14),
               border: Border.all(
-                color: isSelected ? _primary.withOpacity(0.4) : Colors.transparent,
+                color: isSelected ? _primary.withValues(alpha: 0.4) : Colors.transparent,
                 width: 1.5,
               ),
               boxShadow: [
                 BoxShadow(
                   color: isSelected
-                      ? _primary.withOpacity(0.1)
-                      : Colors.black.withOpacity(0.03),
+                      ? _primary.withValues(alpha: 0.1)
+                      : Colors.black.withValues(alpha: 0.03),
                   blurRadius: isSelected ? 12 : 6,
                   offset: const Offset(0, 2),
                 ),
@@ -295,7 +295,7 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage>
                 width: 44,
                 height: 44,
                 decoration: BoxDecoration(
-                  color: isSelected ? _primary.withOpacity(0.15) : catColor.withOpacity(0.1),
+                  color: isSelected ? _primary.withValues(alpha: 0.15) : catColor.withValues(alpha: 0.1),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Icon(icon, color: isSelected ? _primary : catColor, size: 22),
@@ -310,7 +310,7 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage>
               ),
               subtitle: Text(
                 category,
-                style: TextStyle(fontSize: 11, color: isSelected ? _primary.withOpacity(0.7) : Colors.grey.shade400),
+                style: TextStyle(fontSize: 11, color: isSelected ? _primary.withValues(alpha: 0.7) : Colors.grey.shade400),
               ),
               trailing: AnimatedContainer(
                 duration: const Duration(milliseconds: 200),
@@ -346,7 +346,7 @@ class _SymptomSelectionPageState extends State<SymptomSelectionPage>
       padding: const EdgeInsets.fromLTRB(20, 12, 20, 24),
       decoration: BoxDecoration(
         color: Colors.white,
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.06), blurRadius: 20, offset: const Offset(0, -4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.06), blurRadius: 20, offset: const Offset(0, -4))],
       ),
       child: ElevatedButton(
         onPressed: _selected.isEmpty ? null : () => Navigator.pop(context, _selected),

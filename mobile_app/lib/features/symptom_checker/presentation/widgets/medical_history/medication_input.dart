@@ -55,9 +55,9 @@ class _MedicationInputState extends State<MedicationInput> {
         ),
         const SizedBox(height: 10),
         if (widget.initialMedications.isEmpty)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
-            child: const Text(
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 8.0, horizontal: 4.0),
+            child: Text(
               'No medications added yet.',
               style: TextStyle(color: Colors.grey, fontSize: 13, fontStyle: FontStyle.italic),
             ),

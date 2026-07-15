@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
 
@@ -346,7 +346,7 @@ class _SettingsSection extends StatelessWidget {
                     children: [
                       e.value,
                       if (e.key < children.length - 1)
-                        Divider(
+                        const Divider(
                           height: 1,
                           indent: 16,
                           endIndent: 16,

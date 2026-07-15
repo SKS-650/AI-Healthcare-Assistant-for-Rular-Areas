@@ -21,7 +21,7 @@ class HomeBottomNavigation extends ConsumerWidget {
             offset: const Offset(0, -6),
           ),
         ],
-        border: Border(
+        border: const Border(
             top: BorderSide(color: DesignTokens.border, width: 1)),
       ),
       child: SafeArea(

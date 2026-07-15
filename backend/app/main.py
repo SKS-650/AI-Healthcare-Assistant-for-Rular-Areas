@@ -74,11 +74,21 @@ def create_app() -> FastAPI:
     from app.users.routes import router as users_router
     from app.symptom_checker.routes import router as symptom_checker_router
     from app.medical_chatbot.api import router as chatbot_router
+    from app.voice.routes import router as voice_router
+    from app.emergency.routes import router as emergency_router
+    from app.health_records.routes import router as health_records_router
+    from app.health_education.routes import router as health_education_router
+    from app.offline_sync.routes import router as offline_sync_router
 
     app.include_router(auth_router, prefix=settings.api_prefix)
     app.include_router(users_router, prefix=settings.api_prefix)
     app.include_router(symptom_checker_router, prefix=settings.api_prefix)
     app.include_router(chatbot_router, prefix=settings.api_prefix)
+    app.include_router(voice_router, prefix=settings.api_prefix)
+    app.include_router(emergency_router, prefix=settings.api_prefix)
+    app.include_router(health_records_router, prefix=settings.api_prefix)
+    app.include_router(health_education_router, prefix=settings.api_prefix)
+    app.include_router(offline_sync_router, prefix=settings.api_prefix)
 
     # ── Health check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["Health"])

@@ -223,8 +223,8 @@ class _PredictionLoadingPageState extends ConsumerState<PredictionLoadingPage>
                                       size: 22,
                                       key: ValueKey('done'))
                                   : isCurrent
-                                      ? SizedBox(
-                                          key: const ValueKey('current'),
+                                      ? const SizedBox(
+                                          key: ValueKey('current'),
                                           width: 20,
                                           height: 20,
                                           child: CircularProgressIndicator(

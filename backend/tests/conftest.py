@@ -40,9 +40,10 @@ TestSessionLocal = async_sessionmaker(
 @pytest_asyncio.fixture(scope="session", autouse=True)
 async def create_tables():
     """Create all ORM tables once per test session."""
-    import backend.app.auth.models  # noqa: F401
-    import backend.app.users.models  # noqa: F401
-    from backend.app.auth.models import Base
+    import app.auth.models  # noqa: F401
+    import app.users.models  # noqa: F401
+    import app.symptom_checker.models  # noqa: F401
+    from app.auth.models import Base
 
     async with test_engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
@@ -65,8 +66,8 @@ async def db_session() -> AsyncGenerator[AsyncSession, None]:
 @pytest_asyncio.fixture()
 async def client(db_session: AsyncSession) -> AsyncGenerator[AsyncClient, None]:
     """HTTP test client wired to the test database."""
-    from backend.app.database.connection import get_async_session
-    from backend.app.main import app
+    from app.database.connection import get_async_session
+    from app.main import app
 
     # Override the DB dependency with the test session
     async def override_get_db():
@@ -102,8 +103,8 @@ async def register_and_verify(client: AsyncClient) -> dict:
     data = r.json()
 
     # Manually mark email verified in DB (bypasses email flow in tests)
-    from backend.app.auth import repository as auth_repo
-    from backend.app.database.connection import get_async_session
+    from app.auth import repository as auth_repo
+    from app.database.connection import get_async_session
 
     # Use the actual DB override from conftest
     async for session in get_async_session():

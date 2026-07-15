@@ -20,7 +20,7 @@ class SymptomDummyData {
     SymptomModel(id: 'skin rash', name: 'Skin Rash', category: 'Skin', description: 'Skin eruption or rash.'),
   ];
 
-  static final DummyResultModel mockResultHighRisk = DummyResultModel(
+  static const DummyResultModel mockResultHighRisk = DummyResultModel(
     conditionName: 'Possible Viral Respiratory Infection',
     confidenceScore: 0.88,
     riskLevel: 'High',
@@ -28,7 +28,7 @@ class SymptomDummyData {
     recommendations: ['Consult a physician immediately.', 'Monitor oxygen saturation.'],
   );
 
-  static final DummyResultModel mockResultMildRisk = DummyResultModel(
+  static const DummyResultModel mockResultMildRisk = DummyResultModel(
     conditionName: 'Mild Common Cold',
     confidenceScore: 0.65,
     riskLevel: 'Low',

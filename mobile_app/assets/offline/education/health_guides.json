@@ -1,0 +1,153 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-07-14",
+  "description": "Offline health guidelines and quick reference cards",
+  "guides": [
+    {
+      "id": "guide_001",
+      "title": "Emergency First Aid Quick Reference",
+      "icon": "🩹",
+      "sections": [
+        {
+          "heading": "Choking (Heimlich Manoeuvre)",
+          "steps": [
+            "Give 5 firm back blows between shoulder blades",
+            "Give 5 abdominal thrusts (just above navel)",
+            "Alternate until object is cleared",
+            "Call 108 if person becomes unconscious"
+          ]
+        },
+        {
+          "heading": "Burns",
+          "steps": [
+            "Cool with running water for 10-20 minutes",
+            "Do NOT apply ice, butter, toothpaste or oil",
+            "Cover loosely with clean bandage",
+            "Seek hospital care for large or deep burns"
+          ]
+        },
+        {
+          "heading": "Snake Bite",
+          "steps": [
+            "Stay calm — do NOT panic",
+            "Immobilise the bitten limb (keep still and low)",
+            "Remove rings/watches near bite",
+            "Do NOT cut, suck, or apply tourniquet",
+            "Rush to nearest hospital with anti-venom IMMEDIATELY"
+          ]
+        },
+        {
+          "heading": "CPR (Adult)",
+          "steps": [
+            "Check for response and breathing",
+            "Call 108",
+            "Place heel of hand on centre of chest",
+            "Press hard and fast — 30 compressions at 100-120/min",
+            "Give 2 rescue breaths if trained",
+            "Repeat until help arrives"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guide_002",
+      "title": "ORS (Oral Rehydration Solution) Preparation",
+      "icon": "💧",
+      "sections": [
+        {
+          "heading": "WHO-Recommended ORS Recipe",
+          "steps": [
+            "Start with 1 litre of clean/boiled water",
+            "Add 6 level teaspoons of sugar",
+            "Add ½ level teaspoon of salt",
+            "Stir until completely dissolved",
+            "Give small sips frequently — do not force large amounts",
+            "Discard and make fresh after 24 hours"
+          ]
+        },
+        {
+          "heading": "When to Use ORS",
+          "steps": [
+            "Diarrhea — start ORS at first loose stool",
+            "Vomiting — give small sips every 5 minutes",
+            "Heat exhaustion — cool environment + ORS",
+            "Seek hospital if unable to keep ORS down or blood in stool"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guide_003",
+      "title": "Normal Vital Signs Reference",
+      "icon": "❤️",
+      "sections": [
+        {
+          "heading": "Adults (18+ years)",
+          "steps": [
+            "Temperature: 36.1–37.2°C (97–99°F)",
+            "Heart rate: 60–100 beats/minute",
+            "Blood pressure: < 120/80 mmHg",
+            "Respiratory rate: 12–20 breaths/minute",
+            "Oxygen saturation (SpO2): 95–100%"
+          ]
+        },
+        {
+          "heading": "Children (1–12 years)",
+          "steps": [
+            "Temperature: 36.5–37.5°C",
+            "Heart rate: 70–120 beats/minute (varies by age)",
+            "Blood pressure: lower than adults (normal range varies by age)",
+            "Respiratory rate: 20–40 breaths/minute",
+            "Oxygen saturation: 97–100%"
+          ]
+        },
+        {
+          "heading": "When to Seek Emergency Care",
+          "steps": [
+            "SpO2 below 92% — emergency",
+            "Heart rate > 150 or < 40 — emergency",
+            "Temperature > 40°C (104°F) — urgent",
+            "Breathing < 8 or > 30/minute — emergency"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "guide_004",
+      "title": "DOTS — Tuberculosis Treatment Guide",
+      "icon": "🫁",
+      "sections": [
+        {
+          "heading": "What is TB?",
+          "steps": [
+            "Tuberculosis (TB) is an infectious disease caused by Mycobacterium tuberculosis",
+            "Spreads through the air when an infected person coughs, sneezes, or talks",
+            "Curable with proper treatment — do NOT stop early"
+          ]
+        },
+        {
+          "heading": "Symptoms of TB",
+          "steps": [
+            "Persistent cough for 2+ weeks",
+            "Coughing up blood or mucus",
+            "Chest pain",
+            "Unintentional weight loss",
+            "Night sweats and fever",
+            "Extreme fatigue"
+          ]
+        },
+        {
+          "heading": "DOTS Treatment",
+          "steps": [
+            "DOTS = Directly Observed Treatment Short-course",
+            "Treatment lasts 6 months minimum",
+            "Take ALL medications every day — never skip",
+            "Treatment is FREE at government health centres",
+            "Completing treatment prevents drug-resistant TB",
+            "Family members should get tested"
+          ]
+        }
+      ]
+    }
+  ]
+}

@@ -77,11 +77,11 @@ class AuthTextField extends StatelessWidget {
           ),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: DesignTokens.border),
+            borderSide: const BorderSide(color: DesignTokens.border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),
-            borderSide: BorderSide(color: DesignTokens.border),
+            borderSide: const BorderSide(color: DesignTokens.border),
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(16),

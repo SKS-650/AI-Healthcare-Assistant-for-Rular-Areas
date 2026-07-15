@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../routing/route_names.dart';
@@ -490,7 +490,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: DesignTokens.border),
+            borderSide: const BorderSide(color: DesignTokens.border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -528,7 +528,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       child: DropdownButtonFormField<String>(
-        value: options.contains(value) ? value : null,
+        initialValue: options.contains(value) ? value : null,
         items: options.map((o) => DropdownMenuItem(
           value: o,
           child: Text(o, style: const TextStyle(fontSize: 14)),
@@ -541,7 +541,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
           contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
           border: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
-            borderSide: BorderSide(color: DesignTokens.border),
+            borderSide: const BorderSide(color: DesignTokens.border),
           ),
           enabledBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(14),
@@ -576,7 +576,7 @@ class _ProfilePageState extends ConsumerState<ProfilePage> {
         Switch(
           value: value,
           onChanged: onChanged,
-          activeColor: DesignTokens.primary,
+          activeThumbColor: DesignTokens.primary,
         ),
       ]),
     );
@@ -623,7 +623,7 @@ class _SaveBar extends StatelessWidget {
           color: Colors.black.withValues(alpha: 0.08),
           blurRadius: 20, offset: const Offset(0, -6),
         )],
-        border: Border(top: BorderSide(color: DesignTokens.border)),
+        border: const Border(top: BorderSide(color: DesignTokens.border)),
       ),
       child: SizedBox(
         width: double.infinity,

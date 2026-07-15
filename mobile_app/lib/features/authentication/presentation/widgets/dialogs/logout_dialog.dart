@@ -25,7 +25,7 @@ class LogoutDialog extends StatelessWidget {
           Container(
             width: 64,
             height: 64,
-            decoration: BoxDecoration(
+            decoration: const BoxDecoration(
               color: DesignTokens.warningContainer,
               shape: BoxShape.circle,
             ),
@@ -62,7 +62,7 @@ class LogoutDialog extends StatelessWidget {
                   onPressed: () => Navigator.of(context).pop(),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: DesignTokens.textMuted,
-                    side: BorderSide(color: DesignTokens.border),
+                    side: const BorderSide(color: DesignTokens.border),
                     minimumSize: const Size(0, 46),
                     shape: RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(14),

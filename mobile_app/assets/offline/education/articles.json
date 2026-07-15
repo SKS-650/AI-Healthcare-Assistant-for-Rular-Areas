@@ -1,0 +1,62 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-07-14",
+  "description": "Pre-bundled health education articles for offline reading",
+  "articles": [
+    {
+      "id": "art_001",
+      "title": "Understanding Malaria: Prevention and Treatment",
+      "category": "Infectious Disease",
+      "tags": ["malaria", "prevention", "rural health"],
+      "read_time_min": 5,
+      "is_featured": true,
+      "language": "en",
+      "summary": "Malaria is a life-threatening disease caused by parasites transmitted through mosquito bites. Early detection and treatment are critical.",
+      "content": "## What is Malaria?\n\nMalaria is caused by *Plasmodium* parasites transmitted through the bites of infected female *Anopheles* mosquitoes.\n\n## Symptoms\n- High fever with chills\n- Sweating and shivering\n- Headache and muscle pain\n- Nausea and vomiting\n- Fatigue\n\n## Prevention\n1. **Sleep under insecticide-treated mosquito nets** every night\n2. Apply mosquito repellent (DEET-based) to exposed skin\n3. Wear long-sleeved clothing, especially at dusk and dawn\n4. Eliminate stagnant water sources near your home\n5. Use indoor residual spraying if recommended in your area\n\n## Treatment\nArtemisinin-based Combination Therapy (ACT) is the first-line treatment. Always complete the full course even if you feel better.\n\n## When to Seek Emergency Care\n- Fever > 38.5°C\n- Difficulty breathing\n- Confusion or seizures\n- Unable to keep fluids down\n\n**Do not delay — untreated malaria can be fatal within 24-48 hours.**"
+    },
+    {
+      "id": "art_002",
+      "title": "Diabetes Management for Rural Communities",
+      "category": "Chronic Disease",
+      "tags": ["diabetes", "blood sugar", "diet", "lifestyle"],
+      "read_time_min": 7,
+      "is_featured": true,
+      "language": "en",
+      "summary": "Practical guidance on managing diabetes with diet, exercise, and medication adherence in resource-limited settings.",
+      "content": "## Living with Diabetes\n\nDiabetes requires daily attention but can be managed effectively with the right knowledge.\n\n## Know Your Numbers\n- **Normal fasting blood sugar:** 70-100 mg/dL\n- **Pre-diabetes:** 100-125 mg/dL\n- **Diabetes:** 126 mg/dL or higher (on 2 separate tests)\n\n## Daily Management\n\n### Medication\nTake your medication exactly as prescribed. Never skip doses. If you use insulin, keep it stored correctly (2-8°C).\n\n### Diet\n- **Eat regularly** — 3 main meals and 2 small snacks\n- **Choose complex carbohydrates** — brown rice, whole wheat, oats\n- **Include protein** at every meal — lentils, eggs, fish, chicken\n- **Limit sugar** — no sugary drinks, sweets, or white bread\n- **Eat plenty of vegetables** — they help control blood sugar\n\n### Exercise\nA 30-minute walk after meals significantly lowers blood sugar. Start slowly and increase gradually.\n\n### Foot Care\nCheck your feet every day for cuts, blisters, or redness. Wear proper footwear. See a doctor immediately for any wound.\n\n## Warning Signs\n\n**Low blood sugar (Hypoglycaemia):**\nShaking, sweating, confusion, hunger — drink juice or eat glucose immediately.\n\n**High blood sugar (Hyperglycaemia):**\nExcessive thirst, frequent urination, blurred vision — contact your doctor."
+    },
+    {
+      "id": "art_003",
+      "title": "Maternal and Child Health: A Complete Guide",
+      "category": "Maternal Health",
+      "tags": ["pregnancy", "maternal health", "child health", "vaccination"],
+      "read_time_min": 8,
+      "is_featured": true,
+      "language": "en",
+      "summary": "Essential guidance for pregnant women and new mothers on antenatal care, danger signs, and child vaccination schedules.",
+      "content": "## Antenatal Care\n\nEvery pregnant woman should have **at least 4 antenatal visits** during pregnancy.\n\n### First Visit (Before 12 weeks)\n- Confirm pregnancy and due date\n- Blood tests: haemoglobin, blood type, HIV, syphilis\n- Start folic acid 400 mcg/day\n- Register at local health centre\n\n### Key Danger Signs — Seek Hospital Care Immediately\n- **Severe headache** with blurred vision (may indicate pre-eclampsia)\n- **Heavy vaginal bleeding** at any time\n- **Baby not moving** for 12+ hours after 28 weeks\n- **High fever** (infection risk)\n- **Swelling** of face, hands, or feet\n- Difficulty breathing\n\n## Nutrition During Pregnancy\n- **Iron** supplements — prevent anaemia\n- **Calcium** — 1000 mg/day for bone development\n- **Folic acid** — prevents neural tube defects\n- Avoid raw or undercooked meat, unpasteurised milk\n- Drink 10-12 glasses of water daily\n\n## Vaccinations Schedule for Children\n\n| Age | Vaccines |\n|-----|----------|\n| Birth | BCG, OPV-0, Hepatitis B |\n| 6 weeks | DPT, IPV, Hib, Rotavirus, PCV |\n| 10 weeks | DPT, IPV, Hib, Rotavirus, PCV |\n| 14 weeks | DPT, IPV, Hib, Rotavirus, PCV |\n| 9 months | Measles-Rubella (MR) |\n| 16-24 months | DPT booster, OPV, MR 2nd dose |"
+    },
+    {
+      "id": "art_004",
+      "title": "Clean Water and Sanitation: Preventing Waterborne Diseases",
+      "category": "Preventive Health",
+      "tags": ["water", "sanitation", "diarrhea", "typhoid", "prevention"],
+      "read_time_min": 4,
+      "is_featured": false,
+      "language": "en",
+      "summary": "How clean water and proper sanitation protect your family from diarrhea, typhoid, cholera, and other waterborne illnesses.",
+      "content": "## Why Clean Water Matters\n\nWaterborne diseases kill hundreds of thousands of people every year. Most cases are entirely preventable.\n\n## How to Make Water Safe\n\n### Boiling\nBoil water vigorously for 1 minute. Let cool before drinking. Store in clean covered containers.\n\n### Chlorination\nAdd 2 drops of household bleach (5% chlorine) per litre of water. Wait 30 minutes before drinking.\n\n### Filtering\nUse a clean cloth to filter visible particles before boiling or chlorinating.\n\n## Handwashing — The Single Most Important Habit\n\nWash hands with soap and water for at least 20 seconds:\n- Before eating or cooking\n- After using the toilet\n- After changing diapers\n- After handling animals\n\n## Signs of Waterborne Disease\n\n**Diarrhea:**\n- Drink ORS (Oral Rehydration Solution) immediately\n- Make ORS: 1 litre clean water + 6 teaspoons sugar + ½ teaspoon salt\n- Seek care if blood in stool, high fever, or very young child\n\n**Typhoid:**\n- Persistent fever for > 3 days\n- Abdominal pain and weakness\n- Get tested and treated with antibiotics"
+    },
+    {
+      "id": "art_005",
+      "title": "Mental Health in Rural Areas: Breaking the Stigma",
+      "category": "Mental Health",
+      "tags": ["mental health", "depression", "anxiety", "stress", "support"],
+      "read_time_min": 6,
+      "is_featured": false,
+      "language": "en",
+      "summary": "Understanding common mental health conditions and accessible support options for rural communities.",
+      "content": "## Mental Health Is Health\n\nOne in four people will experience a mental health condition in their lifetime. It is not a sign of weakness.\n\n## Common Conditions\n\n### Depression\n**Symptoms:** Persistent sadness, loss of interest, fatigue, sleep changes, feelings of worthlessness\n\n### Anxiety\n**Symptoms:** Excessive worry, restlessness, racing heart, difficulty concentrating, sleep problems\n\n### Stress\n**Symptoms:** Irritability, headaches, digestive problems, difficulty making decisions\n\n## What Helps\n\n### Self-Care Strategies\n- **Talk** to someone you trust\n- **Regular sleep** at consistent times\n- **Physical activity** — even a 20-minute walk helps\n- **Limit alcohol** — it worsens depression\n- **Breathing exercises** — 4-7-8 technique: inhale 4 sec, hold 7 sec, exhale 8 sec\n\n### When to Seek Professional Help\n- Symptoms lasting more than 2 weeks\n- Thoughts of self-harm\n- Unable to care for yourself or family\n- Using substances to cope\n\n## Helplines (India)\n- **iCall:** 9152987821\n- **Vandrevala Foundation:** 1860-2662-345 (24/7)\n- **NIMHANS:** 080-46110007\n- **Snehi:** 044-24640050\n\n**You are not alone. Help is available.**"
+    }
+  ]
+}

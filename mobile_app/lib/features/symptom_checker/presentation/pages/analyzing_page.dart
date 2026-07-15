@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
@@ -201,8 +201,8 @@ class _AnalyzingPageState extends ConsumerState<AnalyzingPage>
                                       key: ValueKey('done'),
                                     )
                                   : isCurrent
-                                      ? SizedBox(
-                                          key: const ValueKey('current'),
+                                      ? const SizedBox(
+                                          key: ValueKey('current'),
                                           width: 20,
                                           height: 20,
                                           child: CircularProgressIndicator(

@@ -18,28 +18,67 @@ class DashboardDummyData {
   static const healthScore = HealthScoreModel(
     score: 85,
     status: 'Excellent',
-    description: 'Your health parameters look steady today. Keep up the good work!',
+    description:
+        'Your health parameters look steady today. Keep up the good work!',
   );
 
   static const List<QuickAction> quickActions = [
-    QuickAction(id: 'symptom', title: 'Symptom Checker', iconPath: 'assets/icons/symptom.svg', routeName: '/symptom-checker'),
-    QuickAction(id: 'prediction', title: 'Disease Prediction', iconPath: 'assets/icons/prediction.svg', routeName: '/disease-prediction'),
-    QuickAction(id: 'chatbot', title: 'AI Chatbot', iconPath: 'assets/icons/chatbot.svg', routeName: '/chatbot'),
-    QuickAction(id: 'emergency', title: 'Emergency', iconPath: 'assets/icons/emergency.svg', routeName: '/emergency'),
-    QuickAction(id: 'records', title: 'Health Records', iconPath: 'assets/icons/records.svg', routeName: '/records'),
-    QuickAction(id: 'hospitals', title: 'Hospitals', iconPath: 'assets/icons/hospitals.svg', routeName: '/hospitals'),
-    QuickAction(id: 'education', title: 'Education', iconPath: 'assets/icons/education.svg', routeName: '/education'),
-    QuickAction(id: 'profile', title: 'Profile', iconPath: 'assets/icons/profile.svg', routeName: '/profile'),
+    QuickAction(
+        id: 'symptom',
+        title: 'Symptom Checker',
+        iconPath: 'assets/icons/symptom.svg',
+        routeName: '/symptom-checker'),
+    QuickAction(
+        id: 'chatbot',
+        title: 'AI Chatbot',
+        iconPath: 'assets/icons/chatbot.svg',
+        routeName: '/chatbot'),
+    QuickAction(
+        id: 'emergency',
+        title: 'Emergency',
+        iconPath: 'assets/icons/emergency.svg',
+        routeName: '/emergency'),
+    QuickAction(
+        id: 'records',
+        title: 'Health Records',
+        iconPath: 'assets/icons/records.svg',
+        routeName: '/records'),
+    QuickAction(
+        id: 'education',
+        title: 'Education',
+        iconPath: 'assets/icons/education.svg',
+        routeName: '/education'),
+    QuickAction(
+        id: 'profile',
+        title: 'Profile',
+        iconPath: 'assets/icons/profile.svg',
+        routeName: '/profile'),
   ];
 
   static final List<PredictionModel> recentPredictions = [
-    PredictionModel(id: '1', diseaseName: 'Common Cold Risk', confidence: 0.88, date: DateTime.now().subtract(const Duration(days: 2))),
-    PredictionModel(id: '2', diseaseName: 'Seasonal Allergy', confidence: 0.74, date: DateTime.now().subtract(const Duration(days: 5))),
+    PredictionModel(
+        id: '1',
+        diseaseName: 'Common Cold Risk',
+        confidence: 0.88,
+        date: DateTime.now().subtract(const Duration(days: 2))),
+    PredictionModel(
+        id: '2',
+        diseaseName: 'Seasonal Allergy',
+        confidence: 0.74,
+        date: DateTime.now().subtract(const Duration(days: 5))),
   ];
 
   static const List<HospitalModel> nearbyHospitals = [
-    HospitalModel(id: '1', name: 'City General Hospital', distance: 1.2, address: '123 Health Ave, Downtown'),
-    HospitalModel(id: '2', name: 'St. Mary Healthcare Center', distance: 3.5, address: '789 Care Rd, Suburbia'),
+    HospitalModel(
+        id: '1',
+        name: 'City General Hospital',
+        distance: 1.2,
+        address: '123 Health Ave, Downtown'),
+    HospitalModel(
+        id: '2',
+        name: 'St. Mary Healthcare Center',
+        distance: 3.5,
+        address: '789 Care Rd, Suburbia'),
   ];
 
   static const List<String> healthTips = [
@@ -49,7 +88,17 @@ class DashboardDummyData {
   ];
 
   static const List<ArticleModel> latestArticles = [
-    ArticleModel(id: '1', title: 'Understanding Dietary Riboflavin & Micronutrients', category: 'Nutrition', imageUrl: 'https://via.placeholder.com/150', readTime: '5 min read'),
-    ArticleModel(id: '2', title: 'Mental Resilience Exercises During Work Hours', category: 'Mental Health', imageUrl: 'https://via.placeholder.com/150', readTime: '4 min read'),
+    ArticleModel(
+        id: '1',
+        title: 'Understanding Dietary Riboflavin & Micronutrients',
+        category: 'Nutrition',
+        imageUrl: 'https://via.placeholder.com/150',
+        readTime: '5 min read'),
+    ArticleModel(
+        id: '2',
+        title: 'Mental Resilience Exercises During Work Hours',
+        category: 'Mental Health',
+        imageUrl: 'https://via.placeholder.com/150',
+        readTime: '4 min read'),
   ];
 }

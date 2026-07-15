@@ -99,7 +99,7 @@ class _HospitalCard extends StatelessWidget {
                         borderRadius: BorderRadius.circular(8),
                         border: Border.all(
                             color: DesignTokens.green.withValues(alpha: 0.3))),
-                    child: Text('24/7',
+                    child: const Text('24/7',
                         style: TextStyle(
                             color: DesignTokens.green,
                             fontSize: 10,

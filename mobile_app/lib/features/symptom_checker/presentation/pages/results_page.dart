@@ -4,7 +4,7 @@ import '../../models/symptom_check_response.dart';
 
 class ResultsPage extends StatefulWidget {
   final SymptomCheckResponse response;
-  const ResultsPage({Key? key, required this.response}) : super(key: key);
+  const ResultsPage({super.key, required this.response});
 
   @override
   State<ResultsPage> createState() => _ResultsPageState();
@@ -108,7 +108,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
         background: Container(
           decoration: BoxDecoration(
             gradient: LinearGradient(
-              colors: [riskColor, riskColor.withOpacity(0.7)],
+              colors: [riskColor, riskColor.withValues(alpha: 0.7)],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
@@ -120,14 +120,14 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                 const SizedBox(height: 40),
                 Container(
                   width: 64, height: 64,
-                  decoration: BoxDecoration(color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                  decoration: BoxDecoration(color: Colors.white.withValues(alpha: 0.2), shape: BoxShape.circle),
                   child: Icon(_riskIcon(widget.response.riskAssessment.riskLevel), color: Colors.white, size: 32),
                 ),
                 const SizedBox(height: 12),
                 const Text('Analysis Complete', style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold)),
                 const SizedBox(height: 4),
                 Text(widget.response.riskAssessment.riskLevelLabel,
-                    style: TextStyle(color: Colors.white.withOpacity(0.85), fontSize: 13)),
+                    style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
               ],
             ),
           ),
@@ -202,7 +202,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
               ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-                decoration: BoxDecoration(color: riskColor.withOpacity(0.12), borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: riskColor.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(20)),
                 child: Text(risk.riskLevelLabel, style: TextStyle(color: riskColor, fontWeight: FontWeight.w700, fontSize: 13)),
               ),
             ],
@@ -246,7 +246,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
               spacing: 8, runSpacing: 8,
               children: risk.riskFactors.map((f) => Container(
                 padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(color: riskColor.withOpacity(0.09), borderRadius: BorderRadius.circular(20)),
+                decoration: BoxDecoration(color: riskColor.withValues(alpha: 0.09), borderRadius: BorderRadius.circular(20)),
                 child: Text(f, style: TextStyle(color: riskColor, fontSize: 12, fontWeight: FontWeight.w500)),
               )).toList(),
             ),
@@ -255,7 +255,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
             const SizedBox(height: 12),
             Container(
               padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(color: Colors.orange.withOpacity(0.07), borderRadius: BorderRadius.circular(12)),
+              decoration: BoxDecoration(color: Colors.orange.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(12)),
               child: Row(
                 children: [
                   const Icon(Icons.warning_amber_rounded, color: Colors.orange, size: 18),
@@ -301,7 +301,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
             decoration: BoxDecoration(
               gradient: const LinearGradient(colors: [Color(0xFF6C63FF), Color(0xFF8B83FF)], begin: Alignment.topLeft, end: Alignment.bottomRight),
               borderRadius: BorderRadius.circular(16),
-              boxShadow: [BoxShadow(color: _primary.withOpacity(0.25), blurRadius: 16, offset: const Offset(0, 6))],
+              boxShadow: [BoxShadow(color: _primary.withValues(alpha: 0.25), blurRadius: 16, offset: const Offset(0, 6))],
             ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -317,7 +317,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Confidence', style: TextStyle(color: Colors.white.withOpacity(0.7), fontSize: 11)),
+                          Text('Confidence', style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 11)),
                           const SizedBox(height: 4),
                           ClipRRect(
                             borderRadius: BorderRadius.circular(4),
@@ -325,7 +325,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                               animation: _scoreAnim,
                               builder: (_, __) => LinearProgressIndicator(
                                 value: conf * _scoreAnim.value,
-                                backgroundColor: Colors.white.withOpacity(0.2),
+                                backgroundColor: Colors.white.withValues(alpha: 0.2),
                                 valueColor: const AlwaysStoppedAnimation(Colors.white),
                                 minHeight: 6,
                               ),
@@ -385,7 +385,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                 children: [
                   Container(
                     width: 28, height: 28,
-                    decoration: BoxDecoration(color: color.withOpacity(0.12), shape: BoxShape.circle),
+                    decoration: BoxDecoration(color: color.withValues(alpha: 0.12), shape: BoxShape.circle),
                     child: Center(child: Text('${idx + 2}', style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.bold))),
                   ),
                   const SizedBox(width: 12),
@@ -451,9 +451,9 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
           Container(
             padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: Colors.green.withOpacity(0.07),
+              color: Colors.green.withValues(alpha: 0.07),
               borderRadius: BorderRadius.circular(14),
-              border: Border.all(color: Colors.green.withOpacity(0.2)),
+              border: Border.all(color: Colors.green.withValues(alpha: 0.2)),
             ),
             child: Row(
               children: [
@@ -491,11 +491,11 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(color: Colors.red.shade50, borderRadius: BorderRadius.circular(12)),
-              child: Row(
+              child: const Row(
                 children: [
-                  const Icon(Icons.phone_in_talk_rounded, color: Colors.red, size: 20),
-                  const SizedBox(width: 10),
-                  const Expanded(child: Text('Emergency contact recommended — call 108', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 13))),
+                  Icon(Icons.phone_in_talk_rounded, color: Colors.red, size: 20),
+                  SizedBox(width: 10),
+                  Expanded(child: Text('Emergency contact recommended — call 108', style: TextStyle(color: Colors.red, fontWeight: FontWeight.w600, fontSize: 13))),
                 ],
               ),
             ),
@@ -532,9 +532,9 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
             children: symptoms.map((s) => Container(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(
-                color: Colors.indigo.withOpacity(0.08),
+                color: Colors.indigo.withValues(alpha: 0.08),
                 borderRadius: BorderRadius.circular(20),
-                border: Border.all(color: Colors.indigo.withOpacity(0.2)),
+                border: Border.all(color: Colors.indigo.withValues(alpha: 0.2)),
               ),
               child: Text(_capitalize(s), style: const TextStyle(color: Colors.indigo, fontSize: 12, fontWeight: FontWeight.w500)),
             )).toList(),
@@ -556,9 +556,9 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: Colors.amber.withOpacity(0.07),
+        color: Colors.amber.withValues(alpha: 0.07),
         borderRadius: BorderRadius.circular(14),
-        border: Border.all(color: Colors.amber.withOpacity(0.3)),
+        border: Border.all(color: Colors.amber.withValues(alpha: 0.3)),
       ),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -613,7 +613,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(20),
-        boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 20, offset: const Offset(0, 4))],
+        boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.05), blurRadius: 20, offset: const Offset(0, 4))],
       ),
       child: child,
     );
@@ -622,7 +622,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
   Widget _sectionIcon(IconData icon, Color color) {
     return Container(
       width: 42, height: 42,
-      decoration: BoxDecoration(color: color.withOpacity(0.12), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.12), borderRadius: BorderRadius.circular(12)),
       child: Icon(icon, color: color, size: 22),
     );
   }
@@ -630,7 +630,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
   Widget _infoChip(IconData icon, String label, String value, Color color) {
     return Container(
       padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(color: color.withOpacity(0.07), borderRadius: BorderRadius.circular(12)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.07), borderRadius: BorderRadius.circular(12)),
       child: Row(
         children: [
           Icon(icon, color: color, size: 16),
@@ -639,7 +639,7 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label, style: TextStyle(color: color.withOpacity(0.7), fontSize: 10)),
+                Text(label, style: TextStyle(color: color.withValues(alpha: 0.7), fontSize: 10)),
                 Text(value, style: TextStyle(color: color, fontSize: 12, fontWeight: FontWeight.w700), maxLines: 1, overflow: TextOverflow.ellipsis),
               ],
             ),
@@ -752,7 +752,7 @@ class _RiskGaugePainter extends CustomPainter {
       ..shader = SweepGradient(
         startAngle: math.pi,
         endAngle: math.pi * 2,
-        colors: [color.withOpacity(0.3), color],
+        colors: [color.withValues(alpha: 0.3), color],
       ).createShader(Rect.fromCircle(center: Offset(cx, cy), radius: r));
 
     canvas.drawArc(

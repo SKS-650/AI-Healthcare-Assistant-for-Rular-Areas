@@ -2,181 +2,154 @@
 SETLOCAL EnableDelayedExpansion
 
 REM ============================================================================
-REM AI Healthcare Assistant - Complete Startup Script
-REM This script starts both backend and provides instructions for mobile app
+REM  AI Medical Voice Assistant — Full Startup Script
+REM  Starts the FastAPI backend with all AI services (voice, FAISS, LLM)
 REM ============================================================================
 
 echo.
-echo =========================================================================
-echo            AI HEALTHCARE ASSISTANT - COMPLETE STARTUP
-echo =========================================================================
+echo  ==========================================================================
+echo      AI MEDICAL VOICE ASSISTANT  ^|  Production Startup
+echo  ==========================================================================
 echo.
 
-REM Change to project root
 cd /d "%~dp0"
 
-REM ─── Check Prerequisites ─────────────────────────────────────────────────
+REM ── 1. Prerequisites ────────────────────────────────────────────────────────
 
-echo [1/5] Checking prerequisites...
+echo  [1/6] Checking prerequisites...
 echo.
 
-REM Check Python
 python --version >nul 2>&1
 if errorlevel 1 (
-    echo [ERROR] Python is not installed or not in PATH
-    echo Please install Python 3.11+ from https://www.python.org/downloads/
-    pause
-    exit /b 1
+    echo  [ERROR] Python not found. Install Python 3.11+ from https://python.org
+    pause & exit /b 1
 )
-echo [OK] Python found: 
-python --version
+for /f "tokens=*" %%v in ('python --version 2^>^&1') do echo  [OK] %%v
 
-REM Check Flutter
 flutter --version >nul 2>&1
 if errorlevel 1 (
-    echo [WARNING] Flutter is not installed or not in PATH
-    echo You'll need Flutter to run the mobile app
-    echo Download from: https://flutter.dev/docs/get-started/install
-    echo.
-    echo You can still start the backend server...
-    timeout /t 3 >nul
+    echo  [WARN]  Flutter not found — mobile app cannot be run from here.
 ) else (
-    echo [OK] Flutter found:
-    flutter --version | findstr "Flutter"
+    for /f "tokens=1,2" %%a in ('flutter --version 2^>^&1 ^| findstr "Flutter"') do echo  [OK] Flutter %%b
 )
-
 echo.
 
-REM ─── Setup Virtual Environment ──────────────────────────────────────────
+REM ── 2. Virtual environment ──────────────────────────────────────────────────
 
-echo [2/5] Setting up virtual environment...
+echo  [2/6] Setting up virtual environment...
 echo.
 
 if not exist ".venv" (
-    echo Creating new virtual environment...
+    echo  Creating virtual environment...
     python -m venv .venv
-    if errorlevel 1 (
-        echo [ERROR] Failed to create virtual environment
-        pause
-        exit /b 1
-    )
-    echo [OK] Virtual environment created
-) else (
-    echo [OK] Virtual environment already exists
+    if errorlevel 1 ( echo  [ERROR] venv failed & pause & exit /b 1 )
 )
-
-echo.
-
-REM ─── Activate Virtual Environment ───────────────────────────────────────
-
-echo [3/5] Activating virtual environment...
-echo.
-
 call .venv\Scripts\activate.bat
-if errorlevel 1 (
-    echo [ERROR] Failed to activate virtual environment
-    pause
-    exit /b 1
-)
-echo [OK] Virtual environment activated
-
+if errorlevel 1 ( echo  [ERROR] Cannot activate venv & pause & exit /b 1 )
+echo  [OK] Virtual environment active
 echo.
 
-REM ─── Install Dependencies ───────────────────────────────────────────────
+REM ── 3. Install / verify dependencies ─────────────────────────────────────
 
-echo [4/5] Checking Python dependencies...
+echo  [3/6] Checking Python dependencies...
 echo.
 
-REM Check if packages are installed
 pip show fastapi >nul 2>&1
 if errorlevel 1 (
-    echo Installing Python dependencies (this may take a few minutes)...
-    pip install -r requirements.txt
-    if errorlevel 1 (
-        echo [ERROR] Failed to install dependencies
-        pause
-        exit /b 1
-    )
-    echo [OK] Dependencies installed
+    echo  Installing core dependencies (this may take a few minutes)...
+    pip install -r requirements.txt --quiet
+    if errorlevel 1 ( echo  [ERROR] pip install failed & pause & exit /b 1 )
+    echo  [OK] Core dependencies installed
 ) else (
-    echo [OK] Dependencies already installed
+    echo  [OK] Core dependencies already present
 )
 
+REM Check key AI packages individually so we can give targeted warnings
+for %%p in (sentence_transformers faiss langdetect deep_translator edge_tts gtts openai whisper) do (
+    pip show %%p >nul 2>&1
+    if errorlevel 1 (
+        echo  [WARN]  %%p not installed — some AI features may be limited
+    )
+)
 echo.
 
-REM ─── Check Environment Configuration ────────────────────────────────────
+REM ── 4. Environment file ─────────────────────────────────────────────────────
 
-echo [5/5] Checking configuration...
+echo  [4/6] Checking environment configuration...
 echo.
 
 if not exist "backend\.env" (
-    echo [WARNING] backend\.env file not found
-    echo Creating from template...
-    if exist "backend\.env.example" (
-        copy backend\.env.example backend\.env >nul
-        echo [OK] Created backend\.env from template
-        echo [ACTION REQUIRED] Please edit backend\.env and add your API keys:
-        echo - JWT_SECRET_KEY
-        echo - CHATBOT_LLM_API_KEY
+    echo  backend\.env not found — creating from template...
+    if exist ".env.example" (
+        copy .env.example backend\.env >nul
+        echo  [OK] backend\.env created from .env.example
+        echo  [ACTION REQUIRED] Open backend\.env and set:
+        echo     CHATBOT_LLM_API_KEY  = your Gemini / OpenAI API key
+        echo     JWT_SECRET_KEY       = a long random secret string
         echo.
-        timeout /t 5
+        timeout /t 6 /nobreak >nul
     ) else (
-        echo [ERROR] backend\.env.example not found
-        pause
-        exit /b 1
+        echo  [ERROR] .env.example not found.
+        pause & exit /b 1
     )
 ) else (
-    echo [OK] Configuration file found
+    echo  [OK] backend\.env found
 )
-
 echo.
 
-REM ─── Get Local IP Address ───────────────────────────────────────────────
+REM ── 5. Build FAISS index (if not already built) ──────────────────────────────
 
-echo Detecting your local IP address...
-for /f "tokens=2 delims=:" %%a in ('ipconfig ^| findstr /c:"IPv4 Address"') do (
+echo  [5/6] Checking FAISS knowledge index...
+echo.
+
+if not exist "ai_models\saved_models\faiss_index\index.faiss" (
+    echo  FAISS index not found.
+    echo  Building semantic search index from medical datasets...
+    echo  (This runs once and takes 5–20 minutes depending on your hardware)
+    echo.
+    python ai_models\scripts\build_faiss_index.py
+    if errorlevel 1 (
+        echo  [WARN]  FAISS index build failed — offline mode will use keyword search only
+    ) else (
+        echo  [OK] FAISS index built successfully
+    )
+) else (
+    echo  [OK] FAISS index already exists — skipping build
+)
+echo.
+
+REM ── 6. Start backend ────────────────────────────────────────────────────────
+
+REM Detect local IP for mobile app connection info
+for /f "tokens=2 delims=:" %%a in ('ipconfig 2^>nul ^| findstr /c:"IPv4 Address"') do (
     set "LOCAL_IP=%%a"
     set "LOCAL_IP=!LOCAL_IP:~1!"
-    goto :ip_found
+    goto :got_ip
 )
-:ip_found
+:got_ip
 
+echo  [6/6] Starting backend server...
+echo.
+echo  ==========================================================================
+echo   Backend URL   :  http://0.0.0.0:8000
+echo   Swagger UI    :  http://localhost:8000/docs
+echo   Health check  :  http://localhost:8000/health
+echo   Voice API     :  http://localhost:8000/api/v1/voice/health
+echo   Chatbot API   :  http://localhost:8000/api/v1/chatbot/health
 if defined LOCAL_IP (
-    echo [INFO] Your local IP address: !LOCAL_IP!
-    echo.
-    echo To run on a physical device, update mobile_app/lib/config/api_config.dart:
-    echo   static const _devLanIp = '!LOCAL_IP!';
-    echo   static const _useEmulator = false;
-) else (
-    echo [WARNING] Could not detect IP address automatically
+echo   LAN address   :  http://!LOCAL_IP!:8000
+echo.
+echo   Mobile app config  ^>  mobile_app\lib\config\api_config.dart
+echo   Set _devLanIp = '!LOCAL_IP!' and _useEmulator = false
 )
-
+echo  ==========================================================================
 echo.
-echo.
-
-REM ─── Start Backend Server ───────────────────────────────────────────────
-
-echo =========================================================================
-echo                         STARTING BACKEND SERVER
-echo =========================================================================
-echo.
-echo Backend will start on: http://0.0.0.0:8000
-echo API Documentation: http://localhost:8000/docs
-echo Health Check: http://localhost:8000/health
-echo.
-echo [INFO] Backend logs will appear below...
-echo [INFO] Press CTRL+C to stop the server
-echo.
-echo -------------------------------------------------------------------------
+echo  Press CTRL+C to stop.
 echo.
 
 cd backend
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
-REM If we reach here, server was stopped
 echo.
-echo.
-echo =========================================================================
-echo Backend server stopped
-echo =========================================================================
+echo  Server stopped.
 pause

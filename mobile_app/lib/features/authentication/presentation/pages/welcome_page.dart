@@ -140,7 +140,7 @@ class _WelcomePageState extends State<WelcomePage>
 
                         const SizedBox(height: 14),
 
-                        Text(
+                        const Text(
                           'Smart, accessible healthcare\nguidance for everyone',
                           textAlign: TextAlign.center,
                           style: TextStyle(
@@ -153,11 +153,11 @@ class _WelcomePageState extends State<WelcomePage>
                         const SizedBox(height: 32),
 
                         // Feature pills row
-                        Wrap(
+                        const Wrap(
                           spacing: 8,
                           runSpacing: 8,
                           alignment: WrapAlignment.center,
-                          children: const [
+                          children: [
                             _FeaturePill('🩺', 'Symptom Check'),
                             _FeaturePill('🤖', 'AI Chat'),
                             _FeaturePill('🚨', 'Emergency SOS'),
@@ -288,7 +288,7 @@ class _WelcomePageState extends State<WelcomePage>
                 // Terms
                 FadeTransition(
                   opacity: _fadeButtons,
-                  child: Text(
+                  child: const Text(
                     'By continuing you agree to our Terms & Privacy Policy',
                     textAlign: TextAlign.center,
                     style: TextStyle(

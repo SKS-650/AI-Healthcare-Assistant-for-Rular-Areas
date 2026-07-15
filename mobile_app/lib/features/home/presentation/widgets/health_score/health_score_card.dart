@@ -68,7 +68,7 @@ class HealthScoreCard extends StatelessWidget {
                             fontWeight: FontWeight.w900,
                             color: grad[0],
                             height: 1.0)),
-                    Text('/100',
+                    const Text('/100',
                         style: TextStyle(
                             fontSize: 10,
                             color: DesignTokens.textSubtle,

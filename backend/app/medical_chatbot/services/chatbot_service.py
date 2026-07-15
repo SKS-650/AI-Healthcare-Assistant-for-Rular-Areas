@@ -37,6 +37,27 @@ from .knowledge_service import get_knowledge_service, KnowledgeService
 from .prompt_builder import PromptBuilder
 from .response_validator import ResponseValidator, EmergencyDetector
 
+# Import enhanced AI modules (lazy — don't crash if not installed)
+import sys as _sys
+from pathlib import Path as _Path
+_PROJECT_ROOT = str(_Path(__file__).parent.parent.parent.parent.parent)
+if _PROJECT_ROOT not in _sys.path:
+    _sys.path.insert(0, _PROJECT_ROOT)
+
+def _get_translator():
+    try:
+        from ai_models.translation.translator import get_translator
+        return get_translator()
+    except Exception:
+        return None
+
+def _get_memory(conversation_id: str):
+    try:
+        from ai_models.memory.conversation_memory import get_conversation_memory
+        return get_conversation_memory(conversation_id)
+    except Exception:
+        return None
+
 
 class ChatbotService:
     """Service for chatbot business logic with AI integration"""
@@ -98,6 +119,21 @@ class ChatbotService:
         
         # Validate message
         validated_message = validate_message(request.message)
+
+        # ── Language detection + translation to English for NLP pipeline ──
+        detected_language = request.language or "en"
+        english_message   = validated_message
+        translator = _get_translator()
+        if translator:
+            try:
+                det = translator.detect(validated_message)
+                detected_language = det.language_code
+                if detected_language not in ("en", "auto"):
+                    tr = translator.translate_to_english(validated_message)
+                    if tr.success and tr.translated_text:
+                        english_message = tr.translated_text
+            except Exception as _tr_err:
+                logger.debug(f"Translation detection failed: {_tr_err}")
         
         logger.log_message_received(
             str(request.conversation_id) if request.conversation_id else "new",
@@ -143,32 +179,38 @@ class ChatbotService:
         
         # Generate AI response
         try:
-            # 1. Get conversation history
+            # 1. Get conversation history (from DB + in-memory)
             conversation_history = await self._get_conversation_history(conversation.id)
-            
-            # 2. Get relevant knowledge from datasets
-            knowledge_context = self.knowledge_service.get_relevant_knowledge(validated_message)
-            
+            # Merge in-memory memory turns for richer context
+            memory = _get_memory(str(conversation.uuid))
+            if memory:
+                mem_history = memory.get_history_for_prompt(last_n=4)
+                if mem_history:
+                    conversation_history = mem_history + conversation_history
+
+            # 2. Get relevant knowledge — use English-translated message for better search
+            knowledge_context = self.knowledge_service.get_relevant_knowledge(english_message)
+
             # 3. Build context from user's request
             user_context = self._build_user_context(request)
-            
-            # 4. Build AI prompt
+
+            # 4. Build AI prompt (pass detected language for multilingual instruction)
             if is_emergency:
-                # Use emergency prompt
                 prompt = self.prompt_builder.build_chat_prompt(
-                    user_question=validated_message,
+                    user_question=english_message,
                     conversation_history=conversation_history,
                     knowledge_context=knowledge_context,
-                    user_context=user_context
+                    user_context=user_context,
+                    language=detected_language,
                 )
                 prompt = self.prompt_builder.add_emergency_context(prompt)
             else:
-                # Normal prompt
                 prompt = self.prompt_builder.build_chat_prompt(
-                    user_question=validated_message,
+                    user_question=english_message,
                     conversation_history=conversation_history,
                     knowledge_context=knowledge_context,
-                    user_context=user_context
+                    user_context=user_context,
+                    language=detected_language,
                 )
             
             # Guard: if LLM service unavailable, raise LLMServiceException to hit fallback
@@ -196,10 +238,30 @@ class ChatbotService:
                 # Use sanitized version or fallback
                 ai_response_text = self.response_validator.sanitize_response(ai_response_text)
             
-            # 7. If emergency, prepend emergency message
+            # 7. If emergency, prepend localised emergency message
             if is_emergency:
-                emergency_message = self.emergency_detector.get_emergency_response(emergency_type or "cardiac")
-                ai_response_text = f"{emergency_message}\n\n{ai_response_text}"
+                # Use enhanced emergency detector for localised message
+                try:
+                    from ai_models.emergency_detection.emergency_detector import get_emergency_detector
+                    em_det = get_emergency_detector()
+                    em_result = em_det.detect(english_message, detected_language)
+                    if em_result.is_emergency and em_result.warning_message:
+                        ai_response_text = f"{em_result.warning_message}\n\n{ai_response_text}"
+                    else:
+                        emergency_message = self.emergency_detector.get_emergency_response(emergency_type or "cardiac")
+                        ai_response_text = f"{emergency_message}\n\n{ai_response_text}"
+                except Exception:
+                    emergency_message = self.emergency_detector.get_emergency_response(emergency_type or "cardiac")
+                    ai_response_text = f"{emergency_message}\n\n{ai_response_text}"
+
+            # 7b. Translate response back to user's language (if non-English)
+            if detected_language not in ("en", "auto") and translator:
+                try:
+                    tr_resp = translator.translate_response(ai_response_text, detected_language)
+                    if tr_resp.success and tr_resp.translated_text:
+                        ai_response_text = tr_resp.translated_text
+                except Exception as _te:
+                    logger.debug(f"Response translation failed: {_te}")
             
             # 8. Calculate confidence
             confidence = calculate_confidence({
@@ -223,6 +285,19 @@ class ChatbotService:
             
             response_time = time.time() - start_time
             tokens_used = llm_result.get("tokens_used", 0)
+
+            # Save to in-memory conversation memory
+            if memory:
+                try:
+                    memory.add_turn(
+                        user_message=validated_message,
+                        bot_response=ai_response_text,
+                        language=detected_language,
+                        intent="GENERAL_MEDICAL",
+                        is_emergency=is_emergency,
+                    )
+                except Exception:
+                    pass
             
         except LLMServiceException as e:
             logger.error(f"LLM service error: {str(e)}")

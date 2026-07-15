@@ -64,6 +64,10 @@ async def on_startup() -> None:
             import app.symptom_checker.models  # noqa: F401
             # Chatbot tables — import models so metadata is populated
             import app.medical_chatbot.database.models  # noqa: F401
+            # Emergency tables
+            import app.emergency.models  # noqa: F401
+            # Medical Records (PHR) tables
+            import app.health_records.models  # noqa: F401
             from app.auth.models import Base
             engine = _get_engine()
             async with engine.begin() as conn:

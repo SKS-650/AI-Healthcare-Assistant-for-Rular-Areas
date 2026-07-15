@@ -75,8 +75,8 @@ class _AnalyzingAnimationState extends State<AnalyzingAnimation>
                 ),
               ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.all(8),
+            child: const Padding(
+              padding: EdgeInsets.all(8),
               child: CircularProgressIndicator(
                 strokeWidth: 3,
                 color: DesignTokens.primary,

@@ -193,7 +193,7 @@ class _ProfileCompletionPageState
                         const SizedBox(height: 32),
 
                         // ── Full Name ─────────────────────────────────────
-                        _SectionLabel(label: 'Full Name *'),
+                        const _SectionLabel(label: 'Full Name *'),
                         const SizedBox(height: 8),
                         AuthTextField(
                           controller: _nameCtrl,
@@ -207,7 +207,7 @@ class _ProfileCompletionPageState
                         const SizedBox(height: 16),
 
                         // ── Phone ─────────────────────────────────────────
-                        _SectionLabel(label: 'Phone Number'),
+                        const _SectionLabel(label: 'Phone Number'),
                         const SizedBox(height: 8),
                         AuthTextField(
                           controller: _phoneCtrl,
@@ -221,7 +221,7 @@ class _ProfileCompletionPageState
                         const SizedBox(height: 20),
 
                         // ── Gender ────────────────────────────────────────
-                        _SectionLabel(label: 'Gender'),
+                        const _SectionLabel(label: 'Gender'),
                         const SizedBox(height: 10),
                         Wrap(
                           spacing: 8,
@@ -268,7 +268,7 @@ class _ProfileCompletionPageState
                         const SizedBox(height: 20),
 
                         // ── Age ───────────────────────────────────────────
-                        _SectionLabel(label: 'Age'),
+                        const _SectionLabel(label: 'Age'),
                         const SizedBox(height: 10),
                         _AgeSelector(
                           selected: _selectedAge,
@@ -280,7 +280,7 @@ class _ProfileCompletionPageState
                         const SizedBox(height: 20),
 
                         // ── Language ──────────────────────────────────────
-                        _SectionLabel(label: 'Preferred Language'),
+                        const _SectionLabel(label: 'Preferred Language'),
                         const SizedBox(height: 10),
                         _LanguageDropdown(
                           languages: _languages,

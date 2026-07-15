@@ -47,7 +47,8 @@ class PromptBuilder:
         user_question: str,
         conversation_history: Optional[List[Dict[str, str]]] = None,
         knowledge_context: Optional[Dict[str, Any]] = None,
-        user_context: Optional[Dict[str, Any]] = None
+        user_context: Optional[Dict[str, Any]] = None,
+        language: str = "en",
     ) -> str:
         """
         Build complete prompt for chat response
@@ -62,7 +63,17 @@ class PromptBuilder:
             Complete prompt string
         """
         prompt_parts = []
-        
+
+        # 0. Language instruction (prepend when user is not English)
+        _lang_names = {"hi": "Hindi", "ne": "Nepali", "bho": "Bhojpuri",
+                        "bn": "Bengali", "ta": "Tamil", "te": "Telugu"}
+        if language not in ("en", "auto", ""):
+            lang_name = _lang_names.get(language, language.upper())
+            prompt_parts.append(
+                f"**IMPORTANT:** The user speaks {lang_name}. "
+                f"Respond ONLY in {lang_name} language.\n\n"
+            )
+
         # 1. System instructions
         prompt_parts.append(self.SYSTEM_PROMPT)
         prompt_parts.append("\n---\n")

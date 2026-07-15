@@ -194,8 +194,8 @@ class _SplashPageState extends State<SplashPage>
                   opacity: _fadeAnim.value.clamp(0.0, 1.0),
                   child: child,
                 ),
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 32),
+                child: const Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 32),
                   child: Wrap(
                     spacing: 10,
                     runSpacing: 10,
