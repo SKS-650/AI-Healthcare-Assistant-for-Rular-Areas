@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
@@ -192,7 +192,7 @@ class _HospitalCard extends StatelessWidget {
             ),
           ),
           const SizedBox(width: 8),
-          Column(
+          const Column(
             children: [
               _SmallBtn(
                 emoji: 'ðŸ“ž',
@@ -200,7 +200,7 @@ class _HospitalCard extends StatelessWidget {
                 color: DesignTokens.success,
                 bg: DesignTokens.successContainer,
               ),
-              const SizedBox(height: 6),
+              SizedBox(height: 6),
               _SmallBtn(
                 emoji: 'ðŸ—ºï¸',
                 label: 'Route',

@@ -15,9 +15,11 @@ class HospitalModel extends Hospital {
       id: json['id'] as String,
       name: json['name'] as String,
       address: json['address'] as String,
-      distanceKm: (json['distanceKm'] as num).toDouble(),
-      phoneNumber: json['phoneNumber'] as String,
-      emergencyAvailable: json['emergencyAvailable'] as bool? ?? true,
+      // Accept both snake_case (backend) and camelCase (legacy dummy data)
+      distanceKm: ((json['distance_km'] ?? json['distanceKm']) as num).toDouble(),
+      phoneNumber: (json['phone_number'] ?? json['phoneNumber']) as String,
+      emergencyAvailable:
+          (json['emergency_available'] ?? json['emergencyAvailable']) as bool? ?? true,
     );
   }
 
@@ -26,9 +28,9 @@ class HospitalModel extends Hospital {
       'id': id,
       'name': name,
       'address': address,
-      'distanceKm': distanceKm,
-      'phoneNumber': phoneNumber,
-      'emergencyAvailable': emergencyAvailable,
+      'distance_km': distanceKm,
+      'phone_number': phoneNumber,
+      'emergency_available': emergencyAvailable,
     };
   }
 }

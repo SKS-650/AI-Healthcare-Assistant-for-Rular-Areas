@@ -13,9 +13,10 @@ class EmergencyContactModel extends EmergencyContact {
     return EmergencyContactModel(
       id: json['id'] as String,
       name: json['name'] as String,
-      phoneNumber: json['phoneNumber'] as String,
-      relation: json['relation'] as String,
-      isPrimary: json['isPrimary'] as bool? ?? false,
+      // Accept both snake_case (backend) and camelCase (legacy)
+      phoneNumber: (json['phone_number'] ?? json['phoneNumber']) as String,
+      relation: json['relation'] as String? ?? '',
+      isPrimary: (json['is_primary'] ?? json['isPrimary']) as bool? ?? false,
     );
   }
 
@@ -23,9 +24,9 @@ class EmergencyContactModel extends EmergencyContact {
     return {
       'id': id,
       'name': name,
-      'phoneNumber': phoneNumber,
+      'phone_number': phoneNumber,
       'relation': relation,
-      'isPrimary': isPrimary,
+      'is_primary': isPrimary,
     };
   }
 }

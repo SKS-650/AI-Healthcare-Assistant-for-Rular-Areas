@@ -56,7 +56,7 @@ class _CountdownDialogState extends State<CountdownDialog> {
             Container(
               width: 80,
               height: 80,
-              decoration: BoxDecoration(
+              decoration: const BoxDecoration(
                 color: DesignTokens.dangerContainer,
                 shape: BoxShape.circle,
               ),

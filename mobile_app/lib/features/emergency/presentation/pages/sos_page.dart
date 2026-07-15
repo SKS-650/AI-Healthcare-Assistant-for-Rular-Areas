@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
@@ -41,11 +41,11 @@ class SosPage extends ConsumerWidget {
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(color: DesignTokens.warningLight),
                 ),
-                child: Row(
+                child: const Row(
                   children: [
-                    const Text('âš ï¸', style: TextStyle(fontSize: 20)),
-                    const SizedBox(width: 12),
-                    const Expanded(
+                    Text('âš ï¸', style: TextStyle(fontSize: 20)),
+                    SizedBox(width: 12),
+                    Expanded(
                       child: Text(
                         'Use SOS only for genuine medical or safety emergencies. Misuse may prevent real emergency responders from helping others.',
                         style: TextStyle(

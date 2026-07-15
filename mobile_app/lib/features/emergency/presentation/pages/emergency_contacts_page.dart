@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
@@ -75,10 +75,10 @@ class EmergencyContactsPage extends ConsumerWidget {
           ),
 
           // National helplines row
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          const Padding(
+            padding: EdgeInsets.fromLTRB(16, 12, 16, 4),
             child: Row(
-              children: const [
+              children: [
                 Text('ðŸ›ï¸', style: TextStyle(fontSize: 14)),
                 SizedBox(width: 6),
                 Text('National Helplines',
@@ -89,16 +89,16 @@ class EmergencyContactsPage extends ConsumerWidget {
               ],
             ),
           ),
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+          const Padding(
+            padding: EdgeInsets.symmetric(horizontal: 16),
             child: Row(
               children: [
                 _HelplineBtn(emoji: 'ðŸš‘', num: '102', label: 'Ambulance'),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _HelplineBtn(emoji: 'ðŸš“', num: '100', label: 'Police'),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _HelplineBtn(emoji: 'ðŸ”¥', num: '101', label: 'Fire'),
-                const SizedBox(width: 8),
+                SizedBox(width: 8),
                 _HelplineBtn(emoji: 'ðŸ¥', num: '104', label: 'Health'),
               ],
             ),
@@ -282,10 +282,10 @@ class _ContactRow extends StatelessWidget {
               ],
             ),
           ),
-          Row(
+          const Row(
             children: [
               _CircleBtn(emoji: 'ðŸ“ž', bg: DesignTokens.successContainer),
-              const SizedBox(width: 6),
+              SizedBox(width: 6),
               _CircleBtn(emoji: 'âœ‰ï¸', bg: DesignTokens.secondaryContainer),
             ],
           ),
@@ -393,11 +393,11 @@ class _AddContactSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 16),
-          _SheetField(emoji: 'ðŸ‘¤', hint: 'Full Name'),
+          const _SheetField(emoji: 'ðŸ‘¤', hint: 'Full Name'),
           const SizedBox(height: 10),
-          _SheetField(emoji: 'ðŸ“ž', hint: 'Phone Number', isPhone: true),
+          const _SheetField(emoji: 'ðŸ“ž', hint: 'Phone Number', isPhone: true),
           const SizedBox(height: 10),
-          _SheetField(emoji: 'ðŸ¤', hint: 'Relationship (e.g. Wife, Father)'),
+          const _SheetField(emoji: 'ðŸ¤', hint: 'Relationship (e.g. Wife, Father)'),
           const SizedBox(height: 20),
           SizedBox(
             width: double.infinity,
