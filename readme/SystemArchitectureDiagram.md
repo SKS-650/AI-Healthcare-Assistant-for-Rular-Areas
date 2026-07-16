@@ -4,63 +4,52 @@ This file contains a system architecture diagram showing the main components, da
 
 ```mermaid
 flowchart LR
-  subgraph Client[Clients]
-    Mobile[Mobile App\nFlutter]
-    Admin[Admin Dashboard\nFlutter Web]
-  end
+  MobileApp[Mobile App]
+  AdminDashboard[Admin Dashboard]
+  BackendAPI[FastAPI Backend]
+  AuthService[Auth Service]
+  SymptomChecker[Symptom Checker]
+  ChatbotService[Chatbot Service]
+  EmergencyService[Emergency Service]
+  SyncService[Offline Sync]
+  HealthRecords[PHR Service]
+  AnalyticsService[Analytics / Admin APIs]
+  Database[Database]
+  EmbeddingsService[Embeddings & Vector Store]
+  RetrieverService[Retrieval Service]
+  LLMProvider[LLM Provider]
+  SymptomModel[Symptom ML Model]
+  EmergencyModel[Emergency Risk Model]
+  NotificationService[Notification / SMS / Email]
+  VoiceService[STT / TTS]
+  StorageService[Model Artifact Storage]
 
-  subgraph Backend[Backend / API Layer]
-    API[FastAPI API]
-    Auth[Authentication & Authorization]
-    Symptom[Symptom Checker Service]
-    Chatbot[Medical Chatbot Service]
-    Emergency[Emergency Detection Service]
-    Sync[Offline Sync Service]
-    HealthRecords[PHR Service]
-    Analytics[Analytics + Admin APIs]
-    DB[SQLAlchemy / Database]
-  end
-
-  subgraph AI[AI / ML Layer]
-    Embeddings[Embeddings + Vector Store]
-    Retriever[Retrieval Service]
-    LLM[LLM Provider]
-    SymptomModel[Symptom ML Models]
-    EmergencyModel[Emergency Risk Model]
-  end
-
-  subgraph External[External Services]
-    Notification[Notification / SMS / Email]
-    Voice[STT / TTS]
-    Storage[File Storage / Model Artifacts]
-  end
-
-  Mobile -->|REST API| API
-  Admin -->|REST API| API
-  API --> Auth
-  API --> Symptom
-  API --> Chatbot
-  API --> Emergency
-  API --> Sync
-  API --> HealthRecords
-  API --> Analytics
-  Symptom --> SymptomModel
-  Chatbot --> Retriever
-  Retriever --> Embeddings
-  Retriever --> LLM
-  Emergency --> EmergencyModel
-  API --> DB
-  Analytics --> DB
-  Sync --> DB
-  HealthRecords --> DB
-  Notification <-- Emergency
-  API --> Voice
-  API --> Storage
-  Storage <-- SymptomModel
-  Storage <-- EmergencyModel
-  Storage <-- Embeddings
-  Admin --> Analytics
-  Admin -->|trigger retrain| Storage
+  MobileApp -->|REST| BackendAPI
+  AdminDashboard -->|REST| BackendAPI
+  BackendAPI --> AuthService
+  BackendAPI --> SymptomChecker
+  BackendAPI --> ChatbotService
+  BackendAPI --> EmergencyService
+  BackendAPI --> SyncService
+  BackendAPI --> HealthRecords
+  BackendAPI --> AnalyticsService
+  BackendAPI --> Database
+  SymptomChecker --> SymptomModel
+  ChatbotService --> RetrieverService
+  RetrieverService --> EmbeddingsService
+  RetrieverService --> LLMProvider
+  EmergencyService --> EmergencyModel
+  SyncService --> Database
+  HealthRecords --> Database
+  AnalyticsService --> Database
+  EmergencyService --> NotificationService
+  BackendAPI --> VoiceService
+  BackendAPI --> StorageService
+  SymptomModel --> StorageService
+  EmergencyModel --> StorageService
+  EmbeddingsService --> StorageService
+  AdminDashboard --> AnalyticsService
+  AdminDashboard -->|trigger retrain| StorageService
 ```
 
 Notes:
