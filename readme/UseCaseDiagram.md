@@ -3,50 +3,36 @@
 This document contains a high-level use-case diagram for the project and brief descriptions of each actor and use-case.
 
 ```mermaid
-%% Fallback diagram: flowchart representation of use-cases and actors (widely supported)
 flowchart LR
-  subgraph Actors
-    U[User\n(Mobile App)]
-    A[Admin\n(Admin Dashboard)]
-    HP[Healthcare\nProvider]
-    LLM[External\nLLM Provider]
-    ES[Emergency\nService]
-  end
+  U(User)
+  A(Admin)
+  HP(Healthcare Provider)
+  LLM(External LLM Provider)
+  ES(Emergency Service)
 
-  subgraph System[Backend System]
-    S[Backend\n(FastAPI + DB)]
-    SK[Symptom\nChecker]
-    CB[Medical\nChatbot]
-    Sync[Offline\nSync]
-    Retrieve[Retrieve\nKnowledge]
-  end
+  S(Backend - FastAPI & DB)
+  SK(Symptom Checker)
+  CB(Medical Chatbot)
+  Sync(Offline Sync)
+  Retrieve(Retrieve Knowledge)
 
-  U -->|Authenticate| S
+  U -->|Authenticate / view data| S
   U -->|Use Symptom Checker| SK
   U -->|Chat with Chatbot| CB
-  U -->|View Health Records| S
-  U -->|Receive Notifications| S
   U -->|Sync Offline Data| Sync
 
-  CB -->|Call Retrieval| Retrieve
-  Retrieve -->|Fetch docs| S
-  CB -->|Call LLM Provider| LLM
   SK -->|POST /symptom-checker/predict| S
   CB -->|POST /chatbot/message| S
   Sync -->|POST /sync| S
 
-  A -->|Authenticate as Admin| S
-  A -->|Manage Users / Metrics / Retrain| S
-  A -->|Review Flagged Conversations| S
+  CB -->|Call Retrieval| Retrieve
+  Retrieve -->|Fetch docs| S
+  CB -->|Call LLM Provider| LLM
 
-  HP -->|Access Patient Data| S
-  HP -->|Review Symptom Reports| S
+  A -->|Admin actions / retrain| S
+  HP -->|Access patient data| S
 
   S -->|Escalate emergency| ES
-
-  click S "./readme/Backend.md" "Backend details"
-  click SK "./readme/SympCheck.md" "Symptom Checker details"
-  click CB "./readme/Chatbot.md" "Chatbot details"
 ```
 
 ## Actors
