@@ -44,9 +44,14 @@ flowchart LR
   %% Logout path
   Auth -->|logout| Unauth
 
+  %% Error handling
+  ErrorNode["Error state"]
+  ErrorNode -.->|retry| ErrorState
+  ErrorState --> Retrieving
+
   %% Rough legend
   classDef states fill:#f9f,stroke:#333,stroke-width:1px;
-  class Unauth,Auth,Idle,InSymptom,InChat,Retrieving,WaitingLLM,ShowingResult,EmergencyEsc,OfflineQ,Syncing,AdminReview,Retrain,ErrorState states;
+  class Unauth,Auth,Idle,InSymptom,InChat,Retrieving,WaitingLLM,ShowingResult,EmergencyEsc,OfflineQ,Syncing,AdminReview,Retrain,ErrorState,ErrorNode states;
 ```
 
 Notes:
