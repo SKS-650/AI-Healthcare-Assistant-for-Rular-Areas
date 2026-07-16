@@ -3,47 +3,50 @@
 This document contains a high-level use-case diagram for the project and brief descriptions of each actor and use-case.
 
 ```mermaid
-%%{init: {"themeVariables": {"actorBorder": "#2b6cb0"}}}%%
-usecaseDiagram
-  actor User as U
-  actor Admin as A
-  actor HealthcareProvider as HP
-  actor System as S
-  actor ExternalLLM as LLM
-  actor EmergencyService as ES
+%% Fallback diagram: flowchart representation of use-cases and actors (widely supported)
+flowchart LR
+  subgraph Actors
+    U[User\n(Mobile App)]
+    A[Admin\n(Admin Dashboard)]
+    HP[Healthcare\nProvider]
+    LLM[External\nLLM Provider]
+    ES[Emergency\nService]
+  end
 
-  U --> (Authenticate)
-  U --> (Use Symptom Checker)
-  U --> (Chat with Medical Chatbot)
-  U --> (View Health Records)
-  U --> (Receive Notifications)
-  U --> (Sync Offline Data)
+  subgraph System[Backend System]
+    S[Backend\n(FastAPI + DB)]
+    SK[Symptom\nChecker]
+    CB[Medical\nChatbot]
+    Sync[Offline\nSync]
+    Retrieve[Retrieve\nKnowledge]
+  end
 
-  (Use Symptom Checker) ..> (Chat with Medical Chatbot) : "optionally calls"
-  (Chat with Medical Chatbot) --> LLM : "calls for generation"
-  (Chat with Medical Chatbot) --> (Retrieve Knowledge)
-  (Retrieve Knowledge) --> S
+  U -->|Authenticate| S
+  U -->|Use Symptom Checker| SK
+  U -->|Chat with Chatbot| CB
+  U -->|View Health Records| S
+  U -->|Receive Notifications| S
+  U -->|Sync Offline Data| Sync
 
-  A --> (Authenticate as Admin)
-  A --> (Manage Users)
-  A --> (Review Flagged Conversations)
-  A --> (Trigger Model Retrain)
-  A --> (View Analytics)
+  CB -->|Call Retrieval| Retrieve
+  Retrieve -->|Fetch docs| S
+  CB -->|Call LLM Provider| LLM
+  SK -->|POST /symptom-checker/predict| S
+  CB -->|POST /chatbot/message| S
+  Sync -->|POST /sync| S
 
-  HP --> (Access Patient Data)
-  HP --> (Review Symptom Reports)
+  A -->|Authenticate as Admin| S
+  A -->|Manage Users / Metrics / Retrain| S
+  A -->|Review Flagged Conversations| S
 
-  (Use Symptom Checker) --> S : "POST /symptom-checker/predict"
-  (Chat with Medical Chatbot) --> S : "POST /chatbot/message"
-  (Sync Offline Data) --> S : "POST /sync"
+  HP -->|Access Patient Data| S
+  HP -->|Review Symptom Reports| S
 
-  S --> ES : "Escalate emergency when detected"
+  S -->|Escalate emergency| ES
 
-  note left of U: Mobile App (Flutter)
-  note right of A: Admin Dashboard (Web)
-  note right of S: Backend (FastAPI) & DB
-  note right of LLM: External LLM Provider
-
+  click S "./readme/Backend.md" "Backend details"
+  click SK "./readme/SympCheck.md" "Symptom Checker details"
+  click CB "./readme/Chatbot.md" "Chatbot details"
 ```
 
 ## Actors
