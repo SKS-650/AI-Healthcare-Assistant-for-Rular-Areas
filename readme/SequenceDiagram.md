@@ -1,61 +1,74 @@
 # Sequence Diagram — AI Healthcare Assistant
 
-This document contains a project-wide sequence diagram for the main user flows: authentication, symptom checking, medical chatbot, emergency escalation, offline sync, admin reporting, and model retraining.
+This document shows a project-wide sequence diagram in lifeline style, modeled after the requested layout.
 
 ```mermaid
 sequenceDiagram
-    participant U as User
-    participant M as Mobile App
-    participant B as Backend
-    participant S as Symptom Checker
-    participant R as Retriever
-    participant L as LLM Provider
-    participant D as Database
-    participant A as Admin Dashboard
-    participant E as Emergency Service
+    participant User
+    participant MobileApp as Mobile App
+    participant AuthService as Auth Service
+    participant Backend as Backend API
+    participant SymptomService as Symptom Checker
+    participant Retriever as Retriever
+    participant LLM as LLM Provider
+    participant Database as Database
+    participant EmergencyService as Emergency Service
+    participant AdminDashboard as Admin Dashboard
 
-    U->>M: Open app
-    M->>B: POST /api/v1/auth/login
-    B-->>M: auth token
-    M->>B: POST /api/v1/symptom-checker/predict
-    B->>S: preprocess input & run inference
-    S-->>B: symptom predictions
-    B->>D: save symptom request
-    B-->>M: return symptom results
+    User->>MobileApp: open app
+    MobileApp->>AuthService: POST /api/v1/auth/login
+    AuthService-->>MobileApp: return token
+    MobileApp-->>Backend: GET /api/v1/user/profile
+    Backend-->>Database: query user profile
+    Database-->>Backend: user data
+    Backend-->>MobileApp: profile data
+
+    User->>MobileApp: submit symptoms
+    MobileApp->>Backend: POST /api/v1/symptom-checker/predict
+    Backend->>SymptomService: preprocess + infer
+    SymptomService-->>Backend: predictions
+    Backend->>Database: save symptom request
+    Database-->>Backend: saved
+    Backend-->>MobileApp: symptom results
 
     alt emergency detected
-        B->>E: escalate emergency
-        E-->>B: acknowledge
-        B-->>M: show emergency alert
-    else normal triage
-        B-->>M: show triage advice
+        Backend->>EmergencyService: escalate emergency
+        EmergencyService-->>Backend: escalation acknowledge
+        Backend-->>MobileApp: emergency alert
+    else normal result
+        Backend-->>MobileApp: triage advice
     end
 
-    M->>B: POST /api/v1/chatbot/message
-    B->>R: retrieve knowledge documents
-    R-->>B: retrieved context
-    B->>L: send prompt + context
-    L-->>B: generated chat reply
-    B->>D: save conversation / audit log
-    B-->>M: deliver chatbot response
+    User->>MobileApp: send chat message
+    MobileApp->>Backend: POST /api/v1/chatbot/message
+    Backend->>Retriever: retrieve context
+    Retriever->>Database: fetch indexed docs
+    Database-->>Retriever: context
+    Retriever->>LLM: call LLM
+    LLM-->>Retriever: generated reply
+    Retriever-->>Backend: response context
+    Backend->>Database: save conversation
+    Database-->>Backend: saved
+    Backend-->>MobileApp: chat reply
 
-    alt offline mode
-        M->>M: queue actions locally
-        M->>B: POST /api/v1/sync when online
-        B->>D: apply queued changes
-        B-->>M: sync acknowledgment
-    end
+    User->>MobileApp: go offline
+    MobileApp->>MobileApp: queue offline actions
+    MobileApp->>Backend: POST /api/v1/sync
+    Backend->>Database: apply queued updates
+    Database-->>Backend: synced
+    Backend-->>MobileApp: sync result
 
-    A->>B: GET /api/v1/admin/analytics
-    B->>D: fetch metrics and user/session data
-    B-->>A: analytics dashboard data
+    AdminDashboard->>Backend: GET /api/v1/admin/analytics
+    Backend->>Database: query analytics data
+    Database-->>Backend: metrics
+    Backend-->>AdminDashboard: dashboard data
 
-    A->>B: POST /api/v1/admin/retrain
-    B->>B: trigger model retrain pipeline
-    B-->>A: retrain started
+    AdminDashboard->>Backend: POST /api/v1/admin/retrain
+    Backend->>Backend: trigger retrain workflow
+    Backend-->>AdminDashboard: retrain started
 ```
 
 Notes:
 
-- Use a Mermaid-compatible viewer like GitHub or VS Code to render this diagram.
-- If this still fails, I can export a static PNG/SVG image instead of Mermaid text.
+- Render this file in a Mermaid-capable viewer such as VS Code or GitHub.
+- If the diagram still does not render, I can generate a fixed PNG/SVG version.
