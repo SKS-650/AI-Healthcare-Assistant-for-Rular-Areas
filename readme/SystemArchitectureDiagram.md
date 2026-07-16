@@ -3,53 +3,21 @@
 This file contains a system architecture diagram showing the main components, data flow, and integrations across the mobile app, admin dashboard, backend, AI models, and external services.
 
 ```mermaid
-flowchart LR
-  MobileApp[Mobile App]
-  AdminDashboard[Admin Dashboard]
-  BackendAPI[FastAPI Backend]
-  AuthService[Auth Service]
-  SymptomChecker[Symptom Checker]
-  ChatbotService[Chatbot Service]
-  EmergencyService[Emergency Service]
-  SyncService[Offline Sync]
-  HealthRecords[PHR Service]
-  AnalyticsService[Analytics / Admin APIs]
-  Database[Database]
-  EmbeddingsService[Embeddings & Vector Store]
-  RetrieverService[Retrieval Service]
-  LLMProvider[LLM Provider]
-  SymptomModel[Symptom ML Model]
-  EmergencyModel[Emergency Risk Model]
-  NotificationService[Notification / SMS / Email]
-  VoiceService[STT / TTS]
-  StorageService[Model Artifact Storage]
+flowchart TD
+  Frontend["Frontend Layer\nMobile App (Flutter)\nAdmin Dashboard (Flutter Web)"]
+  Backend["Backend API Layer\nFastAPI + SQLAlchemy\nAuth, Symptom Checker, Chatbot, Emergency, Offline Sync, PHR"]
+  Database["Database Layer\nPostgreSQL / SQLite\nSQLAlchemy ORM"]
+  AI["AI / ML Module\nEmbeddings + Vector Store\nRAG Retriever + LLM\nSymptom & Emergency Models"]
+  External["External Services\nNotifications / SMS / Email\nSTT / TTS / Voice\nModel Artifact Storage"]
 
-  MobileApp -->|REST| BackendAPI
-  AdminDashboard -->|REST| BackendAPI
-  BackendAPI --> AuthService
-  BackendAPI --> SymptomChecker
-  BackendAPI --> ChatbotService
-  BackendAPI --> EmergencyService
-  BackendAPI --> SyncService
-  BackendAPI --> HealthRecords
-  BackendAPI --> AnalyticsService
-  BackendAPI --> Database
-  SymptomChecker --> SymptomModel
-  ChatbotService --> RetrieverService
-  RetrieverService --> EmbeddingsService
-  RetrieverService --> LLMProvider
-  EmergencyService --> EmergencyModel
-  SyncService --> Database
-  HealthRecords --> Database
-  AnalyticsService --> Database
-  EmergencyService --> NotificationService
-  BackendAPI --> VoiceService
-  BackendAPI --> StorageService
-  SymptomModel --> StorageService
-  EmergencyModel --> StorageService
-  EmbeddingsService --> StorageService
-  AdminDashboard --> AnalyticsService
-  AdminDashboard -->|trigger retrain| StorageService
+  Frontend -->|HTTPS REST| Backend
+  Backend -->|CRUD / query| Database
+  Backend -->|retrieve / infer| AI
+  Backend -->|notify / escalate| External
+  AI -->|model artifacts| External
+  Backend -->|voice APIs| External
+  Frontend -->|admin analytics| Backend
+  Backend -->|store model files| External
 ```
 
 Notes:
