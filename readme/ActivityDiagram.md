@@ -6,19 +6,68 @@ This document contains an activity-style flowchart that shows the primary runtim
 flowchart TD
   %% Activity-style flowchart compatible with GitHub/VS Code Mermaid
   Start([Start])
-  InputSymptoms["User enters symptoms"]
-  Validate{Valid input?}
+  User(User)
+  Auth["Authenticate (POST /api/v1/auth/login)"]
+  Token["Issue token / session"]
+
+  Choose{Choose action}
+  Symptom["Symptom Checker\nPOST /api/v1/symptom-checker/predict"]
+  Chat["Medical Chatbot\nPOST /api/v1/chatbot/message"]
+  ViewRecords["View Health Records"]
+  Offline["Offline Sync / Queue"]
+  AdminPanel["Admin Dashboard"]
+
   Preprocess["Preprocess & feature extraction"]
-  SymptomCheck["Call Symptom Checker API\nPOST /api/v1/symptom-checker/predict"]
-  AssessRisk{Emergency risk?}
-  EmergencyFlow["Invoke Emergency Detection\nEscalate if threshold reached"]
-  ChatbotOption{User requests chatbot?}
+  SymptomModel["Symptom Model\nInference"]
+  SymptomResults["Symptom Results / Triage"]
+  RiskCheck{High emergency risk?}
+  Emergency["Emergency Detection / Escalate"]
+
   Retrieve["Retrieve knowledge (vector search)"]
-  Generate["Call LLM provider to generate reply"]
-  SaveRecord["Persist session, results, audit logs"]
-  Notify["Send notifications to user/admins"]
-  Sync["Queue offline sync payloads"]
+  LLM["External LLM Provider"]
+  Generate["Generate reply / RAG pipeline"]
+  Persist["Persist session, messages, audit logs (DB)"]
+  Notify["Notify user / admins / external services"]
+
+  SyncEndpoint["Sync endpoint\nPOST /api/v1/sync"]
+  ApplySync["Apply queued changes on server"]
+
+  Retrain["Trigger retrain / CI pipeline"]
+  ModelStore["Model artifacts updated"]
+
+  Analytics["Collect metrics / analytics"]
   End([End])
+
+  %% Primary flow
+  Start --> User --> Auth --> Token --> Choose
+
+  %% Symptom flow
+  Choose -->|symptom check| Symptom --> Preprocess --> SymptomModel --> SymptomResults --> RiskCheck
+  RiskCheck -->|yes| Emergency --> Persist --> Notify --> Analytics --> End
+  RiskCheck -->|no| Persist --> Notify
+
+  %% Chatbot flow
+  Choose -->|chat| Chat --> Retrieve --> Generate --> Persist --> Notify --> Analytics
+
+  %% View records flow
+  Choose -->|view records| ViewRecords --> Persist
+
+  %% Offline sync flow
+  Choose -->|sync| Offline --> SyncEndpoint --> ApplySync --> Persist --> Notify
+
+  %% Admin and retrain
+  User -->|admin login| AdminPanel -->|trigger retrain| Retrain --> ModelStore --> Notify
+
+  %% Analytics sink
+  Persist --> Analytics --> End
+
+  %% Healthcare provider path
+  HP[Healthcare Provider] -->|access patient data| ViewRecords
+
+  %% External escalation
+  Emergency -->|call/emails| Notify
+
+  %% Keep labels simple and quoted to maximize compatibility
 
   Start --> InputSymptoms --> Validate
   Validate -->|yes| Preprocess --> SymptomCheck --> AssessRisk
