@@ -3,46 +3,46 @@
 This document contains a high-level use-case diagram for the project and brief descriptions of each actor and use case.
 
 ```mermaid
-flowchart TD
-  %% Actors on left and right, use cases in the middle
-  actorUser([<b>User</b>])
-  actorAdmin([<b>Admin</b>])
-  actorProvider([<b>Healthcare Provider</b>])
+flowchart LR
+  %% Actors outside the system boundary with use cases inside
+  User((User))
+  Admin((Admin))
+  Provider((Healthcare Provider))
 
   subgraph SystemBoundary["AI Healthcare Assistant System"]
     direction TB
-    UC01((Register / Login))
-    UC02((Use Symptom Checker))
-    UC03((Chat with Medical Assistant))
-    UC04((View Health Records))
-    UC05((Sync Offline Data))
-    UC06((Review Flagged Content))
-    UC07((Manage Users & Roles))
-    UC08((Trigger Model Retraining))
-    UC09((View Analytics & Reports))
-    UC10((Escalate Emergency))
-    UC11((Retrieve Knowledge))
+    Login((Login / Authenticate))
+    Symptom((Use Symptom Checker))
+    Chat((Chat with Medical Assistant))
+    Records((View Health Records))
+    Offline((Sync Offline Data))
+    Flags((Review Flagged Content))
+    Users((Manage Users & Roles))
+    Retrain((Trigger Model Retraining))
+    Analytics((View Analytics & Reports))
+    Emergency((Escalate Emergency))
+    Knowledge((Retrieve Knowledge))
   end
 
-  actorUser --> UC01
-  actorUser --> UC02
-  actorUser --> UC03
-  actorUser --> UC04
-  actorUser --> UC05
+  User --> Login
+  User --> Symptom
+  User --> Chat
+  User --> Records
+  User --> Offline
 
-  actorAdmin --> UC01
-  actorAdmin --> UC06
-  actorAdmin --> UC07
-  actorAdmin --> UC08
-  actorAdmin --> UC09
+  Admin --> Login
+  Admin --> Flags
+  Admin --> Users
+  Admin --> Retrain
+  Admin --> Analytics
 
-  actorProvider --> UC04
-  actorProvider --> UC06
+  Provider --> Records
+  Provider --> Flags
 
-  UC03 -.-> UC11
-  UC02 -.-> UC10
-  UC11 -.->|"uses external LLM / retrieval"| UC03
-  UC10 -.->|"emergency workflow"| UC02
+  Chat -.->|<<include>>| Knowledge
+  Symptom -.->|<<extend>>| Emergency
+  Chat -->|uses| Knowledge
+  Symptom -->|may trigger| Emergency
 ```
 ## Actors
 
