@@ -28,7 +28,7 @@ class DashboardRepository {
   }
 
   Future<List<HospitalModel>> getNearbyHospitals() async {
-    await Future.delayed(const Duration(milliseconds: 800));
+    await Future.delayed(const Duration(milliseconds: 600));
     return DashboardDummyData.nearbyHospitals;
   }
 

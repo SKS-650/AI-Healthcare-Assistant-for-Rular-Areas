@@ -417,7 +417,7 @@ class _SyncCenterPageState extends ConsumerState<SyncCenterPage>
             Text(title, style: const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
             Text(subtitle, style: TextStyle(color: Colors.grey.shade500, fontSize: 11)),
           ])),
-          Switch(value: value, onChanged: onChanged, thumbColor: WidgetStatePropertyAll(_primary)),
+          Switch(value: value, onChanged: onChanged, thumbColor: const WidgetStatePropertyAll(_primary)),
         ]),
       );
 

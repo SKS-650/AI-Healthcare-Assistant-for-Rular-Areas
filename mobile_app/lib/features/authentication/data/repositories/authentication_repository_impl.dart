@@ -331,8 +331,11 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
         headers: _authHeaders(),
         body: jsonEncode(profilePayload),
       );
-      if (profileResponse.statusCode != 201 &&
-          profileResponse.statusCode != 200) {
+      if (profileResponse.statusCode == 201 ||
+          profileResponse.statusCode == 200) {
+        // Success — profile created or already up-to-date.
+      } else if (profileResponse.statusCode == 404) {
+        // Profile record doesn't exist yet in an edge case — retry with PUT.
         final updateResponse = await http.put(
           Uri.parse('${ApiConfig.baseUrl}/api/v1/users/profile'),
           headers: _authHeaders(),
@@ -341,6 +344,10 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
         if (updateResponse.statusCode != 200) {
           throw _mapError(updateResponse);
         }
+      } else {
+        // 422 validation error or any other failure — throw immediately
+        // without silently issuing a PUT that would swallow the real error.
+        throw _mapError(profileResponse);
       }
     }
 

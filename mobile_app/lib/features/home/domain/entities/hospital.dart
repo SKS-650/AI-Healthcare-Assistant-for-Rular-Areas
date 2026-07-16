@@ -2,13 +2,17 @@
 class Hospital {
   final String id;
   final String name;
-  final double distance; // In km
   final String address;
+  final double distance; // km
+  final String? phone;
+  final bool emergencyAvailable;
 
   const Hospital({
     required this.id,
     required this.name,
-    required this.distance,
     required this.address,
+    required this.distance,
+    this.phone,
+    this.emergencyAvailable = true,
   });
 }

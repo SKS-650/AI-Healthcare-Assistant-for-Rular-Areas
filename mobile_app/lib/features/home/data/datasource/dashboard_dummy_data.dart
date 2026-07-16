@@ -68,23 +68,37 @@ class DashboardDummyData {
         date: DateTime.now().subtract(const Duration(days: 5))),
   ];
 
-  static const List<HospitalModel> nearbyHospitals = [
-    HospitalModel(
-        id: '1',
-        name: 'City General Hospital',
-        distance: 1.2,
-        address: '123 Health Ave, Downtown'),
-    HospitalModel(
-        id: '2',
-        name: 'St. Mary Healthcare Center',
-        distance: 3.5,
-        address: '789 Care Rd, Suburbia'),
-  ];
-
   static const List<String> healthTips = [
     'Drink at least 8 glasses of water today to stay fully hydrated.',
     'A 10-minute walk after lunch can drastically improve your digestion speeds.',
     'Limit screen time 1 hour before bed to optimize your deep sleep phases.',
+  ];
+
+  static const List<HospitalModel> nearbyHospitals = [
+    HospitalModel(
+      id: 'h1',
+      name: 'City General Hospital',
+      address: '12 Main Street, Downtown',
+      distance: 1.2,
+      phone: '108',
+      emergencyAvailable: true,
+    ),
+    HospitalModel(
+      id: 'h2',
+      name: 'Apollo Medical Centre',
+      address: '45 Park Avenue, Midtown',
+      distance: 2.7,
+      phone: '1860-500-1066',
+      emergencyAvailable: true,
+    ),
+    HospitalModel(
+      id: 'h3',
+      name: 'Community Health Clinic',
+      address: '78 Green Road, Eastside',
+      distance: 3.5,
+      phone: '011-2345-6789',
+      emergencyAvailable: false,
+    ),
   ];
 
   static const List<ArticleModel> latestArticles = [

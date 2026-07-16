@@ -634,7 +634,7 @@ class _OfflineDashboardPageState extends ConsumerState<OfflineDashboardPage> {
       ),
       child: Row(
         children: [
-          Icon(Icons.access_time_rounded, color: _teal, size: 18),
+          const Icon(Icons.access_time_rounded, color: _teal, size: 18),
           const SizedBox(width: 10),
           Text(text,
               style: TextStyle(

@@ -5,16 +5,20 @@ class HospitalModel extends Hospital {
   const HospitalModel({
     required super.id,
     required super.name,
-    required super.distance,
     required super.address,
+    required super.distance,
+    super.phone,
+    super.emergencyAvailable,
   });
 
   factory HospitalModel.fromJson(Map<String, dynamic> json) {
     return HospitalModel(
       id: json['id'] as String,
       name: json['name'] as String,
-      distance: (json['distance'] as num).toDouble(),
       address: json['address'] as String,
+      distance: (json['distance'] as num).toDouble(),
+      phone: json['phone'] as String?,
+      emergencyAvailable: json['emergency_available'] as bool? ?? true,
     );
   }
 }

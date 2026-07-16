@@ -4,10 +4,6 @@ from typing import List, Dict, Optional
 import sys
 from pathlib import Path
 
-# Add ai_models to path
-ai_models_path = Path(__file__).parent.parent.parent.parent / "ai_models"
-sys.path.insert(0, str(ai_models_path))
-
 from .schemas import SymptomCheckRequest, SymptomCheckResponse
 
 
@@ -23,6 +19,14 @@ class SymptomCheckerService:
     def _load_model(self):
         """Load the trained model lazily and safely."""
         try:
+            # Insert ai_models path here (inside the method) so it only runs
+            # when the model is actually being loaded, not at module-import time.
+            # This prevents import-order issues and skips the insertion when the
+            # directory does not exist.
+            ai_models_path = Path(__file__).parent.parent.parent.parent / "ai_models"
+            if ai_models_path.exists() and str(ai_models_path) not in sys.path:
+                sys.path.insert(0, str(ai_models_path))
+
             from symptom_checker.inference.predictor import SymptomCheckerPredictor
             from symptom_checker.config.paths import Paths
 

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../../features/authentication/presentation/providers/authentication_provider.dart';
+import '../../../../../routing/route_names.dart';
 import '../../../../../shared/design_system/design_tokens.dart';
 
 class GreetingWidget extends ConsumerWidget {
@@ -40,40 +41,43 @@ class GreetingWidget extends ConsumerWidget {
 
     return Row(
       children: [
-        // Avatar
-        Container(
-          width: 40,
-          height: 40,
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: isGuest
-                  ? [DesignTokens.textSubtle, DesignTokens.textMuted]
-                  : const [Color(0xFF926EFF), Color(0xFF6B47E8)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-            borderRadius: BorderRadius.circular(12),
-            boxShadow: [
-              BoxShadow(
-                color: (isGuest ? DesignTokens.textMuted : DesignTokens.primary)
-                    .withValues(alpha: 0.28),
-                blurRadius: 8,
-                offset: const Offset(0, 3),
+        // Avatar — tapping opens the profile page
+        GestureDetector(
+          onTap: () => Navigator.of(context).pushNamed(RouteNames.profile),
+          child: Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: isGuest
+                    ? [DesignTokens.textSubtle, DesignTokens.textMuted]
+                    : const [Color(0xFF926EFF), Color(0xFF6B47E8)],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-            ],
-          ),
-          child: Center(
-            child: isGuest
-                ? const Icon(Icons.person_rounded,
-                    color: Colors.white, size: 22)
-                : Text(
-                    initials,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 14,
+              borderRadius: BorderRadius.circular(12),
+              boxShadow: [
+                BoxShadow(
+                  color: (isGuest ? DesignTokens.textMuted : DesignTokens.primary)
+                      .withValues(alpha: 0.28),
+                  blurRadius: 8,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Center(
+              child: isGuest
+                  ? const Icon(Icons.person_rounded,
+                      color: Colors.white, size: 22)
+                  : Text(
+                      initials,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 14,
+                      ),
                     ),
-                  ),
+            ),
           ),
         ),
 

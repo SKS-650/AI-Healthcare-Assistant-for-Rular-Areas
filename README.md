@@ -544,26 +544,29 @@ Directory: `admin_dashboard/`
 
 A Flutter Web application for platform administrators and healthcare managers.
 
-**Feature modules built:**
+**All 11 phases complete:**
 
-| Module | Purpose |
-|---|---|
-| `authentication` | Admin login |
-| `dashboard` | Platform overview with key metrics |
-| `users` | User account management (list, view, deactivate) |
-| `doctors` | Doctor profile management |
-| `hospitals` | Hospital directory management |
-| `analytics` | Usage statistics and charts |
-| `health_records` | View health records (admin access) |
-| `disease_prediction` | Review prediction statistics |
-| `chatbot` | Chatbot conversation logs and feedback review |
-| `emergency` | Emergency alert logs |
-| `notifications` | Push notification management |
-| `reports` | Generate and export reports |
-| `feedback` | User feedback review |
-| `settings` | Platform configuration |
+| Module | Route | Purpose |
+|---|---|---|
+| `authentication` | `/login` | Admin login with JWT, session restore, auto-redirect |
+| `dashboard` | `/dashboard` | Platform overview: 8 KPI cards, 4 trend charts, recent activity |
+| `users` | `/users` | User list, search, activate/deactivate, role change, delete |
+| `emergency` | `/emergency` | Emergency assessment monitoring, risk cards, SOS tracking |
+| `chatbot` | `/chatbot` | Conversation monitoring, language distribution, emergency flags |
+| `education` | `/education` | Health article CRUD, publish/draft toggle, category filters |
+| `analytics` | `/analytics` | Symptom analytics: frequency charts, risk/age/gender distribution |
+| `datasets` | `/datasets` | AI dataset version management, activate/deactivate |
+| `reports` | `/reports` | Period-selectable charts: registrations, risk, chatbot, emergency |
+| `logs` | `/logs` | Admin action audit trail with module/severity filters |
+| `settings` | `/settings` | System settings editor (grouped), danger zone |
 
-The dashboard communicates with the same FastAPI backend using admin-scoped JWT tokens. The Flutter routing is handled by `go_router` defined in `lib/core/router.dart`, and the theme is centralized in `lib/core/theme.dart`.
+**Shared infrastructure:**
+- Collapsible sidebar with 11 nav items
+- Top bar with notifications bell (badge + dropdown panel), dark mode toggle, user chip
+- Shimmer loading states, fade page transitions, responsive grid layouts
+- 51 unit tests across 5 test files (all passing)
+
+The dashboard communicates with the same FastAPI backend using admin-scoped JWT tokens. Routing is handled by `go_router` and the theme is in `lib/core/theme.dart`.
 
 ---
 
@@ -743,6 +746,8 @@ All API endpoints are under `/api/v1/`. Interactive documentation is auto-genera
 | Health Education | `/api/v1/education` | 11 endpoints |
 | Voice Assistant | `/api/v1/voice` | 5 endpoints |
 | Offline Sync | `/api/v1/offline` | 7 endpoints |
+| Notifications | `/api/v1/notifications` | 7 endpoints |
+| Admin Dashboard | `/api/v1/admin` | 36 endpoints |
 
 All authenticated endpoints require a `Bearer` token in the `Authorization` header:
 

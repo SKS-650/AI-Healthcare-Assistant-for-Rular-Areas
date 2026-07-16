@@ -68,11 +68,25 @@ async def on_startup() -> None:
             import app.emergency.models  # noqa: F401
             # Medical Records (PHR) tables
             import app.health_records.models  # noqa: F401
+            # Health Education tables
+            import app.health_education.models  # noqa: F401
+            # Admin tables
+            import app.admin.models  # noqa: F401
             from app.auth.models import Base
             engine = _get_engine()
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
             logger.info("Database tables created/verified (dev auto-create).")
+            # Auto-seed admin defaults
+            try:
+                from app.database.connection import _get_session_factory
+                from app.admin.service import SystemSettingsService
+                factory = _get_session_factory()
+                async with factory() as db:
+                    await SystemSettingsService.seed_defaults(db)
+                logger.info("System settings seeded.")
+            except Exception as seed_err:
+                logger.warning("Settings seed skipped: %s", seed_err)
         except Exception as e:
             logger.warning("Auto table creation failed (non-fatal): %s", e)
 

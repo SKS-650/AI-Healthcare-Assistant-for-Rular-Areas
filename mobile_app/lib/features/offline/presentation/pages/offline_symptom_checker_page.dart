@@ -352,8 +352,8 @@ class _OfflineSymptomCheckerPageState
   Widget _buildResultHeader(OfflineSymptomResult r, Color riskColor) => Container(
     padding: const EdgeInsets.all(18),
     decoration: BoxDecoration(
-      gradient: LinearGradient(
-        colors: [_primary, const Color(0xFF48CAE4)],
+      gradient: const LinearGradient(
+        colors: [_primary, Color(0xFF48CAE4)],
         begin: Alignment.topLeft, end: Alignment.bottomRight,
       ),
       borderRadius: BorderRadius.circular(16),
@@ -413,7 +413,7 @@ class _OfflineSymptomCheckerPageState
               const SizedBox(width: 10),
               Expanded(child: Text(d.disease, style: const TextStyle(fontSize: 13))),
               Text('${(d.confidence * 100).toStringAsFixed(0)}%',
-                  style: TextStyle(
+                  style: const TextStyle(
                       fontWeight: FontWeight.w700, fontSize: 13, color: _primary)),
               const SizedBox(width: 6),
               SizedBox(

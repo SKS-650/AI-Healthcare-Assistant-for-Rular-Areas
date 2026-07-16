@@ -48,18 +48,18 @@ class HomeBottomNavigation extends ConsumerWidget {
               _NavItem(
                 index: 1,
                 selectedIndex: currentIdx,
-                icon: Icons.folder_outlined,
-                selectedIcon: Icons.folder_rounded,
-                label: 'Records',
-                emoji: '📋',
+                icon: Icons.monitor_heart_outlined,
+                selectedIcon: Icons.monitor_heart_rounded,
+                label: 'Symptoms',
+                emoji: '🩺',
                 gradient: const LinearGradient(
-                  colors: [Color(0xFF4F94FF), Color(0xFF2563EB)],
+                  colors: [Color(0xFF926EFF), Color(0xFF6B47E8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
                 onTap: () {
                   ref.read(dashboardTabProvider.notifier).state = 1;
-                  Navigator.of(context).pushNamed(RouteNames.healthRecords);
+                  Navigator.of(context).pushNamed(RouteNames.symptomChecker);
                 },
               ),
               _NavItem(

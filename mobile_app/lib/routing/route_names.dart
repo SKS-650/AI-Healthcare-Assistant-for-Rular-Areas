@@ -18,7 +18,6 @@ class RouteNames {
   static const symptomChecker     = '/symptom-checker';
   static const chatbot            = '/chatbot';
   static const emergency          = '/emergency';
-  static const nearbyHealthcare   = '/nearby-healthcare';
   static const diseasePrediction  = '/disease-prediction';
   static const prediction         = '/prediction';
   static const history            = '/history';
@@ -48,4 +47,7 @@ class RouteNames {
   static const uploadReport       = '/records/upload';
   static const labReports         = '/records/labs';
   static const allRecords         = '/records/all';
+
+  // ── Notifications ──────────────────────────────────────────────────────────
+  static const notifications      = '/notifications';
 }

@@ -9,15 +9,15 @@ class EducationDummyData {
   // ── Categories ─────────────────────────────────────────────────────────────
 
   static List<HealthCategoryModel> get categories => [
-        const HealthCategoryModel(id: 'cat-1', name: 'Diseases',          slug: 'diseases',         icon: '🩺', colorHex: '#FF4757', sortOrder: 1, isActive: true),
+        const HealthCategoryModel(id: 'cat-1', name: 'Diseases',          slug: 'diseases',         icon: '🩺', colorHex: '#F97316', sortOrder: 1, isActive: true),
         const HealthCategoryModel(id: 'cat-2', name: 'Nutrition',          slug: 'nutrition',         icon: '🥗', colorHex: '#2ECC8B', sortOrder: 2, isActive: true),
         const HealthCategoryModel(id: 'cat-3', name: 'Vaccination',        slug: 'vaccination',       icon: '💉', colorHex: '#4F94FF', sortOrder: 3, isActive: true),
-        const HealthCategoryModel(id: 'cat-4', name: 'Maternal Health',    slug: 'maternal-health',   icon: '🤰', colorHex: '#FF5E9E', sortOrder: 4, isActive: true),
+        const HealthCategoryModel(id: 'cat-4', name: 'Maternal Health',    slug: 'maternal-health',   icon: '🤰', colorHex: '#8B5CF6', sortOrder: 4, isActive: true),
         const HealthCategoryModel(id: 'cat-5', name: 'Child Health',       slug: 'child-health',      icon: '👶', colorHex: '#FFB829', sortOrder: 5, isActive: true),
         const HealthCategoryModel(id: 'cat-6', name: 'Hygiene',            slug: 'hygiene',           icon: '🧼', colorHex: '#18C8C8', sortOrder: 6, isActive: true),
         const HealthCategoryModel(id: 'cat-7', name: 'Healthy Lifestyle',  slug: 'healthy-lifestyle', icon: '🏃', colorHex: '#926EFF', sortOrder: 7, isActive: true),
         const HealthCategoryModel(id: 'cat-8', name: 'Mental Health',      slug: 'mental-health',     icon: '🧠', colorHex: '#8B5CF6', sortOrder: 8, isActive: true),
-        const HealthCategoryModel(id: 'cat-9', name: 'Heart Health',       slug: 'heart-health',      icon: '❤️', colorHex: '#E11D48', sortOrder: 9, isActive: true),
+        const HealthCategoryModel(id: 'cat-9', name: 'Heart Health',       slug: 'heart-health',      icon: '💙', colorHex: '#0891B2', sortOrder: 9, isActive: true),
       ];
 
   // ── Articles ───────────────────────────────────────────────────────────────
@@ -25,7 +25,7 @@ class EducationDummyData {
   static List<HealthArticleModel> get articles => [
         HealthArticleModel(
           id: 'art-1', categoryId: 'cat-1', categoryName: 'Diseases',
-          categorySlug: 'diseases', categoryColor: '#FF4757',
+          categorySlug: 'diseases', categoryColor: '#F97316',
           title: 'Understanding Diabetes: Causes, Symptoms & Prevention',
           slug: 'understanding-diabetes', language: 'en',
           summary: 'Learn how diabetes develops, early warning signs, and proven prevention strategies.',
@@ -63,7 +63,7 @@ Seek immediate care for: extreme confusion, difficulty breathing, or loss of con
         ),
         HealthArticleModel(
           id: 'art-2', categoryId: 'cat-1', categoryName: 'Diseases',
-          categorySlug: 'diseases', categoryColor: '#FF4757',
+          categorySlug: 'diseases', categoryColor: '#F97316',
           title: 'Malaria Prevention and Treatment Guide',
           slug: 'malaria-prevention', language: 'en',
           summary: 'Essential guide on malaria causes, prevention with mosquito nets, and treatment.',
@@ -185,7 +185,7 @@ Proper hand washing can reduce diarrheal disease by 40%.
         ),
         HealthArticleModel(
           id: 'art-6', categoryId: 'cat-9', categoryName: 'Heart Health',
-          categorySlug: 'heart-health', categoryColor: '#E11D48',
+          categorySlug: 'heart-health', categoryColor: '#0891B2',
           title: 'Managing High Blood Pressure (Hypertension) Naturally',
           slug: 'hypertension-management', language: 'en',
           summary: 'Understand what raises your blood pressure and how diet, exercise, and stress management can help.',
@@ -265,7 +265,7 @@ Rural communities face unique challenges: isolation, agricultural stress, and so
         ),
         HealthArticleModel(
           id: 'art-9', categoryId: 'cat-4', categoryName: 'Maternal Health',
-          categorySlug: 'maternal-health', categoryColor: '#FF5E9E',
+          categorySlug: 'maternal-health', categoryColor: '#8B5CF6',
           title: 'Breastfeeding: Benefits and Best Practices for New Mothers',
           slug: 'breastfeeding-guide', language: 'en',
           summary: 'Everything a new mother needs to know about breastfeeding, positions, and overcoming challenges.',
@@ -290,7 +290,7 @@ Exclusive breastfeeding for 6 months, then continued with complementary foods up
         ),
         HealthArticleModel(
           id: 'art-10', categoryId: 'cat-1', categoryName: 'Diseases',
-          categorySlug: 'diseases', categoryColor: '#FF4757',
+          categorySlug: 'diseases', categoryColor: '#F97316',
           title: 'Tuberculosis (TB): Facts, Prevention, and Treatment',
           slug: 'tuberculosis-guide', language: 'en',
           summary: 'Complete guide on TB spread, DOTS treatment, and prevention for households and communities.',

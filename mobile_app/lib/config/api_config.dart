@@ -9,14 +9,34 @@ class ApiConfig {
   static const connectionTimeout = 30;
   static const receiveTimeout = 30;
 
+  // ── Dev LAN IP ─────────────────────────────────────────────────────────────
+  // Set this to your development machine's local IP address so the app works
+  // on a physical Android device over WiFi without any dart-define flags.
+  // Run `ipconfig` on Windows to find your IPv4 address.
+  static const _devLanIp = '192.168.18.26';
+
+  /// Set via `flutter run --dart-define=BACKEND_URL=http://192.168.x.x:8000`
+  /// This wins over every other setting when set.
   static const _backendUrlOverride = String.fromEnvironment('BACKEND_URL');
+
+  /// Set via `flutter run --dart-define=BACKEND_HOST=192.168.x.x`
   static const _backendHostOverride = String.fromEnvironment('BACKEND_HOST');
 
-  /// Base URL selection:
-  /// - BACKEND_URL wins when provided, e.g. http://192.168.1.12:8000
-  /// - BACKEND_HOST is useful for physical devices, e.g. 192.168.1.12
-  /// - Android uses the local ADB reverse tunnel created by the launcher
-  /// - iOS simulator and Web default to localhost
+  /// Base URL resolution priority:
+  ///
+  ///  1. BACKEND_URL dart-define  → use as-is
+  ///  2. BACKEND_HOST dart-define → http://<host>:8000
+  ///  3. Web                      → http://localhost:8000
+  ///  4. Android (emulator)       → http://10.0.2.2:8000
+  ///     Android (physical device)→ http://<_devLanIp>:8000
+  ///     Detection: emulators report Build.FINGERPRINT containing "generic"
+  ///     but that's not accessible from Dart. We use the dart-define
+  ///     IS_EMULATOR flag set by flutter.bat when an AVD is detected,
+  ///     otherwise default to the LAN IP for physical devices.
+  ///  5. iOS Simulator / Desktop  → http://localhost:8000
+  static const _isEmulatorOverride =
+      bool.fromEnvironment('IS_EMULATOR', defaultValue: false);
+
   static String get baseUrl {
     if (_backendUrlOverride.isNotEmpty) return _backendUrlOverride;
     if (_backendHostOverride.isNotEmpty) {
@@ -26,11 +46,11 @@ class ApiConfig {
     if (kIsWeb) return 'http://localhost:$_backendPort';
 
     return switch (defaultTargetPlatform) {
-      // `flutter.bat run` configures `adb reverse tcp:8000 tcp:8000` for
-      // connected Android devices.  Using loopback works for both a USB
-      // device and an emulator with that tunnel, whereas 10.0.2.2 works only
-      // for an emulator and fails on a physical phone.
-      TargetPlatform.android => 'http://127.0.0.1:$_backendPort',
+      // If flutter.bat detected an emulator → 10.0.2.2 (host loopback alias)
+      // Otherwise assume a physical device on the same WiFi → LAN IP
+      TargetPlatform.android => _isEmulatorOverride
+          ? 'http://10.0.2.2:$_backendPort'
+          : 'http://$_devLanIp:$_backendPort',
       TargetPlatform.iOS => 'http://localhost:$_backendPort',
       _ => 'http://localhost:$_backendPort',
     };
@@ -62,7 +82,9 @@ class ApiConfig {
     if (kIsWeb) return 'Web (localhost:$_backendPort)';
 
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android => 'Android via ADB tunnel (127.0.0.1:$_backendPort)',
+      TargetPlatform.android => _isEmulatorOverride
+          ? 'Android emulator (10.0.2.2:$_backendPort)'
+          : 'Android physical device (LAN: $_devLanIp:$_backendPort)',
       TargetPlatform.iOS => 'iOS Simulator (localhost:$_backendPort)',
       _ => 'Desktop (localhost:$_backendPort)',
     };

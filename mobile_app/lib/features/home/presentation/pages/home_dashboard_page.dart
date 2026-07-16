@@ -1,17 +1,15 @@
 /// Ultra-premium Home Dashboard — AI Healthcare Assistant
 ///
 /// Design language:
-///   • Glassmorphism hero with purple→blue gradient
+///   • Glassmorphism hero with animated purple→blue gradient
 ///   • Staggered flutter_animate entry animations
-///   • Animated health-score arc ring
-///   • Horizontal scrolling cards for tips, hospitals, articles
-///   • Soft frosted-glass section cards
-///   • All existing sub-widgets preserved (AppBar, BottomNav, QuickActionGrid,
-///     EmergencyCard, GuestBanner, OfflineStatusBanner)
+///   • Animated health-score arc ring with floating effect
+///   • Horizontal scrolling cards for tips, articles, predictions
+///   • 6-colour Quick Action grid with floating icon animation
+///   • Soft section labels with gradient "See all" pill
 library;
 
 import 'dart:math' as math;
-import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
@@ -24,7 +22,6 @@ import '../../../authentication/presentation/providers/authentication_provider.d
 import '../../../offline/presentation/widgets/offline_status_banner.dart';
 import '../../domain/entities/article.dart';
 import '../../domain/entities/health_score.dart';
-import '../../domain/entities/hospital.dart';
 import '../../domain/entities/prediction.dart';
 import '../../domain/entities/weather.dart';
 import '../controller/dashboard_state.dart';
@@ -89,7 +86,7 @@ class HomeDashboardPage extends ConsumerWidget {
     final userName = ref.watch(
       authControllerProvider.select((s) {
         final u = s.user;
-        if (u == null || (u.isGuest)) return null;
+        if (u == null || u.isGuest) return null;
         return u.name ?? u.email.split('@').first;
       }),
     );
@@ -113,7 +110,7 @@ class HomeDashboardPage extends ConsumerWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    // ── Hero gradient header ─────────────────────────────
+                    // ── Hero gradient header ─────────────────────────
                     _HeroHeader(
                       weather: state.weather,
                       healthScore: state.healthScore,
@@ -121,79 +118,71 @@ class HomeDashboardPage extends ConsumerWidget {
                       isGuest: isGuest,
                     ),
 
-                    // ── Guest CTA ────────────────────────────────────────
+                    // ── Guest CTA ────────────────────────────────────
                     if (isGuest) const GuestBanner(),
 
-                    // ── Quick actions ────────────────────────────────────
-                    const _SectionLabel(title: 'Quick Actions', emoji: '⚡',
-                        delay: 200),
+                    // ── Quick actions ────────────────────────────────
+                    const _SectionLabel(
+                      title: 'Quick Actions',
+                      emoji: '⚡',
+                      delay: 200,
+                    ),
                     QuickActionGrid(actions: state.quickActions)
                         .animate(delay: 220.ms)
-                        .fadeIn(duration: 400.ms)
-                        .slideY(begin: 0.08, end: 0),
+                        .fadeIn(duration: 450.ms)
+                        .slideY(begin: 0.08, end: 0,
+                            curve: Curves.easeOutCubic),
 
-                    const SizedBox(height: 6),
+                    const SizedBox(height: 8),
 
-                    // ── SOS emergency card ───────────────────────────────
+                    // ── SOS emergency card ───────────────────────────
                     const EmergencyCard()
-                        .animate(delay: 300.ms)
+                        .animate(delay: 320.ms)
                         .fadeIn(duration: 350.ms)
                         .slideY(begin: 0.06, end: 0),
 
-                    // ── Recent predictions ───────────────────────────────
+                    // ── Recent predictions ───────────────────────────
                     if (state.recentPredictions.isNotEmpty) ...[
                       _SectionLabel(
                         title: 'Recent Assessments',
                         emoji: '🧬',
-                        delay: 350,
+                        delay: 380,
                         onSeeAll: () => Navigator.of(context)
                             .pushNamed(RouteNames.history),
                       ),
                       _PredictionsStrip(
-                              predictions: state.recentPredictions)
-                          .animate(delay: 370.ms)
+                          predictions: state.recentPredictions)
+                          .animate(delay: 400.ms)
                           .fadeIn(duration: 350.ms),
                     ],
 
-                    // ── Health tips ──────────────────────────────────────
+                    // ── Health tips ──────────────────────────────────
                     if (state.healthTips.isNotEmpty) ...[
                       const _SectionLabel(
-                          title: 'Daily Health Tips', emoji: '💡',
-                          delay: 420),
-                      _TipsStrip(tips: state.healthTips)
-                          .animate(delay: 440.ms)
-                          .fadeIn(duration: 350.ms),
-                    ],
-
-                    // ── Nearby hospitals ─────────────────────────────────
-                    if (state.nearbyHospitals.isNotEmpty) ...[
-                      _SectionLabel(
-                        title: 'Nearby Hospitals',
-                        emoji: '🏥',
-                        delay: 480,
-                        onSeeAll: () => Navigator.of(context)
-                            .pushNamed(RouteNames.nearbyHealthcare),
+                        title: 'Daily Health Tips',
+                        emoji: '💡',
+                        delay: 450,
                       ),
-                      _HospitalsStrip(hospitals: state.nearbyHospitals)
-                          .animate(delay: 500.ms)
+                      _TipsStrip(tips: state.healthTips)
+                          .animate(delay: 470.ms)
                           .fadeIn(duration: 350.ms),
                     ],
 
-                    // ── Latest articles ──────────────────────────────────
+                    // ── Latest articles ──────────────────────────────
                     if (state.latestArticles.isNotEmpty) ...[
                       _SectionLabel(
                         title: 'Health Articles',
                         emoji: '📚',
-                        delay: 540,
+                        delay: 560,
                         onSeeAll: () => Navigator.of(context)
                             .pushNamed(RouteNames.healthEducation),
                       ),
                       _ArticlesStrip(articles: state.latestArticles)
-                          .animate(delay: 560.ms)
+                          .animate(delay: 580.ms)
                           .fadeIn(duration: 350.ms),
                     ],
 
-                    const SizedBox(height: 36),
+                    const SizedBox(height: 40),
                   ],
                 ),
               ),
@@ -206,7 +195,7 @@ class HomeDashboardPage extends ConsumerWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Hero Header  (gradient + weather pill + health score ring)
+// Hero Header — gradient + weather pill + animated score ring
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _HeroHeader extends StatefulWidget {
@@ -226,24 +215,36 @@ class _HeroHeader extends StatefulWidget {
 }
 
 class _HeroHeaderState extends State<_HeroHeader>
-    with SingleTickerProviderStateMixin {
-  late AnimationController _ctrl;
-  late Animation<double>    _scoreAnim;
+    with TickerProviderStateMixin {
+  late AnimationController _scoreCtrl;
+  late Animation<double>   _scoreAnim;
+  late AnimationController _shimmerCtrl;
+  late Animation<double>   _shimmerAnim;
 
   @override
   void initState() {
     super.initState();
-    _ctrl = AnimationController(
-        vsync: this, duration: const Duration(milliseconds: 1400));
-    _scoreAnim = Tween<double>(begin: 0,
-        end: (widget.healthScore?.score ?? 0) / 100.0)
-        .animate(CurvedAnimation(parent: _ctrl, curve: Curves.easeOutCubic));
-    Future.delayed(const Duration(milliseconds: 180), _ctrl.forward);
+    _scoreCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 1600));
+    _scoreAnim = Tween<double>(
+            begin: 0,
+            end: (widget.healthScore?.score ?? 0) / 100.0)
+        .animate(
+            CurvedAnimation(parent: _scoreCtrl, curve: Curves.easeOutCubic));
+
+    _shimmerCtrl = AnimationController(
+        vsync: this, duration: const Duration(milliseconds: 3000))
+      ..repeat();
+    _shimmerAnim = Tween<double>(begin: -1.5, end: 2.5)
+        .animate(CurvedAnimation(parent: _shimmerCtrl, curve: Curves.linear));
+
+    Future.delayed(const Duration(milliseconds: 300), _scoreCtrl.forward);
   }
 
   @override
   void dispose() {
-    _ctrl.dispose();
+    _scoreCtrl.dispose();
+    _shimmerCtrl.dispose();
     super.dispose();
   }
 
@@ -258,130 +259,146 @@ class _HeroHeaderState extends State<_HeroHeader>
   Widget build(BuildContext context) {
     final name = widget.isGuest ? 'Guest' : (widget.userName ?? 'there');
 
-    return Container(
-      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-      decoration: BoxDecoration(
-        borderRadius: BorderRadius.circular(28),
-        gradient: const LinearGradient(
-          colors: [Color(0xFF6B47E8), Color(0xFF926EFF), Color(0xFF4F94FF)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF6B47E8).withValues(alpha: 0.38),
-            blurRadius: 28,
-            offset: const Offset(0, 10),
+    return AnimatedBuilder(
+      animation: _shimmerAnim,
+      builder: (_, child) => Container(
+        margin: const EdgeInsets.fromLTRB(16, 14, 16, 0),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(30),
+          gradient: LinearGradient(
+            colors: const [
+              Color(0xFF6B47E8),
+              Color(0xFF9161FF),
+              Color(0xFF4F94FF),
+            ],
+            begin: Alignment(_shimmerAnim.value - 1, -0.5),
+            end: Alignment(_shimmerAnim.value, 0.5),
           ),
-        ],
+          boxShadow: [
+            BoxShadow(
+              color: const Color(0xFF6B47E8).withValues(alpha: 0.45),
+              blurRadius: 32,
+              offset: const Offset(0, 12),
+            ),
+            BoxShadow(
+              color: const Color(0xFF4F94FF).withValues(alpha: 0.20),
+              blurRadius: 60,
+              offset: const Offset(0, 20),
+            ),
+          ],
+        ),
+        child: child,
       ),
       child: Stack(
         children: [
-          // ── Decorative orbs ──────────────────────────────────────────────
-          Positioned(
-            right: -24, top: -24,
-            child: _Orb(size: 130, opacity: 0.08),
-          ),
-          Positioned(
-            left: -18, bottom: -18,
-            child: _Orb(size: 100, opacity: 0.06),
-          ),
-          Positioned(
-            right: 60, bottom: 10,
-            child: _Orb(size: 60, opacity: 0.05),
-          ),
+          // Decorative orbs
+          const Positioned(right: -30, top: -30,
+              child: _GlowOrb(size: 150, opacity: 0.09)),
+          const Positioned(left: -20, bottom: -20,
+              child: _GlowOrb(size: 110, opacity: 0.07)),
+          const Positioned(right: 70, bottom: 8,
+              child: _GlowOrb(size: 50, opacity: 0.10)),
 
-          // ── Content ──────────────────────────────────────────────────────
           ClipRRect(
-            borderRadius: BorderRadius.circular(28),
-            child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 0, sigmaY: 0),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(22, 22, 22, 20),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    // Greeting row + weather pill
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                _greeting(),
+            borderRadius: BorderRadius.circular(30),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(22, 24, 22, 22),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Greeting + score ring
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(_greeting(),
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha: 0.80),
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              )
-                                  .animate(delay: 60.ms)
-                                  .fadeIn(duration: 500.ms),
-                              const SizedBox(height: 3),
-                              Text(
-                                name,
+                                    color:
+                                        Colors.white.withValues(alpha: 0.82),
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w500))
+                                .animate(delay: 60.ms)
+                                .fadeIn(duration: 500.ms),
+                            const SizedBox(height: 4),
+                            Text(name,
                                 style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 26,
-                                  fontWeight: FontWeight.w900,
-                                  letterSpacing: -0.5,
-                                  height: 1.1,
-                                ),
+                                    color: Colors.white,
+                                    fontSize: 27,
+                                    fontWeight: FontWeight.w900,
+                                    letterSpacing: -0.6,
+                                    height: 1.1),
                                 maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              )
-                                  .animate(delay: 90.ms)
-                                  .fadeIn(duration: 500.ms)
-                                  .slideX(begin: -0.06, end: 0),
-                              const SizedBox(height: 10),
-                              // Weather pill
-                              if (widget.weather != null)
-                                _WeatherPill(weather: widget.weather!)
-                                    .animate(delay: 140.ms)
-                                    .fadeIn(duration: 450.ms)
-                                    .slideY(begin: 0.15, end: 0),
-                            ],
-                          ),
+                                overflow: TextOverflow.ellipsis)
+                                .animate(delay: 90.ms)
+                                .fadeIn(duration: 500.ms)
+                                .slideX(begin: -0.06, end: 0),
+                            const SizedBox(height: 12),
+                            if (widget.weather != null)
+                              _WeatherPill(weather: widget.weather!)
+                                  .animate(delay: 150.ms)
+                                  .fadeIn(duration: 450.ms)
+                                  .slideY(begin: 0.15, end: 0),
+                          ],
                         ),
-                        // Health score ring
-                        if (widget.healthScore != null)
-                          AnimatedBuilder(
-                            animation: _scoreAnim,
-                            builder: (_, __) => _ScoreRing(
-                              animatedValue: _scoreAnim.value,
-                              score: widget.healthScore!.score,
-                              status: widget.healthScore!.status,
-                            ),
-                          ).animate(delay: 100.ms).fadeIn(duration: 500.ms),
-                      ],
+                      ),
+                      if (widget.healthScore != null)
+                        AnimatedBuilder(
+                          animation: _scoreAnim,
+                          builder: (_, __) => _ScoreRing(
+                            animatedValue: _scoreAnim.value,
+                            score: widget.healthScore!.score,
+                            status: widget.healthScore!.status,
+                          ),
+                        ).animate(delay: 120.ms).fadeIn(duration: 500.ms),
+                    ],
+                  ),
+
+                  const SizedBox(height: 20),
+
+                  // Stats row
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.18)),
                     ),
-
-                    const SizedBox(height: 16),
-
-                    // ── Stats row ─────────────────────────────────────────
-                    Row(
+                    child: Row(
                       children: [
-                        _HeroStat(emoji: '❤️', label: 'Health Score',
-                            value: '${widget.healthScore?.score ?? "--"}/100')
-                            .animate(delay: 200.ms).fadeIn(duration: 400.ms),
+                        _HeroStat(
+                            emoji: '❤️',
+                            label: 'Health',
+                            value:
+                                '${widget.healthScore?.score ?? "--"}/100')
+                            .animate(delay: 200.ms)
+                            .fadeIn(duration: 400.ms),
                         _vDivider(),
-                        _HeroStat(emoji: '🌡️', label: 'Temperature',
+                        _HeroStat(
+                            emoji: '🌡️',
+                            label: 'Temp',
                             value: widget.weather != null
                                 ? '${widget.weather!.temperature.toStringAsFixed(0)}°C'
                                 : '--°C')
-                            .animate(delay: 240.ms).fadeIn(duration: 400.ms),
+                            .animate(delay: 240.ms)
+                            .fadeIn(duration: 400.ms),
                         _vDivider(),
-                        _HeroStat(emoji: '💧', label: 'Humidity',
+                        _HeroStat(
+                            emoji: '💧',
+                            label: 'Humidity',
                             value: widget.weather != null
                                 ? '${widget.weather!.humidity}%'
                                 : '--%')
-                            .animate(delay: 280.ms).fadeIn(duration: 400.ms),
+                            .animate(delay: 280.ms)
+                            .fadeIn(duration: 400.ms),
                       ],
                     ),
-                  ],
-                ),
+                  ).animate(delay: 180.ms).fadeIn(duration: 400.ms),
+                ],
               ),
             ),
           ),
@@ -389,15 +406,16 @@ class _HeroHeaderState extends State<_HeroHeader>
       ),
     )
         .animate()
-        .fadeIn(duration: 500.ms, delay: 50.ms)
-        .slideY(begin: -0.05, end: 0, duration: 500.ms, curve: Curves.easeOut);
+        .fadeIn(duration: 550.ms, delay: 50.ms)
+        .slideY(begin: -0.06, end: 0,
+            duration: 550.ms, curve: Curves.easeOutCubic);
   }
 
   Widget _vDivider() => Container(
         width: 1,
-        height: 28,
-        color: Colors.white.withValues(alpha: 0.20),
-        margin: const EdgeInsets.symmetric(horizontal: 14),
+        height: 30,
+        color: Colors.white.withValues(alpha: 0.22),
+        margin: const EdgeInsets.symmetric(horizontal: 16),
       );
 }
 
@@ -405,15 +423,13 @@ class _HeroHeaderState extends State<_HeroHeader>
 // Hero sub-widgets
 // ─────────────────────────────────────────────────────────────────────────────
 
-class _Orb extends StatelessWidget {
-  const _Orb({required this.size, required this.opacity});
+class _GlowOrb extends StatelessWidget {
+  const _GlowOrb({required this.size, required this.opacity});
   final double size;
   final double opacity;
-
   @override
   Widget build(BuildContext context) => Container(
-        width: size,
-        height: size,
+        width: size, height: size,
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           color: Colors.white.withValues(alpha: opacity),
@@ -425,15 +441,14 @@ class _WeatherPill extends StatelessWidget {
   const _WeatherPill({required this.weather});
   final Weather weather;
 
-  String _weatherEmoji(String condition) {
-    final c = condition.toLowerCase();
-    if (c.contains('sun') || c.contains('clear')) return '☀️';
-    if (c.contains('cloud')) return '⛅';
-    if (c.contains('rain')) return '🌧️';
-    if (c.contains('storm') || c.contains('thunder')) return '⛈️';
-    if (c.contains('fog') || c.contains('mist')) return '🌫️';
-    if (c.contains('snow')) return '❄️';
-    if (c.contains('wind')) return '🌬️';
+  String _emoji(String c) {
+    final s = c.toLowerCase();
+    if (s.contains('sun') || s.contains('clear')) return '☀️';
+    if (s.contains('cloud')) return '⛅';
+    if (s.contains('rain')) return '🌧️';
+    if (s.contains('storm')) return '⛈️';
+    if (s.contains('fog') || s.contains('mist')) return '🌫️';
+    if (s.contains('snow')) return '❄️';
     return '🌤️';
   }
 
@@ -444,46 +459,40 @@ class _WeatherPill extends StatelessWidget {
         : weather.aqi < 100
             ? Colors.yellowAccent
             : Colors.orangeAccent;
-
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.15),
+        color: Colors.white.withValues(alpha: 0.16),
         borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.28)),
       ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text(_weatherEmoji(weather.condition),
-              style: const TextStyle(fontSize: 14)),
-          const SizedBox(width: 6),
-          Text(
+      child: Row(mainAxisSize: MainAxisSize.min, children: [
+        Text(_emoji(weather.condition),
+            style: const TextStyle(fontSize: 14)),
+        const SizedBox(width: 7),
+        Flexible(
+          child: Text(
             '${weather.condition}  •  ${weather.location}',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.92),
-              fontSize: 12,
-              fontWeight: FontWeight.w600,
-            ),
+                color: Colors.white.withValues(alpha: 0.93),
+                fontSize: 12,
+                fontWeight: FontWeight.w600),
+            overflow: TextOverflow.ellipsis,
+            maxLines: 1,
           ),
-          const SizedBox(width: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
-            decoration: BoxDecoration(
-              color: aqiColor.withValues(alpha: 0.25),
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Text(
-              'AQI ${weather.aqi}',
+        ),
+        const SizedBox(width: 8),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+          decoration: BoxDecoration(
+            color: aqiColor.withValues(alpha: 0.25),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text('AQI ${weather.aqi}',
               style: TextStyle(
-                color: aqiColor,
-                fontSize: 10,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-          ),
-        ],
-      ),
+                  color: aqiColor, fontSize: 10, fontWeight: FontWeight.w800)),
+        ),
+      ]),
     );
   }
 }
@@ -509,38 +518,35 @@ class _ScoreRing extends StatelessWidget {
   Widget build(BuildContext context) {
     final cols = _colors();
     return Container(
-      width: 90,
-      height: 90,
+      width: 92, height: 92,
       decoration: BoxDecoration(
         color: Colors.white.withValues(alpha: 0.12),
         shape: BoxShape.circle,
-        border: Border.all(color: Colors.white.withValues(alpha: 0.20), width: 1.5),
+        border: Border.all(
+            color: Colors.white.withValues(alpha: 0.22), width: 1.5),
+        boxShadow: [
+          BoxShadow(
+              color: cols[0].withValues(alpha: 0.35),
+              blurRadius: 16,
+              offset: const Offset(0, 4)),
+        ],
       ),
       child: CustomPaint(
         painter: _ArcPainter(value: animatedValue, colors: cols),
         child: Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                '$score',
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            Text('$score',
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 22,
-                  fontWeight: FontWeight.w900,
-                  height: 1.0,
-                ),
-              ),
-              Text(
-                status.split(' ').first,
+                    color: Colors.white,
+                    fontSize: 23,
+                    fontWeight: FontWeight.w900,
+                    height: 1.0)),
+            Text(status.split(' ').first,
                 style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.75),
-                  fontSize: 9,
-                  fontWeight: FontWeight.w600,
-                ),
-              ),
-            ],
-          ),
+                    color: Colors.white.withValues(alpha: 0.75),
+                    fontSize: 9,
+                    fontWeight: FontWeight.w600)),
+          ]),
         ),
       ),
     );
@@ -549,43 +555,35 @@ class _ScoreRing extends StatelessWidget {
 
 class _ArcPainter extends CustomPainter {
   const _ArcPainter({required this.value, required this.colors});
-  final double       value;
-  final List<Color>  colors;
+  final double      value;
+  final List<Color> colors;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final cx    = size.width / 2;
-    final cy    = size.height / 2;
-    final radius = (size.width / 2) - 7;
-    final rect   = Rect.fromCircle(center: Offset(cx, cy), radius: radius);
-
-    // Background arc
-    final bgPaint = Paint()
-      ..color  = Colors.white.withValues(alpha: 0.18)
-      ..style  = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..strokeCap   = StrokeCap.round;
-    canvas.drawArc(rect, -math.pi * 0.75, math.pi * 1.5, false, bgPaint);
-
-    if (value <= 0) return;
-
-    // Gradient arc
-    final gradPaint = Paint()
-      ..shader = SweepGradient(
-        colors: colors,
-        startAngle: -math.pi * 0.75,
-        endAngle:   -math.pi * 0.75 + math.pi * 1.5 * value,
-      ).createShader(rect)
-      ..style      = PaintingStyle.stroke
-      ..strokeWidth = 6
-      ..strokeCap   = StrokeCap.round;
+    final c      = Offset(size.width / 2, size.height / 2);
+    final radius = size.width / 2 - 7;
+    final rect   = Rect.fromCircle(center: c, radius: radius);
 
     canvas.drawArc(
-      rect,
-      -math.pi * 0.75,
-      math.pi * 1.5 * value,
-      false,
-      gradPaint,
+      rect, -math.pi * 0.75, math.pi * 1.5, false,
+      Paint()
+        ..color       = Colors.white.withValues(alpha: 0.18)
+        ..style       = PaintingStyle.stroke
+        ..strokeWidth = 7
+        ..strokeCap   = StrokeCap.round,
+    );
+    if (value <= 0) return;
+    canvas.drawArc(
+      rect, -math.pi * 0.75, math.pi * 1.5 * value, false,
+      Paint()
+        ..shader = SweepGradient(
+          colors: colors,
+          startAngle: -math.pi * 0.75,
+          endAngle:   -math.pi * 0.75 + math.pi * 1.5 * value,
+        ).createShader(rect)
+        ..style       = PaintingStyle.stroke
+        ..strokeWidth = 7
+        ..strokeCap   = StrokeCap.round,
     );
   }
 
@@ -594,43 +592,34 @@ class _ArcPainter extends CustomPainter {
 }
 
 class _HeroStat extends StatelessWidget {
-  const _HeroStat(
-      {required this.emoji, required this.label, required this.value});
-  final String emoji;
-  final String label;
-  final String value;
+  const _HeroStat({
+    required this.emoji,
+    required this.label,
+    required this.value,
+  });
+  final String emoji, label, value;
 
   @override
-  Widget build(BuildContext context) {
-    return Expanded(
-      child: Column(
-        children: [
+  Widget build(BuildContext context) => Expanded(
+        child: Column(children: [
           Text(emoji, style: const TextStyle(fontSize: 18)),
           const SizedBox(height: 3),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w800,
-            ),
-          ),
-          Text(
-            label,
-            style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.65),
-              fontSize: 10,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
+          Text(value,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w800)),
+          Text(label,
+              style: TextStyle(
+                  color: Colors.white.withValues(alpha: 0.65),
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500)),
+        ]),
+      );
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Section label  (reuses DesignTokens, replaces old SectionTitle inline)
+// Section label  —  gradient pill "See all" button
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _SectionLabel extends StatelessWidget {
@@ -648,28 +637,42 @@ class _SectionLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+      padding: const EdgeInsets.fromLTRB(20, 26, 20, 12),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(children: [
-            Text(emoji, style: const TextStyle(fontSize: 18)),
-            const SizedBox(width: 8),
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 17,
-                fontWeight: FontWeight.w800,
-                letterSpacing: -0.3,
-                color: DesignTokens.textStrong,
+            // Emoji bubble
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    DesignTokens.primary.withValues(alpha: 0.18),
+                    DesignTokens.primary.withValues(alpha: 0.08),
+                  ],
+                ),
+                borderRadius: BorderRadius.circular(10),
               ),
+              child: Center(
+                  child: Text(emoji,
+                      style: const TextStyle(fontSize: 17))),
             ),
+            const SizedBox(width: 10),
+            Text(title,
+                style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.3,
+                    color: DesignTokens.textStrong)),
           ]),
           if (onSeeAll != null)
             GestureDetector(
               onTap: onSeeAll,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 14, vertical: 7),
                 decoration: BoxDecoration(
                   gradient: const LinearGradient(
                     colors: [Color(0xFF926EFF), Color(0xFF6B47E8)],
@@ -677,23 +680,30 @@ class _SectionLabel extends StatelessWidget {
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: DesignTokens.primary.withValues(alpha: 0.28),
-                      blurRadius: 8, offset: const Offset(0, 3),
+                      color: DesignTokens.primary.withValues(alpha: 0.30),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
-                child: const Text('See all →',
-                    style: TextStyle(
-                        color: Colors.white, fontSize: 11,
-                        fontWeight: FontWeight.w700)),
+                child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('See all',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 11,
+                          fontWeight: FontWeight.w700)),
+                  SizedBox(width: 4),
+                  Icon(Icons.arrow_forward_rounded,
+                      size: 12, color: Colors.white),
+                ]),
               ),
             ),
         ],
       ),
     )
         .animate(delay: Duration(milliseconds: delay))
-        .fadeIn(duration: 350.ms)
-        .slideX(begin: -0.04, end: 0);
+        .fadeIn(duration: 380.ms)
+        .slideX(begin: -0.04, end: 0, curve: Curves.easeOut);
   }
 }
 
@@ -708,7 +718,7 @@ class _PredictionsStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 116,
+      height: 120,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -726,11 +736,11 @@ class _PredictionCard extends StatelessWidget {
   final int        index;
 
   static const _gradients = [
-    [Color(0xFF926EFF), Color(0xFF6B47E8)],
-    [Color(0xFF4F94FF), Color(0xFF2563EB)],
-    [Color(0xFF2ECC8B), Color(0xFF16A34A)],
-    [Color(0xFFFF7B3D), Color(0xFFE55A1A)],
-    [Color(0xFFFF5E9E), Color(0xFFE11D68)],
+    [Color(0xFF9B5DE5), Color(0xFF6B21A8)],
+    [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+    [Color(0xFF10B981), Color(0xFF065F46)],
+    [Color(0xFFF97316), Color(0xFFC2410C)],
+    [Color(0xFFEC4899), Color(0xFF9D174D)],
   ];
 
   @override
@@ -741,20 +751,20 @@ class _PredictionCard extends StatelessWidget {
     return GestureDetector(
       onTap: () => Navigator.of(context).pushNamed(RouteNames.history),
       child: Container(
-        width: 168,
+        width: 172,
         margin: const EdgeInsets.only(right: 12),
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
           gradient: LinearGradient(
-            colors: grad.map((c) => c.withValues(alpha: 0.10)).toList(),
-          ),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: grad[0].withValues(alpha: 0.28), width: 1.2),
+            colors: grad.map((c) => c.withValues(alpha: 0.10)).toList()),
+          borderRadius: BorderRadius.circular(22),
+          border: Border.all(
+              color: grad[0].withValues(alpha: 0.28), width: 1.3),
           boxShadow: [
             BoxShadow(
-              color: grad[0].withValues(alpha: 0.10),
-              blurRadius: 10, offset: const Offset(0, 4),
-            ),
+                color: grad[0].withValues(alpha: 0.12),
+                blurRadius: 12,
+                offset: const Offset(0, 4)),
           ],
         ),
         child: Column(
@@ -765,35 +775,28 @@ class _PredictionCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  gradient: LinearGradient(colors: grad),
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                    gradient: LinearGradient(colors: grad),
+                    borderRadius: BorderRadius.circular(10)),
                 child: const Icon(Icons.biotech_rounded,
                     color: Colors.white, size: 14),
               ),
               const SizedBox(width: 8),
               Expanded(
-                child: Text(
-                  DateFormat('MMM d').format(prediction.date),
-                  style: TextStyle(
-                    fontSize: 11,
-                    color: grad[0],
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
+                child: Text(DateFormat('MMM d').format(prediction.date),
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: grad[0],
+                        fontWeight: FontWeight.w600)),
               ),
             ]),
-            Text(
-              prediction.diseaseName,
-              style: const TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w800,
-                color: DesignTokens.textStrong,
-                height: 1.25,
-              ),
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-            ),
+            Text(prediction.diseaseName,
+                style: const TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w800,
+                    color: DesignTokens.textStrong,
+                    height: 1.25),
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis),
             Row(children: [
               Expanded(
                 child: ClipRRect(
@@ -816,15 +819,15 @@ class _PredictionCard extends StatelessWidget {
           ],
         ),
       )
-          .animate(delay: Duration(milliseconds: 380 + index * 60))
-          .fadeIn(duration: 300.ms)
-          .slideX(begin: 0.1, end: 0),
+          .animate(delay: Duration(milliseconds: 400 + index * 60))
+          .fadeIn(duration: 320.ms)
+          .slideX(begin: 0.10, end: 0),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Health Tips strip  (horizontal scrolling pill cards)
+// Health Tips — auto-scrolling page view with dot indicators
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _TipsStrip extends StatefulWidget {
@@ -837,257 +840,141 @@ class _TipsStrip extends StatefulWidget {
 
 class _TipsStripState extends State<_TipsStrip> {
   int _current = 0;
+  late final PageController _pageCtrl;
 
   static const _tipColors = [
-    [Color(0xFF2ECC8B), Color(0xFF16A34A)],
-    [Color(0xFF4F94FF), Color(0xFF2563EB)],
-    [Color(0xFFFFB829), Color(0xFFD98E00)],
-    [Color(0xFFFF5E9E), Color(0xFFE11D68)],
-    [Color(0xFF926EFF), Color(0xFF6B47E8)],
-    [Color(0xFF18C8C8), Color(0xFF0B9B9B)],
+    [Color(0xFF10B981), Color(0xFF065F46)],
+    [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+    [Color(0xFFF59E0B), Color(0xFFB45309)],
+    [Color(0xFFEC4899), Color(0xFF9D174D)],
+    [Color(0xFF9B5DE5), Color(0xFF6B21A8)],
+    [Color(0xFF06B6D4), Color(0xFF0E7490)],
   ];
 
   static const _tipEmojis = ['💡', '🥗', '🏃', '😴', '💊', '🧘'];
 
   @override
+  void initState() {
+    super.initState();
+    _pageCtrl = PageController(viewportFraction: 0.88);
+  }
+
+  @override
+  void dispose() {
+    _pageCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
-    return Column(
-      children: [
-        SizedBox(
-          height: 140,
-          child: PageView.builder(
-            controller: PageController(viewportFraction: 0.88),
-            itemCount: widget.tips.length,
-            onPageChanged: (i) => setState(() => _current = i),
-            itemBuilder: (ctx, i) {
-              final grad = _tipColors[i % _tipColors.length];
-              final emoji = _tipEmojis[i % _tipEmojis.length];
-              return _TipCard(
-                tip: widget.tips[i],
-                gradient: grad,
-                emoji: emoji,
-                index: i,
-              );
-            },
+    return Column(children: [
+      SizedBox(
+        height: 148,
+        child: PageView.builder(
+          controller: _pageCtrl,
+          itemCount: widget.tips.length,
+          onPageChanged: (i) => setState(() => _current = i),
+          itemBuilder: (ctx, i) => _TipCard(
+            tip:      widget.tips[i],
+            gradient: _tipColors[i % _tipColors.length],
+            emoji:    _tipEmojis[i % _tipEmojis.length],
+            index:    i,
           ),
         ),
-        const SizedBox(height: 10),
-        // Page indicator dots
-        Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(
-            math.min(widget.tips.length, 6),
-            (i) => AnimatedContainer(
-              duration: const Duration(milliseconds: 250),
-              margin: const EdgeInsets.symmetric(horizontal: 3),
-              width: i == _current ? 20 : 6,
-              height: 6,
-              decoration: BoxDecoration(
-                color: i == _current
-                    ? DesignTokens.primary
-                    : DesignTokens.border,
-                borderRadius: BorderRadius.circular(3),
-              ),
+      ),
+      const SizedBox(height: 12),
+      // Animated indicator dots
+      Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: List.generate(
+          math.min(widget.tips.length, 6),
+          (i) => AnimatedContainer(
+            duration: const Duration(milliseconds: 280),
+            margin: const EdgeInsets.symmetric(horizontal: 3),
+            width: i == _current ? 22 : 7,
+            height: 7,
+            decoration: BoxDecoration(
+              color: i == _current
+                  ? DesignTokens.primary
+                  : DesignTokens.border,
+              borderRadius: BorderRadius.circular(4),
             ),
           ),
         ),
-      ],
-    );
+      ),
+    ]);
   }
 }
 
 class _TipCard extends StatelessWidget {
-  const _TipCard(
-      {required this.tip,
-      required this.gradient,
-      required this.emoji,
-      required this.index});
-  final String       tip;
-  final List<Color>  gradient;
-  final String       emoji;
-  final int          index;
+  const _TipCard({
+    required this.tip,
+    required this.gradient,
+    required this.emoji,
+    required this.index,
+  });
+  final String      tip;
+  final List<Color> gradient;
+  final String      emoji;
+  final int         index;
 
   @override
   Widget build(BuildContext context) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 6),
-      padding: const EdgeInsets.all(20),
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
       decoration: BoxDecoration(
         gradient: LinearGradient(
-          colors: gradient,
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(24),
+            colors: gradient,
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight),
+        borderRadius: BorderRadius.circular(26),
         boxShadow: [
           BoxShadow(
-            color: gradient[0].withValues(alpha: 0.30),
-            blurRadius: 18, offset: const Offset(0, 6),
-          ),
+              color: gradient[0].withValues(alpha: 0.32),
+              blurRadius: 20,
+              offset: const Offset(0, 7)),
         ],
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -12, top: -12,
-            child: Text(emoji,
-                style: const TextStyle(fontSize: 64, height: 1)),
-          ),
-          Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Container(
-                padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: Text('Tip ${index + 1}',
-                    style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 10,
-                        fontWeight: FontWeight.w700)),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                tip,
-                style: TextStyle(
-                  color: Colors.white.withValues(alpha: 0.96),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                  height: 1.45,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
-            ],
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Nearby Hospitals strip
-// ─────────────────────────────────────────────────────────────────────────────
-
-class _HospitalsStrip extends StatelessWidget {
-  const _HospitalsStrip({required this.hospitals});
-  final List<Hospital> hospitals;
-
-  @override
-  Widget build(BuildContext context) {
-    return SizedBox(
-      height: 110,
-      child: ListView.builder(
-        scrollDirection: Axis.horizontal,
-        padding: const EdgeInsets.symmetric(horizontal: 16),
-        itemCount: hospitals.length,
-        itemBuilder: (ctx, i) =>
-            _HospitalCard(hospital: hospitals[i], index: i),
-      ),
-    );
-  }
-}
-
-class _HospitalCard extends StatelessWidget {
-  const _HospitalCard({required this.hospital, required this.index});
-  final Hospital hospital;
-  final int      index;
-
-  @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () =>
-          Navigator.of(context).pushNamed(RouteNames.nearbyHealthcare),
-      child: Container(
-        width: 200,
-        margin: const EdgeInsets.only(right: 12),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: DesignTokens.surface,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: DesignTokens.border),
-          boxShadow: [
-            BoxShadow(
-              color: DesignTokens.primary.withValues(alpha: 0.06),
-              blurRadius: 10, offset: const Offset(0, 4),
-            ),
-          ],
+      child: Stack(children: [
+        Positioned(
+          right: -10, top: -10,
+          child: Text(emoji, style: const TextStyle(fontSize: 68, height: 1)),
         ),
-        child: Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          mainAxisAlignment: MainAxisAlignment.end,
           children: [
-            Row(children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF2ECC8B), Color(0xFF16A34A)],
-                  ),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(Icons.local_hospital_rounded,
-                    color: Colors.white, size: 14),
-              ),
-              const SizedBox(width: 8),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 8, vertical: 3),
-                decoration: BoxDecoration(
-                  color: DesignTokens.greenContainer,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Text(
-                  '${hospital.distance.toStringAsFixed(1)} km',
+            Container(
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+              decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.22),
+                  borderRadius: BorderRadius.circular(8)),
+              child: Text('Tip ${index + 1}',
                   style: const TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w700,
-                    color: DesignTokens.green,
-                  ),
-                ),
-              ),
-            ]),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  hospital.name,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w800,
-                    color: DesignTokens.textStrong,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  hospital.address,
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: DesignTokens.textMuted,
-                  ),
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ],
+                      color: Colors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w700)),
             ),
+            const SizedBox(height: 8),
+            Text(tip,
+                style: TextStyle(
+                    color: Colors.white.withValues(alpha: 0.96),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
+                    height: 1.50),
+                maxLines: 3,
+                overflow: TextOverflow.ellipsis),
           ],
         ),
-      )
-          .animate(delay: Duration(milliseconds: 500 + index * 60))
-          .fadeIn(duration: 300.ms)
-          .slideX(begin: 0.08, end: 0),
+      ]),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Articles strip  (horizontal scrolling cards with frosted image placeholder)
+// Articles strip
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ArticlesStrip extends StatelessWidget {
@@ -1097,7 +984,7 @@ class _ArticlesStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 180,
+      height: 190,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1114,27 +1001,29 @@ class _ArticleCard extends StatelessWidget {
   final Article article;
   final int     index;
 
-  static const _catColors = {
-    'nutrition':    [Color(0xFF2ECC8B), Color(0xFF16A34A)],
-    'fitness':      [Color(0xFF4F94FF), Color(0xFF2563EB)],
-    'mental':       [Color(0xFF926EFF), Color(0xFF6B47E8)],
-    'disease':      [Color(0xFFFF4757), Color(0xFFCC2233)],
-    'lifestyle':    [Color(0xFFFFB829), Color(0xFFD98E00)],
-    'first aid':    [Color(0xFFFF7B3D), Color(0xFFE55A1A)],
-    'child':        [Color(0xFFFF5E9E), Color(0xFFE11D68)],
+  static const _catGrads = {
+    'nutrition':  [Color(0xFF10B981), Color(0xFF065F46)],
+    'fitness':    [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
+    'mental':     [Color(0xFF9B5DE5), Color(0xFF6B21A8)],
+    'disease':    [Color(0xFFF43F5E), Color(0xFFBE123C)],
+    'lifestyle':  [Color(0xFFF59E0B), Color(0xFFB45309)],
+    'first aid':  [Color(0xFFF97316), Color(0xFFC2410C)],
+    'child':      [Color(0xFFEC4899), Color(0xFF9D174D)],
+    'vaccination':[Color(0xFF06B6D4), Color(0xFF0E7490)],
+    'hygiene':    [Color(0xFF10B981), Color(0xFF065F46)],
+    'maternal':   [Color(0xFFEC4899), Color(0xFF9D174D)],
   };
 
-  List<Color> _categoryGrad(String cat) {
-    final key = _catColors.keys.firstWhere(
-      (k) => cat.toLowerCase().contains(k),
-      orElse: () => 'nutrition',
-    );
-    return _catColors[key]!;
+  List<Color> _grad(String cat) {
+    final key = _catGrads.keys.firstWhere(
+        (k) => cat.toLowerCase().contains(k),
+        orElse: () => 'nutrition');
+    return _catGrads[key]!;
   }
 
   @override
   Widget build(BuildContext context) {
-    final grad = _categoryGrad(article.category);
+    final grad = _grad(article.category);
 
     return GestureDetector(
       onTap: () =>
@@ -1148,8 +1037,8 @@ class _ArticleCard extends StatelessWidget {
           border: Border.all(color: DesignTokens.border),
           boxShadow: [
             BoxShadow(
-              color: grad[0].withValues(alpha: 0.10),
-              blurRadius: 12,
+              color: grad[0].withValues(alpha: 0.12),
+              blurRadius: 14,
               offset: const Offset(0, 5),
             ),
           ],
@@ -1158,33 +1047,27 @@ class _ArticleCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Image / gradient placeholder
+            // Gradient image header
             Container(
-              height: 96,
+              height: 100,
               width: double.infinity,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: grad,
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
+                    colors: grad,
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight),
               ),
-              child: Stack(
-                children: [
-                  // Decorative orb
-                  Positioned(
-                    right: -16, bottom: -16,
+              child: Stack(children: [
+                Positioned(right: -18, bottom: -18,
                     child: Container(
                       width: 80, height: 80,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
                         color: Colors.white.withValues(alpha: 0.12),
                       ),
-                    ),
-                  ),
-                  // Category badge
-                  Positioned(
-                    top: 10, left: 10,
+                    )),
+                // Category badge
+                Positioned(top: 10, left: 10,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 9, vertical: 4),
@@ -1192,66 +1075,50 @@ class _ArticleCard extends StatelessWidget {
                         color: Colors.white.withValues(alpha: 0.22),
                         borderRadius: BorderRadius.circular(10),
                       ),
-                      child: Text(
-                        article.category,
-                        style: const TextStyle(
-                          color: Colors.white,
-                          fontSize: 10,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Read time badge
-                  Positioned(
-                    bottom: 10, right: 10,
+                      child: Text(article.category,
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 10,
+                              fontWeight: FontWeight.w700)),
+                    )),
+                // Read-time badge
+                Positioned(bottom: 10, right: 10,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
                           horizontal: 8, vertical: 4),
                       decoration: BoxDecoration(
-                        color: Colors.black.withValues(alpha: 0.25),
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.schedule_rounded,
-                              color: Colors.white, size: 10),
-                          const SizedBox(width: 3),
-                          Text(
-                            article.readTime,
+                          color: Colors.black.withValues(alpha: 0.28),
+                          borderRadius: BorderRadius.circular(10)),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        const Icon(Icons.schedule_rounded,
+                            color: Colors.white, size: 10),
+                        const SizedBox(width: 3),
+                        Text(article.readTime,
                             style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 10,
-                                fontWeight: FontWeight.w600),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
+                                fontWeight: FontWeight.w600)),
+                      ]),
+                    )),
+              ]),
             ),
-
             // Title
             Padding(
               padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              child: Text(
-                article.title,
-                style: const TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w700,
-                  color: DesignTokens.textStrong,
-                  height: 1.35,
-                ),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis,
-              ),
+              child: Text(article.title,
+                  style: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w700,
+                    color: DesignTokens.textStrong,
+                    height: 1.35,
+                  ),
+                  maxLines: 3,
+                  overflow: TextOverflow.ellipsis),
             ),
           ],
         ),
       )
-          .animate(delay: Duration(milliseconds: 560 + index * 70))
+          .animate(delay: Duration(milliseconds: 580 + index * 70))
           .fadeIn(duration: 320.ms)
           .slideX(begin: 0.08, end: 0),
     );
@@ -1259,7 +1126,7 @@ class _ArticleCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Premium Skeleton Loader  (replaces the plain grey boxes)
+// Premium Skeleton Loader
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _PremiumSkeletonLoader extends StatefulWidget {
@@ -1296,25 +1163,24 @@ class _PremiumSkeletonLoaderState extends State<_PremiumSkeletonLoader>
   }) {
     return AnimatedBuilder(
       animation: _shimmer,
-      builder: (_, __) {
-        return Container(
-          width: width ?? double.infinity,
-          height: height,
-          margin: margin ?? const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(radius),
-            gradient: LinearGradient(
-              begin: Alignment(-1.5 + _shimmer.value * 3, 0),
-              end:   Alignment(-0.5 + _shimmer.value * 3, 0),
-              colors: const [
-                Color(0xFFEEE8FF),
-                Color(0xFFDDD4FF),
-                Color(0xFFEEE8FF),
-              ],
-            ),
+      builder: (_, __) => Container(
+        width: width ?? double.infinity,
+        height: height,
+        margin: margin ??
+            const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+        decoration: BoxDecoration(
+          borderRadius: BorderRadius.circular(radius),
+          gradient: LinearGradient(
+            begin: Alignment(-1.5 + _shimmer.value * 3, 0),
+            end:   Alignment(-0.5 + _shimmer.value * 3, 0),
+            colors: const [
+              Color(0xFFEEE8FF),
+              Color(0xFFDDD4FF),
+              Color(0xFFEEE8FF),
+            ],
           ),
-        );
-      },
+        ),
+      ),
     );
   }
 
@@ -1327,37 +1193,39 @@ class _PremiumSkeletonLoaderState extends State<_PremiumSkeletonLoader>
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           // Hero header bone
-          _bone(height: 210, radius: 28,
-              margin: const EdgeInsets.fromLTRB(16, 12, 16, 0)),
+          _bone(height: 220, radius: 30,
+              margin: const EdgeInsets.fromLTRB(16, 14, 16, 0)),
 
-          // Section label bone
+          // Section label
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
             child: Row(children: [
-              _bone(width: 22, height: 22, radius: 6, margin: EdgeInsets.zero),
-              const SizedBox(width: 8),
-              _bone(width: 130, height: 16, radius: 8, margin: EdgeInsets.zero),
+              _bone(width: 34, height: 34, radius: 10,
+                  margin: EdgeInsets.zero),
+              const SizedBox(width: 10),
+              _bone(width: 130, height: 18, radius: 8,
+                  margin: EdgeInsets.zero),
             ]),
           ),
 
-          // Quick action grid bones
+          // Quick action grid skeleton (2×3)
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
             child: GridView.builder(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              itemCount: 8,
+              itemCount: 6,
               gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 4,
-                mainAxisSpacing: 10,
-                crossAxisSpacing: 10,
-                mainAxisExtent: 108,
+                crossAxisCount: 2,
+                mainAxisSpacing: 16,
+                crossAxisSpacing: 16,
+                childAspectRatio: 1.55,
               ),
               itemBuilder: (_, i) => AnimatedBuilder(
                 animation: _shimmer,
                 builder: (_, __) => Container(
                   decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(18),
+                    borderRadius: BorderRadius.circular(24),
                     gradient: LinearGradient(
                       begin: Alignment(-1.5 + _shimmer.value * 3, 0),
                       end:   Alignment(-0.5 + _shimmer.value * 3, 0),
@@ -1372,51 +1240,23 @@ class _PremiumSkeletonLoaderState extends State<_PremiumSkeletonLoader>
               ),
             ),
           ),
-
-          const SizedBox(height: 12),
+          const SizedBox(height: 14),
 
           // Emergency card bone
-          _bone(height: 82, radius: 20,
-              margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 4)),
+          _bone(height: 88, radius: 22,
+              margin: const EdgeInsets.symmetric(
+                  horizontal: 16, vertical: 4)),
 
-          // Tips section
+          // Tips section label
           Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
-            child: _bone(width: 160, height: 16, radius: 8, margin: EdgeInsets.zero),
+            padding: const EdgeInsets.fromLTRB(20, 28, 20, 12),
+            child: _bone(width: 160, height: 18, radius: 8,
+                margin: EdgeInsets.zero),
           ),
-          _bone(height: 140, radius: 24,
-              margin: const EdgeInsets.symmetric(horizontal: 16)),
 
-          // Hospitals
-          Padding(
-            padding: const EdgeInsets.fromLTRB(20, 24, 20, 10),
-            child: _bone(width: 140, height: 16, radius: 8, margin: EdgeInsets.zero),
-          ),
-          SizedBox(
-            height: 110,
-            child: ListView.builder(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              itemCount: 3,
-              itemBuilder: (_, i) => AnimatedBuilder(
-                animation: _shimmer,
-                builder: (_, __) => Container(
-                  width: 200,
-                  margin: const EdgeInsets.only(right: 12),
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(20),
-                    gradient: LinearGradient(
-                      begin: Alignment(-1.5 + _shimmer.value * 3, 0),
-                      end:   Alignment(-0.5 + _shimmer.value * 3, 0),
-                      colors: const [
-                        Color(0xFFEEE8FF), Color(0xFFDDD4FF), Color(0xFFEEE8FF)
-                      ],
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ),
+          // Tips card bone
+          _bone(height: 148, radius: 26,
+              margin: const EdgeInsets.symmetric(horizontal: 22)),
         ],
       ),
     );
@@ -1441,24 +1281,27 @@ class _ErrorView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 90,
-              height: 90,
+              width: 90, height: 90,
               decoration: BoxDecoration(
                 color: DesignTokens.dangerContainer,
                 borderRadius: BorderRadius.circular(24),
                 boxShadow: [
                   BoxShadow(
                     color: DesignTokens.danger.withValues(alpha: 0.18),
-                    blurRadius: 20, offset: const Offset(0, 8),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),
               child: const Center(
-                  child: Text('⚠️', style: TextStyle(fontSize: 42))),
+                  child:
+                      Text('⚠️', style: TextStyle(fontSize: 42))),
             )
                 .animate()
-                .scale(begin: const Offset(0.7, 0.7),
-                    duration: 500.ms, curve: Curves.elasticOut),
+                .scale(
+                    begin: const Offset(0.7, 0.7),
+                    duration: 500.ms,
+                    curve: Curves.elasticOut),
             const SizedBox(height: 24),
             const Text(
               'Could not load dashboard',
@@ -1474,7 +1317,9 @@ class _ErrorView extends StatelessWidget {
               message ?? 'Check your connection and try again.',
               textAlign: TextAlign.center,
               style: const TextStyle(
-                  color: DesignTokens.textMuted, fontSize: 14, height: 1.55),
+                  color: DesignTokens.textMuted,
+                  fontSize: 14,
+                  height: 1.55),
             ).animate(delay: 150.ms).fadeIn(duration: 350.ms),
             const SizedBox(height: 32),
             FilledButton.icon(

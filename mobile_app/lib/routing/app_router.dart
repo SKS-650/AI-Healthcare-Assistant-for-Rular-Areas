@@ -33,7 +33,6 @@ import '../features/health_records/presentation/pages/upload_report_page.dart';
 // ─────────────────────────────────────────────────────────────────────────
 import '../features/home/presentation/pages/home_dashboard_page.dart';
 import '../features/medical_chatbot/presentation/pages/chatbot_home_page.dart';
-import '../features/nearby_healthcare/presentation/pages/nearby_healthcare_page.dart';
 import '../features/profile/presentation/pages/profile_page.dart';
 import '../features/settings/presentation/pages/settings_page.dart';
 import '../features/symptom_checker/domain/entities/prediction.dart';
@@ -45,6 +44,7 @@ import '../features/offline/presentation/pages/offline_dashboard_page.dart';
 import '../features/offline/presentation/pages/offline_symptom_checker_page.dart';
 import '../features/offline/presentation/pages/offline_chatbot_page.dart';
 import '../features/offline/presentation/pages/sync_center_page.dart';
+import '../features/notifications/presentation/pages/notifications_page.dart';
 import 'route_names.dart';
 
 class AppRouter {
@@ -140,7 +140,6 @@ class AppRouter {
       RouteNames.chatbot            => const ChatbotHomePage(),
       RouteNames.diseasePrediction  => const DiseasePredictionHomePage(),
       RouteNames.emergency          => const EmergencyPage(),
-      RouteNames.nearbyHealthcare   => const NearbyHealthcarePage(),
       RouteNames.profile            => const ProfilePage(),
       RouteNames.settings           => const SettingsPage(),
       RouteNames.healthEducation    => const HealthEducationPage(),
@@ -181,6 +180,9 @@ class AppRouter {
       RouteNames.uploadReport       => const UploadReportPage(),
       RouteNames.labReports         => const LabReportsPage(),
       RouteNames.allRecords         => const MedicalRecordsPage(),
+
+      // ── Notifications ──────────────────────────────────────────────────────
+      RouteNames.notifications      => const NotificationsPage(),
 
       _                             => const _NotFoundPage(),
     };

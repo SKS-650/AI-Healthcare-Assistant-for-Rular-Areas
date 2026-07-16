@@ -90,15 +90,15 @@ async def _user_bookmark_ids(db: AsyncSession, user_id: str) -> set[str]:
 # ─── SeedService ─────────────────────────────────────────────────────────────
 
 _CATEGORIES = [
-    ("Diseases",          "diseases",          "🩺", "#FF4757", 1),
+    ("Diseases",          "diseases",          "🩺", "#F97316", 1),
     ("Nutrition",         "nutrition",          "🥗", "#2ECC8B", 2),
     ("Vaccination",       "vaccination",        "💉", "#4F94FF", 3),
-    ("Maternal Health",   "maternal-health",    "🤰", "#FF5E9E", 4),
+    ("Maternal Health",   "maternal-health",    "🤰", "#8B5CF6", 4),
     ("Child Health",      "child-health",       "👶", "#FFB829", 5),
     ("Hygiene",           "hygiene",            "🧼", "#18C8C8", 6),
     ("Healthy Lifestyle", "healthy-lifestyle",  "🏃", "#926EFF", 7),
-    ("Mental Health",     "mental-health",      "🧠", "#8B5CF6", 8),
-    ("Heart Health",      "heart-health",       "❤️", "#E11D48", 9),
+    ("Mental Health",     "mental-health",      "🧠", "#7C3AED", 8),
+    ("Heart Health",      "heart-health",       "💙", "#0891B2", 9),
 ]
 
 _SEED_ARTICLES = [
@@ -461,10 +461,18 @@ class SeedService:
 
     @staticmethod
     async def seed(db: AsyncSession) -> None:
-        # 1. Seed categories
+        # 1. Seed categories — upsert so colour changes take effect immediately
         for name, slug, icon, color, order in _CATEGORIES:
-            exists = await db.execute(select(HealthCategory).where(HealthCategory.slug == slug))
-            if not exists.scalar_one_or_none():
+            result = await db.execute(
+                select(HealthCategory).where(HealthCategory.slug == slug)
+            )
+            existing = result.scalar_one_or_none()
+            if existing:
+                # Always update icon and colour so changes are applied live
+                existing.icon      = icon
+                existing.color_hex = color
+                existing.sort_order = order
+            else:
                 db.add(HealthCategory(
                     name=name, slug=slug, icon=icon,
                     color_hex=color, sort_order=order,

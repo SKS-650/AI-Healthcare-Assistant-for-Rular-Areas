@@ -19,3 +19,18 @@ build/
 Thumbs.db
 .vscode/
 .idea/
+
+# Admin guide — contains credentials and internal details
+ADMIN.md
+
+# Flutter build outputs
+admin_dashboard/build/
+admin_dashboard/.dart_tool/
+admin_dashboard/.flutter-plugins
+admin_dashboard/.flutter-plugins-dependencies
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/

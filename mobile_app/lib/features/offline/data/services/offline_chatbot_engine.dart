@@ -312,7 +312,7 @@ class OfflineChatbotEngine {
     }
 
     // 2. Fallback — generic health guidance
-    return OfflineChatResponse(
+    return const OfflineChatResponse(
       answer: '🏥 **Medical Information (Offline Mode)**\n\n'
           'I\'m currently in offline mode and couldn\'t find a specific answer for your question.\n\n'
           '**I can help you with:**\n'

@@ -20,7 +20,6 @@ class DashboardController extends StateNotifier<DashboardState> {
       final healthScore = await repository.getHealthScore();
       final quickActions = await repository.getQuickActions();
       final recentPredictions = await repository.getRecentPredictions();
-      final nearbyHospitals = await repository.getNearbyHospitals();
       final healthTips = await repository.getHealthTips();
       final latestArticles = await repository.getLatestArticles();
 
@@ -30,7 +29,6 @@ class DashboardController extends StateNotifier<DashboardState> {
         healthScore: healthScore,
         quickActions: quickActions,
         recentPredictions: recentPredictions,
-        nearbyHospitals: nearbyHospitals,
         healthTips: healthTips,
         latestArticles: latestArticles,
         errorMessage: null,

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../../../shared/design_system/design_tokens.dart';
 import 'greeting_widget.dart';
-import 'notification_button.dart';
 
 class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
   const DashboardAppBar({super.key});
@@ -15,7 +14,6 @@ class DashboardAppBar extends StatelessWidget implements PreferredSizeWidget {
       surfaceTintColor: Colors.transparent,
       titleSpacing: 16,
       title: const GreetingWidget(),
-      actions: const [NotificationButton(), SizedBox(width: 16)],
     );
   }
 
