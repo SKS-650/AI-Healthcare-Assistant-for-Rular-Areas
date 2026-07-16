@@ -1,88 +1,48 @@
 # Activity Diagram — AI Healthcare Assistant
 
-This document contains an activity-style flowchart that shows the primary runtime flow for user interactions, symptom checking, chatbot retrieval, emergency escalation, and persistence.
+This document contains an activity-style flowchart that shows the primary runtime flow for the whole project in a vertical activity layout.
 
 ```mermaid
 flowchart TD
-  %% Activity-style flowchart compatible with GitHub/VS Code Mermaid
   Start([Start])
-  User(User)
-  Auth["Authenticate (POST /api/v1/auth/login)"]
-  Token["Issue token / session"]
+  LaunchApp["Launch mobile app or admin dashboard"]
+  Authenticate["Authenticate user or admin"]
+  MainMenu["Choose flow:\nSymptom Checker, Chatbot, Health Records, Offline Sync, Admin"]
 
-  Choose{Choose action}
-  Symptom["Symptom Checker\nPOST /api/v1/symptom-checker/predict"]
-  Chat["Medical Chatbot\nPOST /api/v1/chatbot/message"]
-  ViewRecords["View Health Records"]
-  Offline["Offline Sync / Queue"]
-  AdminPanel["Admin Dashboard"]
+  SymptomFlow["Symptom Checker flow"]
+  InputSymptoms["Enter symptoms / health data"]
+  Predict["Run symptom prediction"]
+  RiskCheck{"High emergency risk?"}
+  EmergencyAction["Escalate emergency and alert user"]
+  Triage["Show triage guidance"]
 
-  Preprocess["Preprocess & feature extraction"]
-  SymptomModel["Symptom Model\nInference"]
-  SymptomResults["Symptom Results / Triage"]
-  RiskCheck{High emergency risk?}
-  Emergency["Emergency Detection / Escalate"]
+  ChatFlow["Medical Chatbot flow"]
+  UserMessage["Send chat message"]
+  Retrieve["Retrieve knowledge context"]
+  Generate["Generate response from LLM"]
+  ChatReply["Show chatbot reply"]
 
-  Retrieve["Retrieve knowledge (vector search)"]
-  LLM["External LLM Provider"]
-  Generate["Generate reply / RAG pipeline"]
-  Persist["Persist session, messages, audit logs (DB)"]
-  Notify["Notify user / admins / external services"]
+  RecordsFlow["View health records"]
+  OfflineFlow["Offline queue and sync"]
+  Sync["Sync queued actions when online"]
 
-  SyncEndpoint["Sync endpoint\nPOST /api/v1/sync"]
-  ApplySync["Apply queued changes on server"]
+  AdminFlow["Admin review and retraining"]
+  Retrain["Trigger model retraining"]
 
-  Retrain["Trigger retrain / CI pipeline"]
-  ModelStore["Model artifacts updated"]
-
-  Analytics["Collect metrics / analytics"]
   End([End])
 
-  %% Primary flow
-  Start --> User --> Auth --> Token --> Choose
+  Start --> LaunchApp --> Authenticate --> MainMenu
+  MainMenu --> SymptomFlow
+  SymptomFlow --> InputSymptoms --> Predict --> RiskCheck
+  RiskCheck -->|yes| EmergencyAction --> Triage --> End
+  RiskCheck -->|no| Triage --> End
 
-  %% Symptom flow
-  Choose -->|symptom check| Symptom --> Preprocess --> SymptomModel --> SymptomResults --> RiskCheck
-  RiskCheck -->|yes| Emergency --> Persist --> Notify --> Analytics --> End
-  RiskCheck -->|no| Persist --> Notify
+  MainMenu --> ChatFlow
+  ChatFlow --> UserMessage --> Retrieve --> Generate --> ChatReply --> End
 
-  %% Chatbot flow
-  Choose -->|chat| Chat --> Retrieve --> Generate --> Persist --> Notify --> Analytics
-
-  %% View records flow
-  Choose -->|view records| ViewRecords --> Persist
-
-  %% Offline sync flow
-  Choose -->|sync| Offline --> SyncEndpoint --> ApplySync --> Persist --> Notify
-
-  %% Admin and retrain
-  User -->|admin login| AdminPanel -->|trigger retrain| Retrain --> ModelStore --> Notify
-
-  %% Analytics sink
-  Persist --> Analytics --> End
-
-  %% Healthcare provider path
-  HP[Healthcare Provider] -->|access patient data| ViewRecords
-
-  %% External escalation
-  Emergency -->|call/emails| Notify
-
-  %% Keep labels simple and quoted to maximize compatibility
-
-  Start --> InputSymptoms --> Validate
-  Validate -->|yes| Preprocess --> SymptomCheck --> AssessRisk
-  AssessRisk -->|high| EmergencyFlow --> SaveRecord
-  AssessRisk -->|low| ChatbotOption
-  ChatbotOption -->|yes| Retrieve --> Generate --> SaveRecord
-  ChatbotOption -->|no| SaveRecord
-  SaveRecord --> Notify --> Sync --> End
-  Validate -->|no| InputSymptoms
-
-  %% Optional branches (admin operations, retraining)
-  AdminStart([Admin action]) -->|trigger retrain| SaveRecord
-
-  %% Notes
-  %% Keep this simple to maximize rendering compatibility across viewers
+  MainMenu --> RecordsFlow --> End
+  MainMenu --> OfflineFlow --> Sync --> End
+  MainMenu --> AdminFlow --> Retrain --> End
 ```
 
 Actors and mapping to components:
