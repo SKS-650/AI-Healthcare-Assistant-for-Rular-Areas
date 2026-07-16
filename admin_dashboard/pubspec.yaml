@@ -1,18 +1,59 @@
 name: admin_dashboard
-description: Admin dashboard for AI Healthcare Assistant.
+description: Admin dashboard for AI Healthcare Assistant — ultra-premium web UI.
 publish_to: 'none'
 
 environment:
-  sdk: '>=3.0.0 <4.0.0'
+  sdk: '>=3.3.0 <4.0.0'
 
 dependencies:
   flutter:
     sdk: flutter
 
+  # ── State management ────────────────────────────────────────────────────────
+  flutter_riverpod: ^2.5.1
+  riverpod_annotation: ^2.3.5
+
+  # ── Navigation ──────────────────────────────────────────────────────────────
+  go_router: ^14.2.0
+
+  # ── HTTP / Networking ───────────────────────────────────────────────────────
+  dio: ^5.4.3+1
+  http: ^1.2.1
+
+  # ── Secure storage ──────────────────────────────────────────────────────────
+  flutter_secure_storage: ^9.0.0
+  shared_preferences: ^2.2.3
+
+  # ── Charts ──────────────────────────────────────────────────────────────────
+  fl_chart: ^0.68.0
+
+  # ── UI utilities ────────────────────────────────────────────────────────────
+  google_fonts: ^6.2.1
+  shimmer: ^3.0.0
+  cached_network_image: ^3.3.1
+  flutter_animate: ^4.5.0
+  lottie: ^3.1.2
+
+  # ── Data / utilities ────────────────────────────────────────────────────────
+  intl: ^0.19.0
+  timeago: ^3.6.1
+  equatable: ^2.0.5
+  freezed_annotation: ^2.4.4
+  json_annotation: ^4.9.0
+  uuid: ^4.4.0
+
+  # ── Icons ────────────────────────────────────────────────────────────────────
+  flutter_svg: ^2.0.10+1
+  material_design_icons_flutter: ^7.0.7296
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^3.0.0
+  flutter_lints: ^4.0.0
+  build_runner: ^2.4.9
+  freezed: ^2.5.2
+  json_serializable: ^6.8.0
+  riverpod_generator: ^2.4.0
 
 flutter:
   uses-material-design: true
@@ -20,5 +61,4 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/fonts/
-
-
+    - assets/lottie/
