@@ -4,58 +4,46 @@ This document contains a high-level use-case diagram for the project and brief d
 
 ```mermaid
 flowchart TD
-  User([User])
-  Admin([Admin])
-  Provider([Healthcare Provider])
-  System([System])
-  LLM([External LLM Provider])
-  Emergency([Emergency Service])
+  %% Actors on left and right, use cases in the middle
+  actorUser([<b>User</b>])
+  actorAdmin([<b>Admin</b>])
+  actorProvider([<b>Healthcare Provider</b>])
 
-  Authenticate((Authenticate))
-  UseSymptom((Use Symptom Checker))
-  ChatBot((Chat with Medical Chatbot))
-  ViewRecords((View Health Records))
-  SyncData((Sync Offline Data))
-  ManageUsers((Manage Users))
-  ReviewFlags((Review Flagged Conversations))
-  TriggerRetrain((Trigger Model Retrain))
-  ViewAnalytics((View Analytics))
-  RetrieveKnowledge((Retrieve Knowledge))
-  Escalate((Escalate Emergency))
+  subgraph SystemBoundary["AI Healthcare Assistant System"]
+    direction TB
+    UC01((Register / Login))
+    UC02((Use Symptom Checker))
+    UC03((Chat with Medical Assistant))
+    UC04((View Health Records))
+    UC05((Sync Offline Data))
+    UC06((Review Flagged Content))
+    UC07((Manage Users & Roles))
+    UC08((Trigger Model Retraining))
+    UC09((View Analytics & Reports))
+    UC10((Escalate Emergency))
+    UC11((Retrieve Knowledge))
+  end
 
-  User --> Authenticate
-  User --> UseSymptom
-  User --> ChatBot
-  User --> ViewRecords
-  User --> SyncData
+  actorUser --> UC01
+  actorUser --> UC02
+  actorUser --> UC03
+  actorUser --> UC04
+  actorUser --> UC05
 
-  Admin --> Authenticate
-  Admin --> ManageUsers
-  Admin --> ReviewFlags
-  Admin --> TriggerRetrain
-  Admin --> ViewAnalytics
+  actorAdmin --> UC01
+  actorAdmin --> UC06
+  actorAdmin --> UC07
+  actorAdmin --> UC08
+  actorAdmin --> UC09
 
-  Provider --> ViewRecords
-  Provider --> ReviewFlags
+  actorProvider --> UC04
+  actorProvider --> UC06
 
-  Authenticate --> System
-  UseSymptom --> System
-  ChatBot --> System
-  ViewRecords --> System
-  SyncData --> System
-  ManageUsers --> System
-  ReviewFlags --> System
-  TriggerRetrain --> System
-  ViewAnalytics --> System
-  RetrieveKnowledge --> System
-  Escalate --> System
-
-  ChatBot --> RetrieveKnowledge
-  RetrieveKnowledge --> LLM
-  System --> Emergency
-  System --> LLM
+  UC03 -.-> UC11
+  UC02 -.-> UC10
+  UC11 -.->|"uses external LLM / retrieval"| UC03
+  UC10 -.->|"emergency workflow"| UC02
 ```
-
 ## Actors
 
 - **User**: the end-user (patient) interacting through the mobile app. Performs symptom input, chatting, and viewing results.
