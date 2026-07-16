@@ -6,18 +6,18 @@ This document contains an activity-style flowchart that shows the primary runtim
 flowchart TD
   %% Activity-style flowchart compatible with GitHub/VS Code Mermaid
   Start([Start])
-  InputSymptoms[/User enters symptoms/]
+  InputSymptoms["User enters symptoms"]
   Validate{Valid input?}
-  Preprocess[Preprocess & feature extraction]
-  SymptomCheck[/Call Symptom Checker API\nPOST /api/v1/symptom-checker/predict/]
+  Preprocess["Preprocess & feature extraction"]
+  SymptomCheck["Call Symptom Checker API\nPOST /api/v1/symptom-checker/predict"]
   AssessRisk{Emergency risk?}
-  EmergencyFlow[/Invoke Emergency Detection\nEscalate if threshold reached/]
+  EmergencyFlow["Invoke Emergency Detection\nEscalate if threshold reached"]
   ChatbotOption{User requests chatbot?}
-  Retrieve[/Retrieve knowledge (vector search)/]
-  Generate[/Call LLM provider to generate reply/]
-  SaveRecord[/Persist session, results, audit logs/]
-  Notify[/Send notifications to user/admins/]
-  Sync[/Queue offline sync payloads/]
+  Retrieve["Retrieve knowledge (vector search)"]
+  Generate["Call LLM provider to generate reply"]
+  SaveRecord["Persist session, results, audit logs"]
+  Notify["Send notifications to user/admins"]
+  Sync["Queue offline sync payloads"]
   End([End])
 
   Start --> InputSymptoms --> Validate
