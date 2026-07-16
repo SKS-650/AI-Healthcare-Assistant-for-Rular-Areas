@@ -1,38 +1,59 @@
 # Use Case Diagram — AI Healthcare Assistant
 
-This document contains a high-level use-case diagram for the project and brief descriptions of each actor and use-case.
+This document contains a high-level use-case diagram for the project and brief descriptions of each actor and use case.
 
 ```mermaid
-flowchart LR
-  U(User)
-  A(Admin)
-  HP(Healthcare Provider)
-  LLM(External LLM Provider)
-  ES(Emergency Service)
+flowchart TD
+  User([User])
+  Admin([Admin])
+  Provider([Healthcare Provider])
+  System([System])
+  LLM([External LLM Provider])
+  Emergency([Emergency Service])
 
-  S(Backend - FastAPI & DB)
-  SK(Symptom Checker)
-  CB(Medical Chatbot)
-  Sync(Offline Sync)
-  Retrieve(Retrieve Knowledge)
+  Authenticate((Authenticate))
+  UseSymptom((Use Symptom Checker))
+  ChatBot((Chat with Medical Chatbot))
+  ViewRecords((View Health Records))
+  SyncData((Sync Offline Data))
+  ManageUsers((Manage Users))
+  ReviewFlags((Review Flagged Conversations))
+  TriggerRetrain((Trigger Model Retrain))
+  ViewAnalytics((View Analytics))
+  RetrieveKnowledge((Retrieve Knowledge))
+  Escalate((Escalate Emergency))
 
-  U -->|Authenticate / view data| S
-  U -->|Use Symptom Checker| SK
-  U -->|Chat with Chatbot| CB
-  U -->|Sync Offline Data| Sync
+  User --> Authenticate
+  User --> UseSymptom
+  User --> ChatBot
+  User --> ViewRecords
+  User --> SyncData
 
-  SK -->|POST /symptom-checker/predict| S
-  CB -->|POST /chatbot/message| S
-  Sync -->|POST /sync| S
+  Admin --> Authenticate
+  Admin --> ManageUsers
+  Admin --> ReviewFlags
+  Admin --> TriggerRetrain
+  Admin --> ViewAnalytics
 
-  CB -->|Call Retrieval| Retrieve
-  Retrieve -->|Fetch docs| S
-  CB -->|Call LLM Provider| LLM
+  Provider --> ViewRecords
+  Provider --> ReviewFlags
 
-  A -->|Admin actions / retrain| S
-  HP -->|Access patient data| S
+  Authenticate --> System
+  UseSymptom --> System
+  ChatBot --> System
+  ViewRecords --> System
+  SyncData --> System
+  ManageUsers --> System
+  ReviewFlags --> System
+  TriggerRetrain --> System
+  ViewAnalytics --> System
+  RetrieveKnowledge --> System
+  Escalate --> System
 
-  S -->|Escalate emergency| ES
+  ChatBot --> RetrieveKnowledge
+  RetrieveKnowledge --> LLM
+  System --> Emergency
+  System --> LLM
 ```
 
 ## Actors
