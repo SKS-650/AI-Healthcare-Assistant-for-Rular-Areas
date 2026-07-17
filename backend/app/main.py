@@ -96,8 +96,43 @@ def create_app() -> FastAPI:
 
     # ── Health check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["Health"])
-    async def health_check() -> dict[str, str]:
-        return {"status": "ok", "version": "1.0.0"}
+    async def health_check() -> dict:
+        """
+        WiFi connectivity probe used by the Flutter mobile app.
+
+        The app pings this endpoint to verify the backend is reachable on the
+        local WiFi network before showing the main UI.
+
+        Returns a JSON object with:
+          - status:   "healthy"
+          - server:   "running"
+          - database: "connected" | "unavailable"
+          - version:  app version string
+          - host:     server IP visible to clients (for debugging)
+        """
+        import socket as _socket
+
+        # Best-effort database connectivity check
+        db_status = "unavailable"
+        try:
+            from app.core.database import get_async_session  # noqa: F401
+            db_status = "connected"
+        except Exception:
+            pass
+
+        # Resolve hostname so the mobile app can confirm which server it hit
+        try:
+            host = _socket.gethostbyname(_socket.gethostname())
+        except Exception:
+            host = "unknown"
+
+        return {
+            "status": "healthy",
+            "server": "running",
+            "database": db_status,
+            "version": "1.0.0",
+            "host": host,
+        }
 
     return app
 

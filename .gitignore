@@ -1,36 +1,149 @@
-# Dependencies
-node_modules/
-venv/
-.venv/
+# =============================================================================
+# AI Healthcare Assistant — .gitignore
+# =============================================================================
 
-# Build outputs
-dist/
-build/
-
-# Environment files
+# ─── Environment / Secrets ───────────────────────────────────────────────────
+# These files contain API keys, JWT secrets, DB passwords, admin credentials.
+# NEVER commit these.
 .env
 .env.*
+!.env.example          # keep the example template — it has no real secrets
+backend/.env
+backend/.env.*
+!backend/.env.example
+ai_models/.env
+ai_models/.env.*
 
-# Logs
-*.log
+# ─── API Keys / Credentials files ────────────────────────────────────────────
+**/credentials.json
+**/service_account*.json
+**/secrets.json
+**/secrets.yaml
+**/secrets.yml
+**/*_key.pem
+**/*_key.txt
+**/*.p12
+**/*.pfx
+google-services.json
+GoogleService-Info.plist
 
-# OS/editor files
-.DS_Store
-Thumbs.db
-.vscode/
-.idea/
+# ─── Database files ───────────────────────────────────────────────────────────
+# SQLite databases contain real user data
+*.db
+*.sqlite
+*.sqlite3
+app.db
+backend/app.db
 
-# Admin guide — contains credentials and internal details
+# ─── Admin guide — contains credentials and internal details ─────────────────
 ADMIN.md
 
-# Flutter build outputs
-admin_dashboard/build/
-admin_dashboard/.dart_tool/
-admin_dashboard/.flutter-plugins
-admin_dashboard/.flutter-plugins-dependencies
+# ─── Logs — may contain sensitive request data, user info, stack traces ───────
+*.log
+logs/
+backend/logs/
+ai_models/logs/
+hs_err_pid*.log
 
-# Python cache
+# ─── Python ──────────────────────────────────────────────────────────────────
 __pycache__/
 *.pyc
 *.pyo
+*.pyd
 .pytest_cache/
+.mypy_cache/
+.ruff_cache/
+*.egg-info/
+dist/
+*.egg
+
+# ─── Virtual environments ─────────────────────────────────────────────────────
+venv/
+.venv/
+env/
+.env_backup/
+
+# ─── AI Model artifacts — large binary files, not for version control ─────────
+ai_models/saved_models/
+ai_models/embeddings/
+ai_models/vector_database/
+**/*.faiss
+**/*.bin
+**/*.pkl
+**/*.pickle
+**/*.pt
+**/*.pth
+**/*.onnx
+**/*.h5
+**/*.hdf5
+**/*.npy
+**/*.npz
+backend/ai_models/
+
+# ─── Datasets — large, may contain sensitive medical data ────────────────────
+datasets/
+ai_models/datasets/
+**/*.csv
+**/*.tsv
+**/*.parquet
+**/*.jsonl
+
+# ─── APK / Build outputs ──────────────────────────────────────────────────────
+mobile_app/build/
+admin_dashboard/build/
+*.apk
+*.aab
+*.ipa
+build/
+dist/
+
+# ─── Flutter/Dart ─────────────────────────────────────────────────────────────
+**/.dart_tool/
+**/.flutter-plugins
+**/.flutter-plugins-dependencies
+**/pubspec.lock
+admin_dashboard/.dart_tool/
+
+# ─── Node / JS ────────────────────────────────────────────────────────────────
+node_modules/
+
+# ─── Backups — may contain old credentials or DB dumps ───────────────────────
+backups/
+*.bak
+*.backup
+*.dump
+*.sql
+
+# ─── Temp / scratch files ─────────────────────────────────────────────────────
+temp/
+tmp/
+*.tmp
+z.py
+test.py
+test_final_fix.py
+
+# ─── OS / Editor ─────────────────────────────────────────────────────────────
+.DS_Store
+Thumbs.db
+desktop.ini
+.vscode/
+.idea/
+*.iml
+*.suo
+*.user
+
+# ─── Docker ──────────────────────────────────────────────────────────────────
+# Keep docker-compose.yml (not secret) but ignore override files
+docker-compose.override.yml
+docker-compose.local.yml
+
+# ─── CI/CD secrets ───────────────────────────────────────────────────────────
+.github/secrets/
+ci_cd/secrets/
+**/.env.ci
+
+# ─── Kiro IDE internal ───────────────────────────────────────────────────────
+.kiro/
+
+# ─── CodeQL / security scan results ──────────────────────────────────────────
+codeql-agent-results/

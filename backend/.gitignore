@@ -1,10 +1,48 @@
+# ─── Secrets / Environment ───────────────────────────────────────────────────
+.env
+.env.*
+!.env.example
+
+# ─── Database files ───────────────────────────────────────────────────────────
+*.db
+*.sqlite
+*.sqlite3
+app.db
+
+# ─── Python cache ─────────────────────────────────────────────────────────────
 __pycache__/
 *.py[cod]
+*.pyd
+*.egg-info/
+
+# ─── Test/lint caches ─────────────────────────────────────────────────────────
 .pytest_cache/
 .mypy_cache/
 .ruff_cache/
+
+# ─── Virtual environments ─────────────────────────────────────────────────────
 .venv/
 venv/
-.env
+
+# ─── Logs ─────────────────────────────────────────────────────────────────────
 logs/
-app/uploads/temporary/
+*.log
+
+# ─── Uploaded user files ──────────────────────────────────────────────────────
+app/uploads/
+!app/uploads/.gitkeep
+
+# ─── AI model binaries ────────────────────────────────────────────────────────
+ai_models/saved_models/
+**/*.faiss
+**/*.pkl
+**/*.pickle
+**/*.pt
+**/*.pth
+
+# ─── Temp / scratch ───────────────────────────────────────────────────────────
+*.tmp
+check_db.py
+check_startup.py
+check_syntax.py
+fix_category_colors.py

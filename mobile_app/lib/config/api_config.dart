@@ -5,54 +5,47 @@ import '../constants/api_constants.dart';
 class ApiConfig {
   const ApiConfig._();
 
-  static const _backendPort = '8000';
-  static const connectionTimeout = 30;
-  static const receiveTimeout = 30;
+  static const int connectionTimeout = 30;
+  static const int receiveTimeout = 30;
 
-  // ── Dev LAN IP ─────────────────────────────────────────────────────────────
-  // Set this to your development machine's local IP address so the app works
-  // on a physical Android device over WiFi without any dart-define flags.
-  // Run `ipconfig` on Windows to find your IPv4 address.
-  static const _devLanIp = '192.168.18.26';
+  // ─────────────────────────────────────────────────────────────────────────
+  // WIFI BACKEND URL — update this one constant if your laptop IP changes.
+  //
+  // How to find your IP:  run `ipconfig` on Windows → look for "IPv4 Address"
+  //                       on the WiFi adapter.
+  //
+  // Format MUST be:  http://<IP>:<PORT>   ← colon between IP and port, no slash at end
+  // ─────────────────────────────────────────────────────────────────────────
+  static const String _wifiBackendUrl = 'http://192.168.18.26:8000';
 
-  /// Set via `flutter run --dart-define=BACKEND_URL=http://192.168.x.x:8000`
-  /// This wins over every other setting when set.
+  // ─────────────────────────────────────────────────────────────────────────
+  // Override via dart-define (optional — for CI / team members with different IPs):
+  //   flutter run --dart-define=BACKEND_URL=http://192.168.x.x:8000
+  // ─────────────────────────────────────────────────────────────────────────
   static const _backendUrlOverride = String.fromEnvironment('BACKEND_URL');
 
-  /// Set via `flutter run --dart-define=BACKEND_HOST=192.168.x.x`
-  static const _backendHostOverride = String.fromEnvironment('BACKEND_HOST');
-
-  /// Base URL resolution priority:
+  /// Resolved base URL.
   ///
-  ///  1. BACKEND_URL dart-define  → use as-is
-  ///  2. BACKEND_HOST dart-define → http://<host>:8000
-  ///  3. Web                      → http://localhost:8000
-  ///  4. Android (emulator)       → http://10.0.2.2:8000
-  ///     Android (physical device)→ http://<_devLanIp>:8000
-  ///     Detection: emulators report Build.FINGERPRINT containing "generic"
-  ///     but that's not accessible from Dart. We use the dart-define
-  ///     IS_EMULATOR flag set by flutter.bat when an AVD is detected,
-  ///     otherwise default to the LAN IP for physical devices.
-  ///  5. iOS Simulator / Desktop  → http://localhost:8000
-  static const _isEmulatorOverride =
-      bool.fromEnvironment('IS_EMULATOR', defaultValue: false);
-
+  /// Priority:
+  ///   1. BACKEND_URL dart-define (if provided)
+  ///   2. Android emulator       → http://10.0.2.2:8000
+  ///   3. Physical Android/iOS   → [_wifiBackendUrl]  (WiFi LAN)
+  ///   4. Web / Desktop          → http://localhost:8000
   static String get baseUrl {
+    // 1. Explicit override wins
     if (_backendUrlOverride.isNotEmpty) return _backendUrlOverride;
-    if (_backendHostOverride.isNotEmpty) {
-      return 'http://$_backendHostOverride:$_backendPort';
-    }
 
-    if (kIsWeb) return 'http://localhost:$_backendPort';
+    if (kIsWeb) return 'http://localhost:8000';
 
     return switch (defaultTargetPlatform) {
-      // If flutter.bat detected an emulator → 10.0.2.2 (host loopback alias)
-      // Otherwise assume a physical device on the same WiFi → LAN IP
-      TargetPlatform.android => _isEmulatorOverride
-          ? 'http://10.0.2.2:$_backendPort'
-          : 'http://$_devLanIp:$_backendPort',
-      TargetPlatform.iOS => 'http://localhost:$_backendPort',
-      _ => 'http://localhost:$_backendPort',
+      // Android emulator uses a special alias to reach the host machine
+      TargetPlatform.android =>
+        bool.fromEnvironment('IS_EMULATOR', defaultValue: false)
+            ? 'http://10.0.2.2:8000'
+            : _wifiBackendUrl,
+      // iOS / Desktop
+      TargetPlatform.iOS => 'http://localhost:8000',
+      _ => 'http://localhost:8000',
     };
   }
 
@@ -76,17 +69,15 @@ class ApiConfig {
     if (_backendUrlOverride.isNotEmpty) {
       return 'Override ($_backendUrlOverride)';
     }
-    if (_backendHostOverride.isNotEmpty) {
-      return 'Custom host ($_backendHostOverride:$_backendPort)';
-    }
-    if (kIsWeb) return 'Web (localhost:$_backendPort)';
+    if (kIsWeb) return 'Web (localhost:8000)';
 
     return switch (defaultTargetPlatform) {
-      TargetPlatform.android => _isEmulatorOverride
-          ? 'Android emulator (10.0.2.2:$_backendPort)'
-          : 'Android physical device (LAN: $_devLanIp:$_backendPort)',
-      TargetPlatform.iOS => 'iOS Simulator (localhost:$_backendPort)',
-      _ => 'Desktop (localhost:$_backendPort)',
+      TargetPlatform.android =>
+        bool.fromEnvironment('IS_EMULATOR', defaultValue: false)
+            ? 'Android emulator (10.0.2.2:8000)'
+            : 'Android physical device (WiFi: $_wifiBackendUrl)',
+      TargetPlatform.iOS => 'iOS Simulator (localhost:8000)',
+      _ => 'Desktop (localhost:8000)',
     };
   }
 }

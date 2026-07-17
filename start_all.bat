@@ -137,10 +137,21 @@ echo   Health check  :  http://localhost:8000/health
 echo   Voice API     :  http://localhost:8000/api/v1/voice/health
 echo   Chatbot API   :  http://localhost:8000/api/v1/chatbot/health
 if defined LOCAL_IP (
-echo   LAN address   :  http://!LOCAL_IP!:8000
 echo.
-echo   Mobile app config  ^>  mobile_app\lib\config\api_config.dart
-echo   Set _devLanIp = '!LOCAL_IP!' and _useEmulator = false
+echo   ── WiFi Mobile Access ────────────────────────────────────────────────
+echo   LAN address   :  http://!LOCAL_IP!:8000
+echo   Swagger (LAN) :  http://!LOCAL_IP!:8000/docs
+echo   Health (LAN)  :  http://!LOCAL_IP!:8000/health
+echo.
+echo   ► Open http://!LOCAL_IP!:8000/docs on your PHONE browser to verify.
+echo.
+echo   Mobile app WiFi config:
+echo     File : mobile_app\lib\config\api_config.dart
+echo     Set  _devLanIp = '!LOCAL_IP!'  (currently set to 192.168.254.5)
+echo     If the IPs differ, update _devLanIp and re-run: flutter build apk
+echo.
+echo   ► Both the laptop and phone MUST be on the SAME WiFi network.
+echo   ► No USB cable required after the APK is installed.
 )
 echo  ==========================================================================
 echo.

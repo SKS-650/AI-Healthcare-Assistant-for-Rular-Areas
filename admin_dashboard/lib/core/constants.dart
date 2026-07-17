@@ -4,7 +4,11 @@ class AppConstants {
   AppConstants._();
 
   // ── API ────────────────────────────────────────────────────────────────────
-  static const String baseUrl = 'http://localhost:8000';
+  // WiFi backend URL — laptop must be on the same WiFi network as the phone.
+  // Server IP: 192.168.254.5  |  To update: change _backendIp below.
+  static const String _backendIp = '192.168.18.26';
+  static const String _backendPort = '8000';
+  static const String baseUrl = 'http://$_backendIp:$_backendPort';
   static const String apiPrefix = '/api/v1';
   static const String apiBase = '$baseUrl$apiPrefix';
 

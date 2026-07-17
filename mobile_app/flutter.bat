@@ -143,18 +143,18 @@ if defined ANDROID_EMU_FOUND (
 )
 
 REM ── No ADB device connected — detect LAN IP for WiFi physical device ─────────
-set "LAN_IP="
-for /f "tokens=2 delims=:" %%a in ('ipconfig 2^>nul ^| findstr /c:"IPv4 Address"') do (
-    if not defined LAN_IP (
-        set "LAN_IP=%%a"
-        set "LAN_IP=!LAN_IP:~1!"
-    )
-)
+REM
+REM For WiFi physical devices we do NOT inject a BACKEND_URL dart-define.
+REM The hardcoded _wifiBackendUrl in lib/config/api_config.dart
+REM (currently http://192.168.254.5:8000) is used instead.
+REM
+REM This avoids unreliable ipconfig text-parsing producing malformed URLs
+REM like "http://192.168.254.5.8000" (dot instead of colon).
+REM
+REM To use a DIFFERENT IP, either:
+REM   a) Edit _wifiBackendUrl in lib/config/api_config.dart  (recommended)
+REM   b) Run:  flutter run --dart-define=BACKEND_URL=http://YOUR_IP:8000
 
-if defined LAN_IP (
-    set "FLUTTER_BACKEND_DEFINE=--dart-define=BACKEND_URL=http://!LAN_IP!:8000"
-    echo No USB device. Using LAN IP for WiFi device: http://!LAN_IP!:8000
-) else (
-    echo No Android device detected. Using default from api_config.dart.
-)
+echo No USB/emulator device. Physical WiFi device will use the IP hardcoded
+echo in lib/config/api_config.dart  ^(currently http://192.168.254.5:8000^).
 exit /b 0
