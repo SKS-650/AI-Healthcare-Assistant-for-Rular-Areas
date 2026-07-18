@@ -50,9 +50,19 @@ logger = logging.getLogger(__name__)
 def _build_assessment_response(row: EmergencyAssessment) -> EmergencyAssessmentResponse:
     first_aid = None
     if row.first_aid_steps:
+        # Try to get the correct emoji from the guide data
+        guide_emoji = "🚨"
+        if row.emergency_type:
+            try:
+                from ai_models.emergency_detection import get_first_aid_guide
+                guide = get_first_aid_guide(row.emergency_type)
+                guide_emoji = guide.get("emoji", "🚨")
+            except Exception:
+                pass
+
         first_aid = FirstAidResponse(
             title=row.possible_emergency or "Emergency",
-            emoji="🚨",
+            emoji=guide_emoji,
             steps=row.first_aid_steps or [],
             do_not_steps=row.first_aid_dont_do or [],
             call_to_action="Call 102 (Ambulance) immediately.",
@@ -406,18 +416,19 @@ class FirstAidService:
         from app.emergency.schemas import FirstAidResponse, FirstAidListResponse
         try:
             from ai_models.emergency_detection import get_all_guides
-            guides = get_all_guides()
+            guides = get_all_guides()   # returns List[Dict]
             return FirstAidListResponse(
                 guides=[
                     FirstAidResponse(
-                        title=g.title,
-                        emoji=g.emoji,
-                        steps=g.steps,
-                        do_not_steps=g.do_not_steps,
-                        call_to_action=g.call_to_action,
+                        title=g["title"],
+                        emoji=g["emoji"],
+                        steps=g["steps"],
+                        do_not_steps=g["do_not_steps"],
+                        call_to_action=g["call_to_action"],
                     )
                     for g in guides
                 ]
             )
-        except ImportError:
+        except (ImportError, Exception) as exc:
+            logger.warning("FirstAidService: could not load guides — %s", exc)
             return FirstAidListResponse(guides=[])

@@ -12,7 +12,7 @@ import '../features/authentication/presentation/pages/reset_password_page.dart';
 import '../features/authentication/presentation/pages/splash_page.dart';
 import '../features/authentication/presentation/pages/welcome_page.dart';
 import '../features/disease_prediction/presentation/pages/disease_prediction_home_page.dart';
-import '../features/emergency/presentation/pages/emergency_page.dart';
+import '../features/emergency/presentation/pages/emergency_home_page.dart';
 import '../features/health_education/presentation/pages/health_education_page.dart';
 import '../features/health_education/presentation/pages/article_list_page.dart';
 import '../features/health_education/presentation/pages/article_detail_page.dart';
@@ -139,7 +139,7 @@ class AppRouter {
       RouteNames.history            => const HistoryPage(),
       RouteNames.chatbot            => const ChatbotHomePage(),
       RouteNames.diseasePrediction  => const DiseasePredictionHomePage(),
-      RouteNames.emergency          => const EmergencyPage(),
+      RouteNames.emergency          => const EmergencyHomePage(),
       RouteNames.profile            => const ProfilePage(),
       RouteNames.settings           => const SettingsPage(),
       RouteNames.healthEducation    => const HealthEducationPage(),

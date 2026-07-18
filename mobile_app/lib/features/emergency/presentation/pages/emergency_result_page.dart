@@ -3,6 +3,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
+import '../../../../../shared/utils/phone_call_service.dart';
 import '../../domain/entities/emergency_assessment.dart';
 import '../../domain/entities/first_aid_guide.dart';
 import '../../domain/entities/hospital.dart';
@@ -503,7 +504,13 @@ class _HospitalsCard extends StatelessWidget {
                             fontSize: 11, color: DesignTokens.textMuted)),
                     const Spacer(),
                     GestureDetector(
-                      onTap: () {},
+                      onTap: h.emergencyAvailable
+                          ? () {
+                              HapticFeedback.mediumImpact();
+                              PhoneCallService.call(context, h.phoneNumber,
+                                  label: h.name);
+                            }
+                          : null,
                       child: Container(
                         padding: const EdgeInsets.symmetric(
                             horizontal: 10, vertical: 4),
@@ -662,17 +669,15 @@ class _ActionButtons extends ConsumerWidget {
 
       if (result.sosRequired) const SizedBox(height: 10),
 
-      // Call ambulance
+      // Call ambulance — real dial
       _BigActionButton(
         emoji: '🚑',
         label: 'Call Ambulance — 102',
         sublabel: 'Free emergency service',
         gradient: const [Color(0xFFEA580C), Color(0xFFC2410C)],
         onTap: () {
-          HapticFeedback.mediumImpact();
-          ScaffoldMessenger.of(context).showSnackBar(
-            _snack('📞 Calling 102…', const Color(0xFFEA580C)),
-          );
+          HapticFeedback.heavyImpact();
+          PhoneCallService.call(context, '102', label: 'Ambulance');
         },
       ),
       const SizedBox(height: 10),

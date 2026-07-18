@@ -1,7 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+
 import '../../../../../routing/route_names.dart';
 import '../../../../../shared/design_system/design_tokens.dart';
+import '../../../../../shared/utils/phone_call_service.dart';
 
+/// Emergency banner shown on the home dashboard.
+/// The whole card navigates to EmergencyHomePage.
+/// The "SOS" chip instantly dials 102.
 class EmergencyCard extends StatelessWidget {
   const EmergencyCard({super.key});
 
@@ -26,6 +32,7 @@ class EmergencyCard extends StatelessWidget {
       ),
       child: Stack(
         children: [
+          // decorative orb
           Positioned(
             right: -12,
             top: -12,
@@ -43,12 +50,15 @@ class EmergencyCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(20),
             child: InkWell(
               borderRadius: BorderRadius.circular(20),
-              onTap: () => Navigator.of(context).pushNamed(RouteNames.emergency),
+              // whole card → full emergency hub
+              onTap: () =>
+                  Navigator.of(context).pushNamed(RouteNames.emergency),
               child: Padding(
                 padding: const EdgeInsets.symmetric(
                     horizontal: 18, vertical: 15),
                 child: Row(
                   children: [
+                    // icon
                     Container(
                       width: 52,
                       height: 52,
@@ -60,49 +70,73 @@ class EmergencyCard extends StatelessWidget {
                             width: 1.5),
                       ),
                       child: const Center(
-                          child: Text('🚨',
-                              style: TextStyle(fontSize: 26))),
+                          child:
+                              Text('🚨', style: TextStyle(fontSize: 26))),
                     ),
                     const SizedBox(width: 14),
+
+                    // text
                     const Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('Medical Emergency?',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                  height: 1.2,
-                                  letterSpacing: -0.2)),
+                          Text(
+                            'Medical Emergency?',
+                            style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w800,
+                                height: 1.2,
+                                letterSpacing: -0.2),
+                          ),
                           SizedBox(height: 3),
-                          Text('Tap to send SOS • Get instant help',
-                              style: TextStyle(
-                                  color: Colors.white70,
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w500)),
+                          Text(
+                            'Tap for AI triage • SOS • 102',
+                            style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500),
+                          ),
                         ],
                       ),
                     ),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 9),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: [
-                          BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.12),
-                              blurRadius: 8,
-                              offset: const Offset(0, 3))
-                        ],
+
+                    // SOS chip — dials 102 directly, does NOT navigate
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () {
+                        HapticFeedback.heavyImpact();
+                        PhoneCallService.call(context, '102',
+                            label: 'Ambulance');
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 14, vertical: 9),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(12),
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.12),
+                                blurRadius: 8,
+                                offset: const Offset(0, 3))
+                          ],
+                        ),
+                        child: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.call_rounded,
+                                size: 13, color: Color(0xFFFF4757)),
+                            SizedBox(width: 4),
+                            Text('102',
+                                style: TextStyle(
+                                    color: Color(0xFFFF4757),
+                                    fontWeight: FontWeight.w900,
+                                    fontSize: 14,
+                                    letterSpacing: 0.5)),
+                          ],
+                        ),
                       ),
-                      child: const Text('SOS',
-                          style: TextStyle(
-                              color: Color(0xFFFF4757),
-                              fontWeight: FontWeight.w900,
-                              fontSize: 14,
-                              letterSpacing: 1.0)),
                     ),
                   ],
                 ),

@@ -1,7 +1,9 @@
 ﻿import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
+import '../../../../../shared/utils/phone_call_service.dart';
 import '../providers/emergency_provider.dart';
 import '../widgets/first_aid/first_aid_card.dart';
 
@@ -16,260 +18,352 @@ class _FirstAidPageState extends ConsumerState<FirstAidPage> {
   String _selectedCategory = 'All';
 
   static const _categories = [
-    ('ðŸ¥', 'All'),
-    ('ðŸ’”', 'Cardiac'),
-    ('ðŸ§ ', 'Neurological'),
-    ('ðŸ©¸', 'Bleeding'),
-    ('ðŸŒ¡ï¸', 'Fever'),
-    ('ðŸ', 'Bites'),
-    ('ðŸ¤•', 'Injury'),
+    ('🏥', 'All'),
+    ('❤️', 'Cardiac'),
+    ('🧠', 'Neurological'),
+    ('🩸', 'Bleeding'),
+    ('🌡️', 'Fever'),
+    ('🐍', 'Bites'),
+    ('🤕', 'Injury'),
   ];
 
-  // Built-in first aid guides shown when no data loaded
+  // Full built-in first-aid guides
   static const _builtinGuides = [
     _GuideData(
-      emoji: 'ðŸ’”',
+      emoji: '❤️',
       title: 'Chest Pain / Heart Attack',
       category: 'Cardiac',
-      urgency: 'ðŸ”´ CRITICAL',
+      urgency: '🔴 CRITICAL',
       urgencyColor: DesignTokens.danger,
       steps: [
-        'ðŸ“ž Call 102 (ambulance) immediately',
-        'ðŸ›‹ï¸ Have the person sit or lie down comfortably',
-        'ðŸ’Š Give aspirin if available and not allergic',
-        'ðŸ¤š Loosen tight clothing around neck & chest',
-        'ðŸ‘€ Monitor breathing and pulse',
-        'ðŸ«€ Begin CPR if person becomes unresponsive',
+        '📞 Call 102 (ambulance) immediately',
+        '🛋️ Have the person sit or lie down comfortably',
+        '💊 Give aspirin (325 mg) if available and not allergic',
+        '🤚 Loosen tight clothing around neck and chest',
+        '👀 Monitor breathing and pulse continuously',
+        '🫀 Begin CPR if person becomes unresponsive and stops breathing',
       ],
+      doNotSteps: [
+        'Do NOT give food or water',
+        'Do NOT let the person exert themselves',
+        'Do NOT drive to hospital alone — wait for ambulance',
+      ],
+      callToAction: 'Call 102 immediately. Every minute counts.',
     ),
     _GuideData(
-      emoji: 'ðŸ§ ',
-      title: 'Stroke (FAST)',
+      emoji: '🧠',
+      title: 'Stroke — Use FAST',
       category: 'Neurological',
-      urgency: 'ðŸ”´ CRITICAL',
+      urgency: '🔴 CRITICAL',
       urgencyColor: DesignTokens.danger,
       steps: [
-        'ðŸ˜¶ F â€” Face drooping: Ask to smile',
-        'ðŸ’ª A â€” Arm weakness: Check both arms',
-        'ðŸ—£ï¸ S â€” Speech difficulty: Ask to repeat phrase',
-        'â° T â€” Time: Call 102 immediately',
-        'ðŸ›‘ Do not give food, water or medicine',
-        'ðŸ§‘â€âš•ï¸ Keep person calm until help arrives',
+        '⏰ Note the time symptoms started — critical for treatment',
+        '😶 F — Face: Ask to smile. Is one side drooping?',
+        '💪 A — Arms: Ask to raise both. Does one drift down?',
+        '🗣️ S — Speech: Ask to repeat a phrase. Is it slurred?',
+        '📞 T — Time: If yes to ANY of the above, call 102 NOW',
+        '🧑‍⚕️ Keep the person calm and still until help arrives',
       ],
+      doNotSteps: [
+        'Do NOT give food, water or any medication',
+        'Do NOT let the person sleep it off',
+        'Do NOT wait for symptoms to improve on their own',
+      ],
+      callToAction: 'Call 102 NOW. Treatment is most effective within 3 hours.',
     ),
     _GuideData(
-      emoji: 'ðŸ©¸',
+      emoji: '🩸',
       title: 'Severe Bleeding',
       category: 'Bleeding',
-      urgency: 'ðŸŸ  URGENT',
+      urgency: '🟠 URGENT',
       urgencyColor: Color(0xFFF97316),
       steps: [
-        'ðŸ§¤ Wear gloves if available',
-        'ðŸ¤š Apply firm direct pressure to the wound',
-        'ðŸ§£ Use a clean cloth or bandage',
-        'â¬†ï¸ Elevate the injured limb if possible',
-        'ðŸ©¹ Do not remove the cloth if soaked â€” add more',
-        'ðŸ“ž Seek emergency care immediately',
+        '🧤 Wear gloves if available to protect yourself',
+        '🤚 Apply firm direct pressure to the wound',
+        '🧣 Use a clean cloth or bandage — do not remove if soaked, add more on top',
+        '⬆️ Elevate the injured limb above heart level if possible',
+        '🩹 For limb bleeding that won\'t stop: apply tourniquet 5–7 cm above wound',
+        '📞 Seek emergency care immediately',
       ],
+      doNotSteps: [
+        'Do NOT remove embedded objects — stabilise them',
+        'Do NOT apply tourniquet to neck, chest or abdomen',
+      ],
+      callToAction: 'Call 102. Severe bleeding causes shock within minutes.',
     ),
     _GuideData(
-      emoji: 'ðŸŒ¡ï¸',
-      title: 'High Fever',
+      emoji: '🌡️',
+      title: 'High Fever / Seizure',
       category: 'Fever',
-      urgency: 'ðŸŸ¡ MODERATE',
+      urgency: '🟡 MODERATE',
       urgencyColor: DesignTokens.warning,
       steps: [
-        'ðŸŒ¡ï¸ Measure temperature accurately',
-        'ðŸ’§ Ensure adequate fluid intake',
-        'ðŸ§Š Use cool damp cloth on forehead',
-        'ðŸ’Š Give paracetamol if appropriate',
-        'ðŸ‘• Remove excessive clothing',
-        'ðŸ¥ Seek care if fever exceeds 39.5Â°C',
+        '🌡️ Measure temperature accurately with a thermometer',
+        '💊 Give paracetamol at correct dose for age and weight',
+        '🧊 Apply cool (not cold) damp cloth to forehead and armpits',
+        '💧 Ensure adequate fluid intake — water or oral rehydration solution',
+        '👕 Remove excessive clothing and blankets',
+        '🏥 Seek care if fever exceeds 39.5°C or seizures occur',
       ],
+      doNotSteps: [
+        'Do NOT use ice-cold water baths — causes shivering',
+        'Do NOT give aspirin to children under 16',
+        'Do NOT put anything in the mouth during a seizure',
+      ],
+      callToAction: 'Call 102 if fever exceeds 39.5°C, seizure occurs, or child is under 3 months.',
     ),
     _GuideData(
-      emoji: 'ðŸ',
-      title: 'Snake / Animal Bite',
+      emoji: '🐍',
+      title: 'Snakebite / Animal Bite',
       category: 'Bites',
-      urgency: 'ðŸ”´ CRITICAL',
+      urgency: '🔴 CRITICAL',
       urgencyColor: DesignTokens.danger,
       steps: [
-        'ðŸ›‘ Keep the person calm and still',
-        'ðŸ”» Keep the bitten area below heart level',
-        'ðŸ§¼ Wash with soap and water gently',
-        'âŒ Do NOT cut, suck or apply tourniquet',
-        'ðŸ“ž Call poison control or go to hospital',
-        'ðŸ“¸ Photograph the snake if safely possible',
+        '🛑 Move the person away from the snake immediately',
+        '🧘 Keep the person calm and still to slow venom spread',
+        '📉 Keep the bitten limb below heart level',
+        '🧼 Wash gently with soap and water',
+        '❌ Do NOT cut, suck or apply tourniquet',
+        '📞 Call poison control or go to hospital with antivenom urgently',
       ],
+      doNotSteps: [
+        'Do NOT cut the wound or try to suck out venom',
+        'Do NOT apply a tourniquet or ice',
+        'Do NOT give aspirin or ibuprofen — they increase bleeding',
+      ],
+      callToAction: 'Call 102. Antivenom must be given within 4–6 hours.',
     ),
     _GuideData(
-      emoji: 'ðŸ¤¢',
+      emoji: '☠️',
       title: 'Poisoning / Overdose',
       category: 'Injury',
-      urgency: 'ðŸ”´ CRITICAL',
+      urgency: '🔴 CRITICAL',
       urgencyColor: DesignTokens.danger,
       steps: [
-        'ðŸ“ž Call 102 or poison control immediately',
-        'ðŸ§´ Identify the substance if possible',
-        'âŒ Do NOT induce vomiting unless instructed',
-        'ðŸ’¨ Move to fresh air if inhaled',
-        'ðŸ‘€ Monitor breathing and consciousness',
-        'ðŸ¥ Bring the poison container to hospital',
+        '📞 Call 102 or Poison Control (1800-116-117) immediately',
+        '🧴 Identify the substance if possible — bring container to hospital',
+        '❌ Do NOT induce vomiting unless specifically told to',
+        '💨 If inhaled: move person to fresh air immediately',
+        '🛁 If on skin: remove clothing and flush with water 20 minutes',
+        '👀 Monitor breathing and consciousness',
       ],
+      doNotSteps: [
+        'Do NOT induce vomiting without medical guidance',
+        'Do NOT give milk, water or any food',
+        'Do NOT leave the person alone',
+      ],
+      callToAction: 'Call Poison Control 1800-116-117 or 102 immediately.',
+    ),
+    _GuideData(
+      emoji: '😵',
+      title: 'Loss of Consciousness',
+      category: 'Neurological',
+      urgency: '🔴 CRITICAL',
+      urgencyColor: DesignTokens.danger,
+      steps: [
+        '📞 Call 102 immediately',
+        '👋 Check responsiveness: tap shoulders, shout name',
+        '👁️ Check breathing: look, listen and feel',
+        '🔄 If breathing: place in recovery position on side',
+        '🫀 If NOT breathing: begin CPR — 30 compressions, 2 rescue breaths',
+        '⏱️ Continue CPR until ambulance arrives',
+      ],
+      doNotSteps: [
+        'Do NOT leave the person alone',
+        'Do NOT place a pillow under the head',
+        'Do NOT give food or water',
+      ],
+      callToAction: 'Call 102 immediately and start CPR if not breathing.',
+    ),
+    _GuideData(
+      emoji: '😮',
+      title: 'Choking',
+      category: 'Injury',
+      urgency: '🔴 CRITICAL',
+      urgencyColor: DesignTokens.danger,
+      steps: [
+        '❓ Ask loudly: "Are you choking?"',
+        '🚫 If person cannot speak, cough or breathe — act now',
+        '👋 Give 5 firm back blows between shoulder blades with heel of hand',
+        '🤼 Give 5 abdominal thrusts (Heimlich): arms around waist, push upward',
+        '🔁 Alternate 5 back blows and 5 abdominal thrusts',
+        '📞 If unconscious: begin CPR and call 102',
+      ],
+      doNotSteps: [
+        'Do NOT perform blind finger sweeps in the mouth',
+        'Do NOT slap a person who is still coughing effectively',
+      ],
+      callToAction: 'Call 102 if choking is not resolved within 2 minutes.',
     ),
   ];
+
+  List<_GuideData> get _filteredGuides => _selectedCategory == 'All'
+      ? _builtinGuides
+      : _builtinGuides
+          .where((g) => g.category == _selectedCategory)
+          .toList();
 
   @override
   Widget build(BuildContext context) {
-    final state = ref.watch(emergencyControllerProvider);
-
-    // Use built-in guides if no data from provider
+    final state      = ref.watch(emergencyControllerProvider);
     final useBuiltin = state.firstAidGuides.isEmpty;
 
     return Scaffold(
       backgroundColor: DesignTokens.background,
       appBar: AppBar(
         backgroundColor: DesignTokens.background,
-        foregroundColor: const Color(0xFF1A1035),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back_ios_new_rounded, color: DesignTokens.textStrong, size: 20),
+          icon: const Icon(Icons.arrow_back_ios_new_rounded,
+              color: DesignTokens.textStrong, size: 20),
           onPressed: () => Navigator.of(context).pop(),
         ),
-        title: const Row(
-          children: [
-            Text('ðŸ©¹', style: TextStyle(fontSize: 18)),
-            SizedBox(width: 8),
-            Text('First Aid Guides'),
-          ],
-        ),
-      ),
-      body: Column(
-        children: [
-          // Category filter
-          Container(
-            height: 50,
-            color: DesignTokens.background,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              separatorBuilder: (_, __) => const SizedBox(width: 8),
-              itemCount: _categories.length,
-              itemBuilder: (context, i) {
-                final cat = _categories[i];
-                final selected = _selectedCategory == cat.$2;
-                return GestureDetector(
-                  onTap: () => setState(() => _selectedCategory = cat.$2),
-                  child: AnimatedContainer(
-                    duration: const Duration(milliseconds: 160),
-                    padding: const EdgeInsets.symmetric(horizontal: 12),
-                    decoration: BoxDecoration(
-                      color: selected
-                          ? DesignTokens.primary
-                          : DesignTokens.surface,
-                      borderRadius: BorderRadius.circular(20),
-                      border: Border.all(
-                        color: selected
-                            ? DesignTokens.primary
-                            : DesignTokens.border,
-                      ),
-                    ),
-                    child: Row(
-                      children: [
-                        Text(cat.$1, style: const TextStyle(fontSize: 13)),
-                        const SizedBox(width: 4),
-                        Text(
-                          cat.$2,
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w700,
-                            color: selected ? Colors.white : DesignTokens.textStrong,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-
-          // Warning banner
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-            child: Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: DesignTokens.dangerContainer,
-                borderRadius: BorderRadius.circular(10),
-              ),
-              child: const Row(
-                children: [
-                  Text('âš ï¸', style: TextStyle(fontSize: 13)),
-                  SizedBox(width: 8),
-                  Expanded(
-                    child: Text(
-                      'These are general guidelines. Call 102 for all life-threatening emergencies.',
-                      style: TextStyle(
-                        color: DesignTokens.danger,
-                        fontSize: 11,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ),
-
-          // Guides list
-          Expanded(
-            child: RefreshIndicator(
-              onRefresh: () => ref
-                  .read(emergencyControllerProvider.notifier)
-                  .refreshFirstAid(),
-              child: useBuiltin
-                  ? _BuiltinGuidesList(
-                      guides: _builtinGuides
-                          .where((g) =>
-                              _selectedCategory == 'All' ||
-                              g.category == _selectedCategory)
-                          .toList(),
-                    )
-                  : ListView.separated(
-                      padding: const EdgeInsets.all(16),
-                      separatorBuilder: (_, __) => const SizedBox(height: 10),
-                      itemCount: state.firstAidGuides.length,
-                      itemBuilder: (context, i) =>
-                          FirstAidCard(guide: state.firstAidGuides[i]),
-                    ),
-            ),
+        title: const Row(children: [
+          Text('🩹', style: TextStyle(fontSize: 18)),
+          SizedBox(width: 8),
+          Text('First Aid Guides',
+              style: TextStyle(
+                  color: DesignTokens.textStrong, fontWeight: FontWeight.w700)),
+        ]),
+        actions: [
+          // Instant 102 dial from first-aid page
+          TextButton.icon(
+            onPressed: () {
+              HapticFeedback.heavyImpact();
+              PhoneCallService.call(context, '102', label: 'Ambulance');
+            },
+            icon: const Icon(Icons.call_rounded,
+                size: 16, color: DesignTokens.danger),
+            label: const Text('Call 102',
+                style: TextStyle(
+                    color: DesignTokens.danger,
+                    fontWeight: FontWeight.w900,
+                    fontSize: 13)),
           ),
         ],
       ),
+      body: Column(children: [
+        // ── Category filter chips ──────────────────────────────────────
+        SizedBox(
+          height: 50,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+            separatorBuilder: (_, __) => const SizedBox(width: 8),
+            itemCount: _categories.length,
+            itemBuilder: (_, i) {
+              final cat      = _categories[i];
+              final selected = _selectedCategory == cat.$2;
+              return GestureDetector(
+                onTap: () => setState(() => _selectedCategory = cat.$2),
+                child: AnimatedContainer(
+                  duration: const Duration(milliseconds: 150),
+                  padding: const EdgeInsets.symmetric(horizontal: 12),
+                  decoration: BoxDecoration(
+                    color: selected ? DesignTokens.primary : DesignTokens.surface,
+                    borderRadius: BorderRadius.circular(20),
+                    border: Border.all(
+                        color: selected
+                            ? DesignTokens.primary
+                            : DesignTokens.border),
+                  ),
+                  child: Row(children: [
+                    Text(cat.$1, style: const TextStyle(fontSize: 13)),
+                    const SizedBox(width: 4),
+                    Text(cat.$2,
+                        style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w700,
+                            color: selected
+                                ? Colors.white
+                                : DesignTokens.textStrong)),
+                  ]),
+                ),
+              );
+            },
+          ),
+        ),
+
+        // ── Warning + 102 strip ────────────────────────────────────────
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 0, 16, 6),
+          child: Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: DesignTokens.dangerContainer,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Row(children: [
+              const Text('⚠️', style: TextStyle(fontSize: 13)),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'These are general guidelines. For life-threatening emergencies call 102 immediately.',
+                  style: TextStyle(
+                      color: DesignTokens.danger,
+                      fontSize: 11,
+                      fontWeight: FontWeight.w500),
+                ),
+              ),
+              const SizedBox(width: 8),
+              GestureDetector(
+                onTap: () {
+                  HapticFeedback.heavyImpact();
+                  PhoneCallService.call(context, '102', label: 'Ambulance');
+                },
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: DesignTokens.danger,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: const Row(mainAxisSize: MainAxisSize.min, children: [
+                    Icon(Icons.call_rounded, color: Colors.white, size: 13),
+                    SizedBox(width: 4),
+                    Text('102',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900)),
+                  ]),
+                ),
+              ),
+            ]),
+          ),
+        ),
+
+        // ── Guides list ────────────────────────────────────────────────
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: () =>
+                ref.read(emergencyControllerProvider.notifier).refreshFirstAid(),
+            child: useBuiltin
+                ? (_filteredGuides.isEmpty
+                    ? const Center(
+                        child: Text('No guides in this category.',
+                            style: TextStyle(color: DesignTokens.textMuted)))
+                    : ListView.separated(
+                        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+                        separatorBuilder: (_, __) => const SizedBox(height: 10),
+                        itemCount: _filteredGuides.length,
+                        itemBuilder: (_, i) =>
+                            _GuideCard(guide: _filteredGuides[i]),
+                      ))
+                : ListView.separated(
+                    padding: const EdgeInsets.all(16),
+                    separatorBuilder: (_, __) => const SizedBox(height: 10),
+                    itemCount: state.firstAidGuides.length,
+                    itemBuilder: (_, i) =>
+                        FirstAidCard(guide: state.firstAidGuides[i]),
+                  ),
+          ),
+        ),
+      ]),
     );
   }
 }
 
-class _BuiltinGuidesList extends StatelessWidget {
-  final List<_GuideData> guides;
-  const _BuiltinGuidesList({required this.guides});
-
-  @override
-  Widget build(BuildContext context) {
-    if (guides.isEmpty) {
-      return const Center(
-        child: Text('No guides in this category.', style: TextStyle(color: DesignTokens.textMuted)),
-      );
-    }
-    return ListView.separated(
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
-      itemCount: guides.length,
-      itemBuilder: (context, i) => _GuideCard(guide: guides[i]),
-    );
-  }
-}
-
+// ─── Built-in guide card ──────────────────────────────────────────────────────
 class _GuideCard extends StatefulWidget {
   final _GuideData guide;
   const _GuideCard({required this.guide});
@@ -279,10 +373,13 @@ class _GuideCard extends StatefulWidget {
 }
 
 class _GuideCardState extends State<_GuideCard> {
-  bool _expanded = false;
+  bool _expanded  = false;
+  bool _showDonts = false;
 
   @override
   Widget build(BuildContext context) {
+    final g = widget.guide;
+
     return Container(
       decoration: BoxDecoration(
         color: DesignTokens.surface,
@@ -293,70 +390,66 @@ class _GuideCardState extends State<_GuideCard> {
         color: Colors.transparent,
         borderRadius: BorderRadius.circular(16),
         child: InkWell(
-          onTap: () => setState(() => _expanded = !_expanded),
+          onTap: () => setState(() {
+            _expanded = !_expanded;
+            if (!_expanded) _showDonts = false;
+          }),
           borderRadius: BorderRadius.circular(16),
           child: Padding(
             padding: const EdgeInsets.all(14),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Row(
-                  children: [
-                    Container(
-                      width: 46,
-                      height: 46,
-                      decoration: BoxDecoration(
-                        color: widget.guide.urgencyColor.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Center(
-                        child: Text(widget.guide.emoji, style: const TextStyle(fontSize: 22)),
-                      ),
+                // ── Header row ─────────────────────────────────────────
+                Row(children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      color: g.urgencyColor.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Column(
+                    child: Center(
+                        child: Text(g.emoji,
+                            style: const TextStyle(fontSize: 22))),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            widget.guide.title,
-                            style: const TextStyle(
+                      Text(g.title,
+                          style: const TextStyle(
                               fontWeight: FontWeight.w800,
                               fontSize: 14,
-                              color: DesignTokens.textStrong,
-                            ),
-                          ),
-                          const SizedBox(height: 3),
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
-                            decoration: BoxDecoration(
-                              color: widget.guide.urgencyColor.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(6),
-                            ),
-                            child: Text(
-                              widget.guide.urgency,
-                              style: TextStyle(
-                                color: widget.guide.urgencyColor,
+                              color: DesignTokens.textStrong)),
+                      const SizedBox(height: 3),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: g.urgencyColor.withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(g.urgency,
+                            style: TextStyle(
+                                color: g.urgencyColor,
                                 fontSize: 10,
-                                fontWeight: FontWeight.w700,
-                              ),
-                            ),
-                          ),
-                        ],
+                                fontWeight: FontWeight.w700)),
                       ),
-                    ),
-                    AnimatedRotation(
-                      turns: _expanded ? 0.5 : 0,
-                      duration: const Duration(milliseconds: 200),
-                      child: const Icon(
-                        Icons.keyboard_arrow_down_rounded,
-                        color: DesignTokens.textMuted,
-                      ),
-                    ),
-                  ],
-                ),
+                    ]),
+                  ),
+                  AnimatedRotation(
+                    turns: _expanded ? 0.5 : 0,
+                    duration: const Duration(milliseconds: 200),
+                    child: const Icon(Icons.keyboard_arrow_down_rounded,
+                        color: DesignTokens.textMuted),
+                  ),
+                ]),
+
+                // ── Expanded content ───────────────────────────────────
                 AnimatedCrossFade(
-                  duration: const Duration(milliseconds: 200),
+                  duration: const Duration(milliseconds: 220),
                   crossFadeState: _expanded
                       ? CrossFadeState.showFirst
                       : CrossFadeState.showSecond,
@@ -366,46 +459,129 @@ class _GuideCardState extends State<_GuideCard> {
                       const SizedBox(height: 12),
                       const Divider(height: 1, color: DesignTokens.borderMuted),
                       const SizedBox(height: 12),
-                      ...widget.guide.steps.asMap().entries.map((e) {
-                        return Padding(
-                          padding: const EdgeInsets.only(bottom: 8),
-                          child: Row(
+
+                      // Steps
+                      ...g.steps.asMap().entries.map((e) => Padding(
+                        padding: const EdgeInsets.only(bottom: 8),
+                        child: Row(
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 22,
-                                height: 22,
-                                margin: const EdgeInsets.only(top: 1),
-                                decoration: BoxDecoration(
-                                  color: DesignTokens.primaryContainer,
-                                  borderRadius: BorderRadius.circular(6),
-                                ),
-                                child: Center(
-                                  child: Text(
-                                    '${e.key + 1}',
-                                    style: const TextStyle(
+                          Container(
+                            width: 22,
+                            height: 22,
+                            margin: const EdgeInsets.only(top: 1),
+                            decoration: BoxDecoration(
+                              color: DesignTokens.primaryContainer,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Center(
+                              child: Text('${e.key + 1}',
+                                  style: const TextStyle(
                                       fontSize: 10,
                                       fontWeight: FontWeight.w800,
-                                      color: DesignTokens.primaryDark,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              const SizedBox(width: 10),
-                              Expanded(
-                                child: Text(
-                                  e.value,
-                                  style: const TextStyle(
+                                      color: DesignTokens.primaryDark)),
+                            ),
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(e.value,
+                                style: const TextStyle(
                                     fontSize: 13,
                                     color: DesignTokens.textStrong,
-                                    height: 1.4,
-                                  ),
-                                ),
-                              ),
-                            ],
+                                    height: 1.4)),
                           ),
-                        );
-                      }),
+                        ]),
+                      )),
+
+                      // What NOT to do (collapsible)
+                      if (g.doNotSteps.isNotEmpty) ...[
+                        const SizedBox(height: 4),
+                        GestureDetector(
+                          onTap: () =>
+                              setState(() => _showDonts = !_showDonts),
+                          child: Container(
+                            padding: const EdgeInsets.all(10),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFFEF2F2),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Row(children: [
+                              const Text('🚫',
+                                  style: TextStyle(fontSize: 14)),
+                              const SizedBox(width: 8),
+                              const Expanded(
+                                child: Text('What NOT to do',
+                                    style: TextStyle(
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: 13,
+                                        color: Color(0xFFDC2626))),
+                              ),
+                              Icon(
+                                _showDonts
+                                    ? Icons.keyboard_arrow_up_rounded
+                                    : Icons.keyboard_arrow_down_rounded,
+                                color: const Color(0xFFDC2626),
+                              ),
+                            ]),
+                          ),
+                        ),
+                        if (_showDonts) ...[
+                          const SizedBox(height: 8),
+                          ...g.doNotSteps.map((s) => Padding(
+                            padding: const EdgeInsets.only(bottom: 6),
+                            child: Row(
+                                crossAxisAlignment:
+                                    CrossAxisAlignment.start,
+                                children: [
+                              const Text('❌',
+                                  style: TextStyle(fontSize: 12)),
+                              const SizedBox(width: 8),
+                              Expanded(
+                                child: Text(s,
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: Color(0xFF991B1B),
+                                        height: 1.4)),
+                              ),
+                            ]),
+                          )),
+                        ],
+                      ],
+
+                      // Call-to-action
+                      const SizedBox(height: 10),
+                      GestureDetector(
+                        onTap: () {
+                          HapticFeedback.heavyImpact();
+                          PhoneCallService.call(context, '102',
+                              label: 'Ambulance');
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFFF0FDF4),
+                            borderRadius: BorderRadius.circular(10),
+                            border: Border.all(
+                                color: const Color(0xFF059669)
+                                    .withValues(alpha: 0.3)),
+                          ),
+                          child: Row(children: [
+                            const Icon(Icons.call_rounded,
+                                size: 14, color: Color(0xFF059669)),
+                            const SizedBox(width: 8),
+                            Expanded(
+                              child: Text(g.callToAction,
+                                  style: const TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 12,
+                                      color: Color(0xFF059669))),
+                            ),
+                            const Icon(Icons.chevron_right_rounded,
+                                size: 14, color: Color(0xFF059669)),
+                          ]),
+                        ),
+                      ),
                     ],
                   ),
                   secondChild: const SizedBox.shrink(),
@@ -419,6 +595,7 @@ class _GuideCardState extends State<_GuideCard> {
   }
 }
 
+// ─── Data class for built-in guides ──────────────────────────────────────────
 class _GuideData {
   final String emoji;
   final String title;
@@ -426,6 +603,8 @@ class _GuideData {
   final String urgency;
   final Color urgencyColor;
   final List<String> steps;
+  final List<String> doNotSteps;
+  final String callToAction;
 
   const _GuideData({
     required this.emoji,
@@ -434,5 +613,7 @@ class _GuideData {
     required this.urgency,
     required this.urgencyColor,
     required this.steps,
+    this.doNotSteps = const [],
+    this.callToAction = 'Call 102 for emergencies.',
   });
 }

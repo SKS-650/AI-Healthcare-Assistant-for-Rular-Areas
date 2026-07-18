@@ -1,7 +1,8 @@
 @echo off
 SETLOCAL EnableDelayedExpansion
 
-REM ============================================================================
+REM ===================================
+=========================================
 REM  AI Healthcare Assistant — Quick Backend Startup Script
 REM  ─────────────────────────────────────────────────────
 REM  Usage  : Double-click this file OR run from terminal

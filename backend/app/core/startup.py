@@ -4,8 +4,14 @@ from __future__ import annotations
 
 import logging
 import pathlib
+import sys
 
 logger = logging.getLogger(__name__)
+
+# ── Ensure the backend root is on sys.path so ai_models is always importable ──
+_BACKEND_ROOT = str(pathlib.Path(__file__).resolve().parent.parent.parent)
+if _BACKEND_ROOT not in sys.path:
+    sys.path.insert(0, _BACKEND_ROOT)
 
 
 def initialize_application() -> None:

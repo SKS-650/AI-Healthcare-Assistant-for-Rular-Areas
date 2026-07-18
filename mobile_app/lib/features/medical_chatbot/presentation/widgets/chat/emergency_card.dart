@@ -1,7 +1,12 @@
 import 'package:flutter/material.dart';
-import '../../../../../shared/design_system/design_tokens.dart';
+import 'package:flutter/services.dart';
 
-/// Red emergency banner shown when bot detects a life-threatening situation.
+import '../../../../../routing/route_names.dart';
+import '../../../../../shared/design_system/design_tokens.dart';
+import '../../../../../shared/utils/phone_call_service.dart';
+
+/// Red emergency banner injected into the chat when the bot detects a
+/// life-threatening situation.  Every call button now dials for real.
 class EmergencyCard extends StatelessWidget {
   const EmergencyCard({super.key});
 
@@ -28,47 +33,60 @@ class EmergencyCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Row(
-            children: [
-              Text('🚨', style: TextStyle(fontSize: 22)),
-              SizedBox(width: 10),
-              Text(
-                'MEDICAL EMERGENCY',
-                style: TextStyle(
+          const Row(children: [
+            Text('🚨', style: TextStyle(fontSize: 22)),
+            SizedBox(width: 10),
+            Text(
+              'MEDICAL EMERGENCY',
+              style: TextStyle(
                   color: Colors.white,
                   fontSize: 15,
                   fontWeight: FontWeight.w900,
-                  letterSpacing: 0.5,
-                ),
-              ),
-            ],
-          ),
+                  letterSpacing: 0.5),
+            ),
+          ]),
           const SizedBox(height: 10),
           const Text(
             'Your symptoms may require immediate medical attention.',
             style: TextStyle(color: Colors.white, fontSize: 13, height: 1.4),
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              _EmergencyCallButton(
-                emoji: '🚑',
-                label: '108\nAmbulance',
-                onTap: () {},
+
+          // ── Dial buttons ──────────────────────────────────────────────
+          Row(children: [
+            _CallBtn(emoji: '🚑', label: '102\nAmbulance', number: '102'),
+            const SizedBox(width: 8),
+            _CallBtn(emoji: '🆘', label: '108\nDisaster',  number: '108'),
+            const SizedBox(width: 8),
+            _CallBtn(emoji: '☎️', label: '112\nEmergency', number: '112'),
+          ]),
+          const SizedBox(height: 10),
+
+          // ── Full emergency hub link ────────────────────────────────────
+          GestureDetector(
+            onTap: () =>
+                Navigator.of(context).pushNamed(RouteNames.emergency),
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 10),
+              decoration: BoxDecoration(
+                color: Colors.white.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(10),
+                border: Border.all(color: Colors.white30),
               ),
-              const SizedBox(width: 10),
-              _EmergencyCallButton(
-                emoji: '🆘',
-                label: '112\nEmergency',
-                onTap: () {},
+              child: const Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Text('🩺', style: TextStyle(fontSize: 14)),
+                  SizedBox(width: 8),
+                  Text('Open Emergency Hub → AI Triage + SOS',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w700)),
+                ],
               ),
-              const SizedBox(width: 10),
-              _EmergencyCallButton(
-                emoji: '🏥',
-                label: '102\nNepal',
-                onTap: () {},
-              ),
-            ],
+            ),
           ),
         ],
       ),
@@ -76,20 +94,20 @@ class EmergencyCard extends StatelessWidget {
   }
 }
 
-class _EmergencyCallButton extends StatelessWidget {
-  final String emoji, label;
-  final VoidCallback onTap;
-  const _EmergencyCallButton({
-    required this.emoji,
-    required this.label,
-    required this.onTap,
-  });
+// ── Single call button ────────────────────────────────────────────────────────
+class _CallBtn extends StatelessWidget {
+  final String emoji, label, number;
+  const _CallBtn(
+      {required this.emoji, required this.label, required this.number});
 
   @override
   Widget build(BuildContext context) {
     return Expanded(
       child: GestureDetector(
-        onTap: onTap,
+        onTap: () {
+          HapticFeedback.heavyImpact();
+          PhoneCallService.call(context, number, label: label.split('\n').last);
+        },
         child: Container(
           padding: const EdgeInsets.symmetric(vertical: 8),
           decoration: BoxDecoration(
@@ -97,22 +115,17 @@ class _EmergencyCallButton extends StatelessWidget {
             borderRadius: BorderRadius.circular(10),
             border: Border.all(color: Colors.white30),
           ),
-          child: Column(
-            children: [
-              Text(emoji, style: const TextStyle(fontSize: 18)),
-              const SizedBox(height: 4),
-              Text(
-                label,
+          child: Column(children: [
+            Text(emoji, style: const TextStyle(fontSize: 18)),
+            const SizedBox(height: 4),
+            Text(label,
                 textAlign: TextAlign.center,
                 style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w700,
-                  height: 1.2,
-                ),
-              ),
-            ],
-          ),
+                    color: Colors.white,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    height: 1.2)),
+          ]),
         ),
       ),
     );
