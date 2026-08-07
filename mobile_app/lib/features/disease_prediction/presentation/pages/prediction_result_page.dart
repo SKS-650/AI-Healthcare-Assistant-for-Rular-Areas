@@ -538,7 +538,7 @@ class _HeroBanner extends StatelessWidget {
           ),
           // ── Content ─────────────────────────────────────────────────────
           Padding(
-            padding: const EdgeInsets.fromLTRB(24, 8, 24, 28),
+            padding: const EdgeInsets.fromLTRB(24, 16, 24, 28),
             child: Column(
               children: [
                 Container(

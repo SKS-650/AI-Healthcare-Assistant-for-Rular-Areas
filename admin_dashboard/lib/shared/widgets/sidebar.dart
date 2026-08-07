@@ -149,15 +149,14 @@ class Sidebar extends ConsumerWidget {
           decoration: BoxDecoration(
               border: Border(bottom: BorderSide(color: borderColor))),
           child: Row(children: [
-            Container(
-              width: 36, height: 36,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                    colors: [AppColors.primary, AppColors.primaryDark]),
-                borderRadius: BorderRadius.circular(10),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: Image.asset(
+                'assets/images/logo.png',
+                width: 36,
+                height: 36,
+                fit: BoxFit.cover,
               ),
-              child: const Icon(Icons.local_hospital_rounded,
-                  color: Colors.white, size: 20),
             ),
             if (!collapsed) ...[
               const SizedBox(width: 12),
@@ -165,7 +164,7 @@ class Sidebar extends ConsumerWidget {
                 mainAxisAlignment: MainAxisAlignment.center,
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Text('Healthcare AI',
+                  Text('HealthAI',
                       style: Theme.of(context).textTheme.titleMedium
                           ?.copyWith(fontWeight: FontWeight.w700)),
                   Text('Admin Panel',

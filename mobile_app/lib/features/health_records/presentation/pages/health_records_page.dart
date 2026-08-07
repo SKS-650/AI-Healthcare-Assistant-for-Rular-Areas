@@ -125,15 +125,6 @@ class _PHRSliverAppBar extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const Text(
-                          '📋 Health Records',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 22,
-                            fontWeight: FontWeight.w900,
-                            letterSpacing: -0.5,
-                          ),
-                        ),
                         const SizedBox(height: 6),
                         Text(
                           profile?.bloodGroup != null
@@ -185,7 +176,7 @@ class _PHRSliverAppBar extends StatelessWidget {
           style: TextStyle(
               fontSize: 16,
               fontWeight: FontWeight.w800,
-              color: DesignTokens.textStrong),
+              color: Colors.white),
         ),
         titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
       ),

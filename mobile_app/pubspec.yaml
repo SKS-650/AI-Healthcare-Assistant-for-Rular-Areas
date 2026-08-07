@@ -53,6 +53,7 @@ dev_dependencies:
   flutter_lints: ^4.0.0
   hive_generator: ^2.0.1
   build_runner: ^2.4.12
+  flutter_launcher_icons: ^0.14.1
 
 flutter:
   uses-material-design: true
@@ -63,3 +64,11 @@ flutter:
     - assets/audio/
     - assets/offline/chatbot/
     - assets/offline/education/
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/images/logo.png"
+  min_sdk_android: 21
+  web:
+    generate: false

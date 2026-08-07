@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../../models/symptom_check_response.dart';
+import '../../../medical_chatbot/presentation/pages/chat_page.dart';
 
 class ResultsPage extends StatefulWidget {
   final SymptomCheckResponse response;
@@ -76,6 +77,8 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                       const SizedBox(height: 16),
                       _buildDisclaimerCard(),
                       const SizedBox(height: 16),
+                      _buildChatbotButton(),
+                      const SizedBox(height: 16),
                       _buildActionButtons(),
                       const SizedBox(height: 32),
                     ]),
@@ -128,12 +131,9 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
                 const SizedBox(height: 4),
                 Text(widget.response.riskAssessment.riskLevelLabel,
                     style: TextStyle(color: Colors.white.withValues(alpha: 0.85), fontSize: 13)),
-              ],
-            ),
+              ],            ),
           ),
         ),
-        title: const Text('Results', style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        centerTitle: false,
       ),
     );
   }
@@ -602,6 +602,104 @@ class _ResultsPageState extends State<ResultsPage> with TickerProviderStateMixin
           ),
         ),
       ],
+    );
+  }
+
+  // ─── AI Chatbot Button ────────────────────────────────────────────────────
+  Widget _buildChatbotButton() {
+    final disease = _capitalize(widget.response.primaryDisease);
+    final risk = widget.response.riskAssessment.riskLevelLabel;
+    final confidence = (widget.response.primaryConfidence * 100).toStringAsFixed(1);
+    final symptoms = (widget.response.inputSummary['symptoms'] as List?)
+            ?.cast<String>()
+            .take(4)
+            .join(', ') ??
+        '';
+    final initialMessage =
+        'I just used the AI Symptom Checker. '
+        'The result shows "$disease" as the most likely condition '
+        '($confidence% confidence, $risk risk).'
+        '${symptoms.isNotEmpty ? " My symptoms include: $symptoms." : ""} '
+        'Can you explain this condition and what I should do next?';
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () => Navigator.of(context).push(
+            MaterialPageRoute(
+              builder: (_) => ChatPage(initialMessage: initialMessage),
+            ),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text('🤖', style: TextStyle(fontSize: 22)),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ask AI Medical Chatbot',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Get detailed explanation & follow-up advice',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
     );
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
 import '../../../../../shared/utils/phone_call_service.dart';
+import '../../../medical_chatbot/presentation/pages/chat_page.dart';
 import '../../domain/entities/emergency_assessment.dart';
 import '../../domain/entities/first_aid_guide.dart';
 import '../../domain/entities/hospital.dart';
@@ -710,6 +711,11 @@ class _ActionButtons extends ConsumerWidget {
           ),
         ),
       ]),
+
+      const SizedBox(height: 10),
+
+      // AI Chatbot button
+      _ChatbotButton(result: result),
     ]);
   }
 
@@ -790,6 +796,108 @@ class _SmallActionButton extends StatelessWidget {
           Text(label, style: TextStyle(
               color: color, fontWeight: FontWeight.w700, fontSize: 12)),
         ]),
+      ),
+    );
+  }
+}
+
+// ─── AI Chatbot Button ────────────────────────────────────────────────────────
+class _ChatbotButton extends StatelessWidget {
+  final EmergencyAssessment result;
+  const _ChatbotButton({required this.result});
+
+  String _buildMessage() {
+    final emergency = result.possibleEmergency;
+    final risk = result.riskLevel.displayName;
+    final dept = result.recommendedDept;
+    return 'I just completed an emergency assessment. '
+        'The result indicates "$emergency" with a $risk risk level. '
+        'The recommended department is $dept. '
+        'Can you help me understand what steps I should take next?';
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          colors: [Color(0xFF6366F1), Color(0xFF8B5CF6)],
+          begin: Alignment.centerLeft,
+          end: Alignment.centerRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF6366F1).withValues(alpha: 0.35),
+            blurRadius: 12,
+            offset: const Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        borderRadius: BorderRadius.circular(16),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(16),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Navigator.of(context).push(
+              MaterialPageRoute(
+                builder: (_) => ChatPage(initialMessage: _buildMessage()),
+              ),
+            );
+          },
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+            child: Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: Colors.white.withValues(alpha: 0.2),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Center(
+                    child: Text('🤖', style: TextStyle(fontSize: 22)),
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        'Ask AI Medical Chatbot',
+                        style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 15,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                      SizedBox(height: 2),
+                      Text(
+                        'Get guidance on next steps & care advice',
+                        style: TextStyle(
+                          color: Colors.white70,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.arrow_forward_rounded,
+                  color: Colors.white70,
+                  size: 20,
+                ),
+              ],
+            ),
+          ),
+        ),
       ),
     );
   }

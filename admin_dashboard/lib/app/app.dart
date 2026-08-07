@@ -28,7 +28,7 @@ class AdminApp extends ConsumerWidget {
 
     final router = ref.watch(routerProvider);
     return MaterialApp.router(
-      title: 'Healthcare AI — Admin',
+      title: 'HealthAI — Admin',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       darkTheme: AppTheme.dark,
@@ -55,11 +55,6 @@ class _SplashScreen extends StatelessWidget {
               width: 76,
               height: 76,
               decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [AppColors.primary, AppColors.primaryDark],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
                 borderRadius: BorderRadius.circular(22),
                 boxShadow: [
                   BoxShadow(
@@ -69,15 +64,19 @@ class _SplashScreen extends StatelessWidget {
                   ),
                 ],
               ),
-              child: const Icon(
-                Icons.local_hospital_rounded,
-                color: Colors.white,
-                size: 38,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(22),
+                child: Image.asset(
+                  'assets/images/logo.png',
+                  width: 76,
+                  height: 76,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(height: 28),
             Text(
-              'Healthcare AI',
+              'HealthAI',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w800,
