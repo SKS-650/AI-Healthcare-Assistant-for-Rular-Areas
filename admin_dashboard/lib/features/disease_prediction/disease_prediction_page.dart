@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -227,7 +227,7 @@ class _TopDiseasesCard extends StatelessWidget {
                     Container(
                       width: 24, height: 24,
                       decoration: BoxDecoration(
-                        color: AppColors.chartPalette[e.key % AppColors.chartPalette.length].withOpacity(0.15),
+                        color: AppColors.chartPalette[e.key % AppColors.chartPalette.length].withValues(alpha: 0.15),
                         borderRadius: BorderRadius.circular(6),
                       ),
                       child: Center(child: Text('${e.key + 1}',
@@ -291,7 +291,7 @@ class _ConfidenceBar extends StatelessWidget {
       SizedBox(width: 56, height: 5,
           child: ClipRRect(borderRadius: BorderRadius.circular(3),
               child: LinearProgressIndicator(value: value.clamp(0.0, 1.0),
-                  backgroundColor: color.withOpacity(0.15),
+                  backgroundColor: color.withValues(alpha: 0.15),
                   valueColor: AlwaysStoppedAnimation(color)))),
       const SizedBox(width: 6),
       Text('$pct%', style: TextStyle(fontSize: 12, fontWeight: FontWeight.w700, color: color)),

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -349,7 +349,7 @@ class _SymptomFrequencyCard extends StatelessWidget {
                     child: LinearProgressIndicator(
                       value: maxCount > 0 ? e.value.count / maxCount : 0,
                       minHeight: 6,
-                      backgroundColor: color.withOpacity(0.12),
+                      backgroundColor: color.withValues(alpha: 0.12),
                       valueColor: AlwaysStoppedAnimation(color),
                     ),
                   ),
@@ -384,7 +384,7 @@ class _EmergencyTypesCard extends StatelessWidget {
                 child: Row(children: [
                   Container(width: 28, height: 28,
                       decoration: BoxDecoration(
-                        color: color.withOpacity(0.12),
+                        color: color.withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(8),
                       ),
                       child: Center(child: Text('${e.key + 1}',

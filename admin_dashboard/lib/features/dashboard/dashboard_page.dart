@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -258,10 +258,10 @@ class _HealthChip extends StatelessWidget {
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
-          color: (isOk ? AppColors.success : AppColors.error).withOpacity(0.08),
+          color: (isOk ? AppColors.success : AppColors.error).withValues(alpha: 0.08),
           borderRadius: BorderRadius.circular(10),
           border: Border.all(
-              color: (isOk ? AppColors.success : AppColors.error).withOpacity(0.3)),
+              color: (isOk ? AppColors.success : AppColors.error).withValues(alpha: 0.3)),
         ),
         child: Row(mainAxisSize: MainAxisSize.min, children: [
           Icon(icon, size: 14,
@@ -336,9 +336,9 @@ class _QuickLinkButton extends StatelessWidget {
           onTap: () => context.go(link.route),
           child: Container(
             decoration: BoxDecoration(
-              color: link.color.withOpacity(0.08),
+              color: link.color.withValues(alpha: 0.08),
               borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: link.color.withOpacity(0.2)),
+              border: Border.all(color: link.color.withValues(alpha: 0.2)),
             ),
             child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -476,7 +476,7 @@ class _EmergencyTile extends StatelessWidget {
       padding: const EdgeInsets.only(bottom: 12),
       child: Row(children: [
         Container(width: 36, height: 36,
-            decoration: BoxDecoration(color: riskColor.withOpacity(0.1),
+            decoration: BoxDecoration(color: riskColor.withValues(alpha: 0.1),
                 borderRadius: BorderRadius.circular(10)),
             child: Icon(Icons.warning_rounded, color: riskColor, size: 18)),
         const SizedBox(width: 12),
@@ -489,7 +489,7 @@ class _EmergencyTile extends StatelessWidget {
         ])),
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-          decoration: BoxDecoration(color: riskColor.withOpacity(0.1),
+          decoration: BoxDecoration(color: riskColor.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12)),
           child: Text(risk, style: TextStyle(fontSize: 10,
               fontWeight: FontWeight.w700, color: riskColor)),

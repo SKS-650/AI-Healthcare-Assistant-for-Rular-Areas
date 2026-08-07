@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -39,7 +39,7 @@ class EmergencyPage extends ConsumerWidget {
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
               decoration: BoxDecoration(color: AppColors.errorSurface,
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(color: AppColors.error.withOpacity(0.3))),
+                  border: Border.all(color: AppColors.error.withValues(alpha: 0.3))),
               child: Row(children: [
                 const Icon(Icons.crisis_alert_rounded, color: AppColors.error, size: 14),
                 const SizedBox(width: 6),
@@ -123,8 +123,8 @@ class EmergencyPage extends ConsumerWidget {
           ],
           rows: state.items.map((e) => DataRow(
             color: WidgetStateProperty.resolveWith((_) {
-              if (e.riskLevel == 'CRITICAL') return AppColors.riskCritical.withOpacity(0.04);
-              if (e.riskLevel == 'HIGH') return AppColors.riskHigh.withOpacity(0.03);
+              if (e.riskLevel == 'CRITICAL') return AppColors.riskCritical.withValues(alpha: 0.04);
+              if (e.riskLevel == 'HIGH') return AppColors.riskHigh.withValues(alpha: 0.03);
               return null;
             }),
             cells: [
@@ -247,7 +247,7 @@ class _ScoreBar extends StatelessWidget {
             child: ClipRRect(borderRadius: BorderRadius.circular(3),
                 child: LinearProgressIndicator(
                     value: score / 100,
-                    backgroundColor: _color.withOpacity(0.15),
+                    backgroundColor: _color.withValues(alpha: 0.15),
                     valueColor: AlwaysStoppedAnimation(_color)))),
         const SizedBox(width: 6),
         Text('$score%', style: TextStyle(fontSize: 12,

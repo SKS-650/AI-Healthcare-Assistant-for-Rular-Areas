@@ -1,4 +1,4 @@
-import 'package:fl_chart/fl_chart.dart';
+﻿import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:intl/intl.dart';
@@ -80,7 +80,7 @@ class LineChartCard extends StatelessWidget {
         show: true,
         drawVerticalLine: false,
         getDrawingHorizontalLine: (_) => FlLine(
-            color: AppColors.lightBorder.withOpacity(0.5), strokeWidth: 1),
+            color: AppColors.lightBorder.withValues(alpha: 0.5), strokeWidth: 1),
       ),
       titlesData: FlTitlesData(
         leftTitles: AxisTitles(
@@ -132,7 +132,7 @@ class LineChartCard extends StatelessWidget {
                 dotData: const FlDotData(show: false),
                 belowBarData: BarAreaData(
                   show: true,
-                  color: s.color.withOpacity(0.08),
+                  color: s.color.withValues(alpha: 0.08),
                 ),
               ))
           .toList(),
@@ -174,7 +174,7 @@ class BarChartCard extends StatelessWidget {
                   show: true,
                   drawVerticalLine: false,
                   getDrawingHorizontalLine: (_) => FlLine(
-                      color: AppColors.lightBorder.withOpacity(0.5),
+                      color: AppColors.lightBorder.withValues(alpha: 0.5),
                       strokeWidth: 1),
                 ),
                 titlesData: FlTitlesData(

@@ -1,4 +1,4 @@
-﻿"""Admin API routes — mounted under /api/v1/admin"""
+"""Admin API routes — mounted under /api/v1/admin"""
 
 from __future__ import annotations
 
@@ -952,6 +952,7 @@ async def system_health(db: AsyncSession = Depends(get_db)) -> dict:
     
     try:
         # Test database connection
+        from app.auth.models import UserModel
         await db.execute(select(func.count(UserModel.id)))
     except Exception:
         health["database"] = "unhealthy"

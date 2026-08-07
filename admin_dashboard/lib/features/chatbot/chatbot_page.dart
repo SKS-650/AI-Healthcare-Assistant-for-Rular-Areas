@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -216,7 +216,7 @@ class _LanguageDistCard extends StatelessWidget {
                     child: LinearProgressIndicator(
                         value: pct.toDouble(),
                         minHeight: 8,
-                        backgroundColor: color.withOpacity(0.15),
+                        backgroundColor: color.withValues(alpha: 0.15),
                         valueColor: AlwaysStoppedAnimation(color))),
                 const SizedBox(height: 4),
                 Text('${e.value} (${(pct * 100).toStringAsFixed(0)}%)',

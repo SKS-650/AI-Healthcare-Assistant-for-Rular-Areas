@@ -1,698 +1,2867 @@
 ﻿# AI Healthcare Assistant
 
-A full-stack AI-powered healthcare platform built with FastAPI (Python) on the backend, Flutter for both the mobile app and admin web dashboard, and a dedicated AI models layer for machine learning, NLP, and voice capabilities.
+<div align="center">
+
+**An AI-powered full-stack healthcare platform designed for rural and semi-urban South Asia**
+
+*Combining medical AI, multilingual voice support, offline-first design, and comprehensive health management into one unified system*
+
+---
+
+[![Python](https://img.shields.io/badge/Python-3.11+-3776AB?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/)
+[![FastAPI](https://img.shields.io/badge/FastAPI-0.111-009688?style=for-the-badge&logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Flutter](https://img.shields.io/badge/Flutter-3.x-02569B?style=for-the-badge&logo=flutter&logoColor=white)](https://flutter.dev/)
+[![SQLAlchemy](https://img.shields.io/badge/SQLAlchemy-2.0_Async-CC2927?style=for-the-badge)](https://www.sqlalchemy.org/)
+[![OpenRouter](https://img.shields.io/badge/OpenRouter-9_Free_Models-FF6B35?style=for-the-badge)](https://openrouter.ai/)
+[![Riverpod](https://img.shields.io/badge/Riverpod-2.x-00B4D8?style=for-the-badge)](https://riverpod.dev/)
+[![License](https://img.shields.io/badge/License-MIT-27AE60?style=for-the-badge)](LICENSE)
+
+</div>
 
 ---
 
 ## Table of Contents
 
 1. [Project Overview](#1-project-overview)
-2. [Repository Structure](#2-repository-structure)
-3. [Tech Stack](#3-tech-stack)
-4. [Backend — FastAPI](#4-backend--fastapi)
-   - [Architecture](#41-architecture)
-   - [Authentication & Authorization](#42-authentication--authorization)
-   - [Medical Chatbot](#43-medical-chatbot)
-   - [Symptom Checker](#44-symptom-checker)
-   - [Emergency Module](#45-emergency-module)
-   - [Health Records (PHR)](#46-health-records-phr)
-   - [Health Education](#47-health-education)
-   - [Voice Assistant](#48-voice-assistant)
-   - [Offline Sync](#49-offline-sync)
-   - [Database](#410-database)
-5. [Mobile App — Flutter](#5-mobile-app--flutter)
-   - [Architecture & State Management](#51-architecture--state-management)
-   - [Features & Screens](#52-features--screens)
-   - [Offline Mode](#53-offline-mode)
-   - [Key Packages](#54-key-packages)
-6. [Admin Dashboard — Flutter Web](#6-admin-dashboard--flutter-web)
-7. [AI Models Layer](#7-ai-models-layer)
-8. [Environment Configuration](#8-environment-configuration)
-9. [Getting Started](#9-getting-started)
-10. [API Reference](#10-api-reference)
-11. [Bug Fixes & Known Issues Resolved](#11-bug-fixes--known-issues-resolved)
+2. [High-Level System Architecture](#2-high-level-system-architecture)
+3. [Repository Structure](#3-repository-structure)
+4. [Tech Stack](#4-tech-stack)
+5. [Module 1 — Authentication & Authorization](#5-module-1--authentication--authorization)
+6. [Module 2 — Medical Chatbot](#6-module-2--medical-chatbot)
+7. [Module 3 — Symptom Checker & Disease Prediction](#7-module-3--symptom-checker--disease-prediction)
+8. [Module 4 — Emergency Assessment & SOS](#8-module-4--emergency-assessment--sos)
+9. [Module 5 — Personal Health Records (PHR)](#9-module-5--personal-health-records-phr)
+10. [Module 6 — Health Education](#10-module-6--health-education)
+11. [Module 7 — Voice Assistant](#11-module-7--voice-assistant)
+12. [Module 8 — Offline Sync](#12-module-8--offline-sync)
+13. [Module 9 — Notifications & Feedback](#13-module-9--notifications--feedback)
+14. [Mobile App — Flutter](#14-mobile-app--flutter)
+15. [Admin Dashboard — Flutter Web](#15-admin-dashboard--flutter-web)
+16. [AI Models Layer](#16-ai-models-layer)
+17. [Environment Configuration](#17-environment-configuration)
+18. [Getting Started](#18-getting-started)
+19. [API Reference Summary](#19-api-reference-summary)
+20. [Network & WiFi Configuration](#20-network--wifi-configuration)
+21. [Bug Fixes & Resolved Issues](#21-bug-fixes--resolved-issues)
+22. [Notes & Production Checklist](#22-notes--production-checklist)
 
 ---
 
 ## 1. Project Overview
 
-The AI Healthcare Assistant is designed to make basic healthcare guidance accessible from a smartphone. It combines several AI capabilities into one unified app:
+### Background & Problem Statement
 
-- An AI-powered medical chatbot that answers health questions in multiple languages
-- A symptom checker that uses a trained ML model to suggest possible conditions
-- An emergency assessment tool with AI risk scoring, first-aid guides, and SOS alerts
-- A personal health records vault (PHR) for storing prescriptions, medical history, and images
-- A health education library with personalized article recommendations
-- A voice interface supporting Speech-to-Text and Text-to-Speech in English, Hindi, Nepali, and other Indian languages
-- Full offline support using a local FAISS vector database and Hive on-device storage
-- An admin web dashboard for platform management
+Access to quality healthcare information remains a significant challenge across rural South Asia. Millions of people in India and Nepal lack proximity to qualified doctors, cannot interpret medical symptoms, and have no reliable way to manage personal health records or respond correctly to medical emergencies. Language barriers further compound the problem — most digital health tools support only English, excluding the majority of the target population.
 
-The system is intended primarily for users in South Asia (India, Nepal) and includes language support for Hindi, Nepali, Bhojpuri, Bengali, Tamil, Telugu, Marathi, and Gujarati.
+The **AI Healthcare Assistant** is a full-stack platform built to bridge this gap. It is designed to run on an Android smartphone with intermittent internet connectivity, support 9+ regional languages, and provide clinically informed guidance without replacing a professional doctor.
+
+### What This Platform Does
+
+| Capability | Description |
+|---|---|
+| **Medical Chatbot** | LLM-powered conversational assistant for health questions, symptom discussion, and general medical guidance in the user's own language |
+| **Symptom Checker** | ML model trained on 230 symptoms across 13 body systems that predicts likely diseases with confidence scores and risk levels |
+| **Emergency Assessment** | AI-driven triage tool that scores emergency severity, provides step-by-step first aid, and sends SOS alerts to emergency contacts |
+| **Personal Health Records** | Secure on-device and server-side vault for prescriptions, medical images, history entries, and a unified chronological medical timeline |
+| **Health Education** | Curated multilingual article library with category browsing, full-text search, bookmarks, and reading-history-based personalised recommendations |
+| **Voice Assistant** | Full Speech-to-Text → AI → Text-to-Speech pipeline; users can speak queries in Hindi, Nepali, English, or Bhojpuri and hear responses |
+| **Offline Mode** | FAISS vector knowledge base + Hive local storage enables full chatbot and symptom checking without internet; bidirectional sync when connectivity returns |
+| **Admin Dashboard** | Flutter Web management portal for platform administrators with analytics, user management, content moderation, dataset versioning, and audit trails |
+
+### Target Users
+
+- **Patients** in rural and semi-urban areas of India and Nepal who need accessible health guidance
+- **Rural health workers** (ASHA workers, ANMs) who support communities without on-site doctors
+- **Doctors** who want to review patient-submitted health records and symptom check history
+- **Platform administrators** who manage content, monitor usage, and maintain system health
+
+### Supported Languages
+
+English · Hindi (`hi`) · Nepali (`ne`) · Bhojpuri (`bh`) · Bengali · Tamil · Telugu · Marathi · Gujarati
+
+The system auto-detects the user's language from their input and responds in the same language.
+
+### Key Design Principles
+
+1. **Offline-first** — Core features (chatbot, symptom checker, education) work without internet
+2. **Safe AI** — Every response ends with a disclaimer; diagnosis and prescription are explicitly prohibited
+3. **Privacy-conscious** — All tokens are encrypted at rest; anonymous emergency assessments are supported
+4. **Graceful degradation** — LLM → FAISS fallback, STT tier cascade, SQLite → PostgreSQL upgrade path
+5. **Multilingual by default** — Language auto-detection on every input, not a toggle
 
 ---
 
-## 2. Repository Structure
+## 2. High-Level System Architecture
+
+The platform is a three-tier architecture: Flutter clients → FastAPI backend → AI/database layer. All communication is JSON over REST. The backend is fully async using SQLAlchemy 2.0's async engine.
+
+```mermaid
+graph TB
+    subgraph Mobile["📱 Mobile App  (Flutter / Android / iOS)"]
+        MA_AUTH[Authentication]
+        MA_CHAT[Medical Chatbot]
+        MA_SYM[Symptom Checker]
+        MA_EMR[Emergency]
+        MA_PHR[Health Records]
+        MA_EDU[Health Education]
+        MA_VOICE[Voice Assistant]
+        MA_OFFLINE[Offline Module]
+    end
+
+    subgraph Web["🖥️ Admin Dashboard  (Flutter Web)"]
+        AD_DASH[Dashboard & KPIs]
+        AD_USERS[User Management]
+        AD_ANALYTICS[Analytics]
+        AD_CONTENT[Content Management]
+        AD_LOGS[Audit Logs]
+    end
+
+    subgraph API["⚙️ Backend  (FastAPI / Python 3.11)"]
+        direction TB
+        GW["/api/v1  — API Gateway\nCORS · JWT Middleware · Static Files"]
+        subgraph Modules
+            M_AUTH[auth]
+            M_USERS[users]
+            M_CHAT[medical_chatbot]
+            M_SYM[symptom_checker]
+            M_EMR[emergency]
+            M_PHR[health_records]
+            M_EDU[health_education]
+            M_VOICE[voice]
+            M_SYNC[offline_sync]
+            M_NOTIF[notifications]
+            M_FEED[feedback]
+            M_ADMIN[admin]
+        end
+    end
+
+    subgraph AI["🤖 AI Layer"]
+        OR["OpenRouter\n9 Free LLMs\n(primary)"]
+        GEM["Google Gemini\n(fallback 1)"]
+        GROQ["Groq / LLaMA\n(fallback 2)"]
+        FAISS["FAISS Index\n(offline)"]
+        ML["scikit-learn\nSymptom Model"]
+        WHISPER["OpenAI Whisper\nSTT (local)"]
+        EDGETTS["Edge TTS\nNeural Voices"]
+    end
+
+    subgraph Data["💾 Data Layer"]
+        SQLITE["SQLite\n(development)"]
+        PG["PostgreSQL\n(production)"]
+        REDIS["Redis\nCache & Rate Limit"]
+        HIVE["Hive\nOn-Device Cache"]
+        FS["File System\n/uploads/"]
+    end
+
+    Mobile -->|"HTTP/REST + Bearer JWT"| GW
+    Web -->|"HTTP/REST + Bearer JWT"| GW
+    GW --> Modules
+    M_CHAT --> OR & GEM & GROQ & FAISS
+    M_SYM --> ML
+    M_VOICE --> WHISPER & EDGETTS & M_CHAT
+    Modules --> SQLITE & PG
+    M_CHAT --> REDIS
+    M_PHR --> FS
+    MA_OFFLINE <-->|"Hive R/W"| HIVE
+    M_SYNC <-->|"Bidirectional sync"| HIVE
+```
+
+### Request Lifecycle
+
+```mermaid
+sequenceDiagram
+    participant C as Client (Flutter)
+    participant MW as FastAPI Middleware
+    participant AUTH as Auth Dependency
+    participant SVC as Service Layer
+    participant DB as Database (SQLAlchemy async)
+    participant AI as AI Provider
+
+    C->>MW: HTTP Request + Authorization: Bearer <token>
+    MW->>MW: CORS check
+    MW->>AUTH: Validate JWT → extract user_id + role
+    AUTH->>DB: Verify token not revoked
+    DB-->>AUTH: Token valid
+    AUTH-->>MW: user_id = "uuid-string"
+    MW->>SVC: Process request (user_id, payload)
+    SVC->>DB: Async DB query
+    DB-->>SVC: Result
+    SVC->>AI: Optional: LLM / ML call
+    AI-->>SVC: AI response
+    SVC-->>MW: Response object
+    MW-->>C: HTTP 200 JSON
+```
+
+---
+
+## 3. Repository Structure
 
 ```
-ai_healthcare_assistant/
-├── backend/                    # FastAPI Python backend
+ai_healthcare_assistant/                    ← Project root
+│
+├── backend/                                ← FastAPI Python backend
 │   ├── app/
-│   │   ├── auth/               # Authentication, JWT, OTP, sessions, RBAC
-│   │   ├── users/              # User profile management
-│   │   ├── medical_chatbot/    # LLM-powered medical chatbot
-│   │   ├── symptom_checker/    # ML-based symptom → disease prediction
-│   │   ├── emergency/          # Emergency assessment, contacts, SOS
-│   │   ├── health_records/     # Personal health records (PHR)
-│   │   ├── health_education/   # Articles, bookmarks, recommendations
-│   │   ├── voice/              # STT, TTS, full voice-chat pipeline
-│   │   ├── offline_sync/       # Bidirectional offline data sync
-│   │   ├── config/             # Settings loaded from environment
-│   │   ├── core/               # Startup, shutdown lifecycle hooks
-│   │   └── database/           # Async SQLAlchemy engine and session
+│   │   ├── main.py                         ← App factory (create_app)
+│   │   ├── auth/                           ← JWT, OTP, RBAC, sessions
+│   │   │   ├── models.py                   ← 10 SQLAlchemy ORM models
+│   │   │   ├── routes.py                   ← 17 auth endpoints
+│   │   │   ├── services.py
+│   │   │   ├── dependencies.py             ← get_current_user, require_role
+│   │   │   ├── schemas.py
+│   │   │   ├── password.py                 ← bcrypt helpers
+│   │   │   ├── constants.py                ← Role enum
+│   │   │   └── repository.py
+│   │   ├── users/                          ← User profile, address, medical info
+│   │   ├── medical_chatbot/
+│   │   │   ├── api/
+│   │   │   │   ├── routes.py               ← 8 chatbot endpoints
+│   │   │   │   ├── controller.py
+│   │   │   │   └── dependencies.py
+│   │   │   ├── repositories/
+│   │   │   │   ├── conversation_repository.py
+│   │   │   │   └── feedback_repository.py
+│   │   │   ├── schemas/
+│   │   │   │   ├── request.py
+│   │   │   │   └── response.py
+│   │   │   ├── services/
+│   │   │   │   ├── chatbot_service.py      ← Main orchestrator
+│   │   │   │   └── gemini_service.py       ← OpenRouter-first AI provider
+│   │   │   ├── database/
+│   │   │   │   └── models.py               ← Conversation, Message, Feedback, Session
+│   │   │   └── utils/
+│   │   │       ├── constants.py
+│   │   │       ├── exceptions.py
+│   │   │       ├── helpers.py
+│   │   │       └── logger.py
+│   │   ├── symptom_checker/
+│   │   │   ├── routes.py                   ← 7 endpoints
+│   │   │   ├── service.py                  ← Model loading + prediction logic
+│   │   │   ├── schemas.py
+│   │   │   └── models.py                   ← SymptomCheckHistory ORM
+│   │   ├── emergency/
+│   │   │   ├── routes.py                   ← 9 endpoints
+│   │   │   ├── service.py
+│   │   │   ├── schemas.py
+│   │   │   └── models.py                   ← EmergencyAssessment, EmergencyContact
+│   │   ├── health_records/
+│   │   │   ├── routes.py                   ← 15 endpoints
+│   │   │   ├── service.py
+│   │   │   ├── schemas.py
+│   │   │   └── models.py                   ← UserMedicalProfile, MedicalHistory,
+│   │   │                                      Prescription, MedicalImage, TimelineEvent
+│   │   ├── health_education/
+│   │   │   ├── routes.py                   ← 12 endpoints
+│   │   │   ├── services.py                 ← ArticleService, BookmarkService,
+│   │   │   │                                  DashboardService, SeedService
+│   │   │   ├── schemas.py
+│   │   │   └── models.py
+│   │   ├── voice/
+│   │   │   ├── routes.py                   ← 5 endpoints
+│   │   │   ├── stt_service.py              ← Whisper → Google → Vosk cascade
+│   │   │   └── tts_service.py              ← Edge TTS → gTTS → pyttsx3 cascade
+│   │   ├── offline_sync/
+│   │   │   ├── routes.py                   ← 6 endpoints
+│   │   │   └── service.py
+│   │   ├── notifications/
+│   │   ├── feedback/
+│   │   ├── admin/
+│   │   │   ├── routes.py                   ← 60+ admin endpoints
+│   │   │   ├── service.py                  ← 10 admin service classes
+│   │   │   ├── schemas.py
+│   │   │   └── seed.py                     ← Default data seeder
+│   │   ├── config/
+│   │   │   └── settings.py                 ← Pydantic BaseSettings from .env
+│   │   ├── core/
+│   │   │   └── startup.py                  ← on_startup / on_shutdown hooks
+│   │   ├── database/
+│   │   │   └── connection.py               ← Async engine + session factory
+│   │   └── uploads/                        ← Static files (profile images, PDFs)
 │   ├── TESTING_GUIDE.md
-│   └── .env
-├── mobile_app/                 # Flutter mobile app (Android / iOS)
+│   ├── QUICK_START.md
+│   ├── get_models.py                       ← Downloads AI model files
+│   └── .env                                ← Runtime secrets (git-ignored)
+│
+├── mobile_app/                             ← Flutter mobile app
 │   ├── lib/
-│   │   ├── core/               # API client, local DB, routing, shared widgets
-│   │   ├── features/           # One folder per feature (auth, chatbot, etc.)
-│   │   └── routing/            # Named routes and navigation config
+│   │   ├── main.dart
+│   │   ├── config/
+│   │   │   └── api_config.dart             ← WiFi IP / emulator URL resolver
+│   │   ├── constants/
+│   │   │   └── api_constants.dart          ← All API path strings
+│   │   ├── core/
+│   │   │   ├── api/                        ← Dio HTTP client + interceptors
+│   │   │   ├── local_db/
+│   │   │   │   └── local_db_service.dart   ← Hive box management
+│   │   │   └── network/
+│   │   │       └── network_config.dart     ← Persisted backend URL
+│   │   └── features/
+│   │       ├── authentication/             ← Splash → Onboarding → Auth screens
+│   │       ├── home/                       ← Home dashboard
+│   │       ├── medical_chatbot/            ← Chat screens + voice input
+│   │       ├── disease_prediction/         ← Symptom selector + results
+│   │       ├── emergency/                  ← Assessment + SOS + contacts
+│   │       ├── health_records/             ← PHR screens
+│   │       ├── health_education/           ← Articles + bookmarks
+│   │       ├── profile/                    ← User profile editor
+│   │       └── settings/
+│   ├── assets/
+│   │   ├── animations/                     ← Lottie JSON files
+│   │   ├── images/                         ← logo.png, illustrations
+│   │   ├── audio/                          ← UI sound effects
+│   │   └── offline/
+│   │       ├── chatbot/                    ← Bundled FAISS index
+│   │       └── education/                  ← Cached article snapshots
 │   └── pubspec.yaml
-├── admin_dashboard/            # Flutter web admin dashboard
+│
+├── admin_dashboard/                        ← Flutter Web admin portal
 │   ├── lib/
-│   │   ├── core/               # API client, router, theme
-│   │   └── features/           # analytics, users, doctors, reports, etc.
+│   │   ├── main.dart
+│   │   ├── app/
+│   │   │   └── app.dart                    ← MaterialApp root + go_router
+│   │   ├── core/
+│   │   │   ├── api.dart                    ← Dio singleton + token interceptor
+│   │   │   ├── constants.dart              ← Backend host, timeouts
+│   │   │   ├── models.dart                 ← Shared data models
+│   │   │   ├── router.dart                 ← go_router route definitions
+│   │   │   └── theme.dart                  ← Light/dark theme
+│   │   ├── shared/
+│   │   │   └── widgets/
+│   │   │       ├── sidebar.dart            ← Collapsible 11-item nav
+│   │   │       ├── top_bar.dart            ← Notifications + dark mode toggle
+│   │   │       └── data_table_card.dart    ← Reusable paginated table
+│   │   └── features/
+│   │       ├── authentication/
+│   │       ├── dashboard/
+│   │       ├── users/
+│   │       ├── emergency/
+│   │       ├── chatbot/
+│   │       ├── education/
+│   │       ├── analytics/
+│   │       ├── dataset/
+│   │       ├── reports/
+│   │       ├── logs/
+│   │       ├── settings/
+│   │       ├── doctors/
+│   │       ├── health_records/
+│   │       ├── profile/
+│   │       └── feedback/
 │   └── pubspec.yaml
-├── ai_models/                  # Python ML/AI scripts and saved models
-│   ├── chatbot/                # Chatbot engine, conversation manager, prompts
-│   ├── configs/                # Model and inference YAML configs
-│   ├── datasets/               # Training and evaluation data
-│   ├── scripts/                # FAISS index builder and training utilities
-│   ├── saved_models/           # Trained model files (joblib, FAISS index)
-│   └── tests/                  # AI model unit tests
-├── requirements.txt            # Unified Python dependencies
-├── .env.example                # All environment variables documented
-├── start_all.bat               # One-click Windows startup script
+│
+├── ai_models/                              ← ML training + offline assets
+│   ├── chatbot/
+│   ├── configs/
+│   ├── datasets/
+│   ├── scripts/
+│   │   └── build_faiss_index.py
+│   ├── saved_models/
+│   │   ├── symptom_checker/                ← trained.joblib + vocabulary.json
+│   │   └── faiss_index/                    ← index.faiss + metadata.json
+│   └── tests/
+│
+├── .env.example                            ← All env vars documented
+├── requirements.txt                        ← Unified Python deps
+├── activate_venv.ps1
+├── start_all.bat                           ← One-click Windows start
+├── start_admin_dashboard.bat
 └── README.md
 ```
 
 ---
 
-## 3. Tech Stack
+## 4. Tech Stack
 
 ### Backend
-| Layer | Technology |
-|---|---|
-| Web framework | FastAPI 0.111 + Uvicorn |
-| ORM | SQLAlchemy 2.0 (async) |
-| Database (dev) | SQLite via aiosqlite |
-| Database (prod) | PostgreSQL via asyncpg |
-| Cache | Redis |
-| Migrations | Alembic |
-| LLM providers | OpenAI GPT-4, Google Gemini, Anthropic Claude |
-| Embeddings | sentence-transformers (all-MiniLM-L6-v2) |
-| Vector search | FAISS (offline knowledge base) |
-| ML / prediction | scikit-learn, NumPy, pandas, SciPy |
-| Speech-to-Text | OpenAI Whisper (local), Google STT (fallback), Vosk (fully offline) |
-| Text-to-Speech | Microsoft Edge TTS (neural), gTTS (fallback), pyttsx3 (offline) |
-| Translation | deep-translator (Google Translate wrapper) |
-| Language detection | langdetect |
-| Auth | JWT (HS256), bcrypt password hashing, OTP via email/SMS |
-| HTTP client | httpx, aiohttp |
+
+| Category | Technology | Version | Notes |
+|---|---|---|---|
+| Web framework | FastAPI | 0.111 | Async, OpenAPI auto-docs |
+| ASGI server | Uvicorn | latest | Hot-reload in dev |
+| ORM | SQLAlchemy | 2.0 (async) | Fully non-blocking DB layer |
+| Database — dev | SQLite via `aiosqlite` | — | Zero config, auto-created |
+| Database — prod | PostgreSQL via `asyncpg` | 14+ | Set `DATABASE_URL` in `.env` |
+| Cache & rate limiting | Redis | 7+ | Optional; graceful skip if absent |
+| Migrations | Alembic | latest | Production schema versioning |
+| LLM — primary | OpenRouter | Free tier | 9-model auto-failover chain |
+| LLM — fallback 1 | Google Gemini | 2.0-flash | Set `CHATBOT_LLM_API_KEY` |
+| LLM — fallback 2 | Groq / LLaMA | 3.3-70b | Set `CHATBOT_GROQ_API_KEY` |
+| Embeddings | sentence-transformers | all-MiniLM-L6-v2 | For FAISS index building |
+| Vector search | FAISS | latest | Offline knowledge base |
+| Disease prediction | scikit-learn | latest | Trained joblib model |
+| Numerical compute | NumPy, pandas, SciPy | latest | Feature engineering |
+| STT — tier 1 | OpenAI Whisper (local) | base model | Works offline |
+| STT — tier 2 | Google Speech Recognition | — | Free, requires internet |
+| STT — tier 3 | Vosk | — | Fully offline, lower accuracy |
+| TTS — tier 1 | Microsoft Edge TTS | — | Neural voices, `en-IN`/`hi-IN`/`ne-NP` |
+| TTS — tier 2 | gTTS | — | Google Translate TTS |
+| TTS — tier 3 | pyttsx3 | — | System voice, fully offline |
+| Translation | deep-translator | — | Google Translate wrapper |
+| Language detection | langdetect | — | Auto-detect input language |
+| Auth | JWT (HS256) + bcrypt | — | Access 15 min, refresh 30 days |
+| Email | SMTP via `aiosmtplib` | — | Mock provider in dev |
+| SMS | Twilio | — | Mock provider in dev |
+| HTTP clients | httpx, aiohttp | — | Async external calls |
+| Settings | Pydantic `BaseSettings` | 2.x | Typed env var loading |
 
 ### Mobile App
-| Layer | Technology |
-|---|---|
-| Framework | Flutter 3.x (Dart) |
-| State management | Riverpod 2.x |
-| Local storage | Hive + hive_flutter |
-| Secure token storage | flutter_secure_storage |
-| Voice (STT) | speech_to_text 7.x |
-| Voice (TTS) | flutter_tts 4.x |
-| Audio recording | record 7.x |
-| Audio playback | audioplayers 6.x |
-| Networking | http 1.x, connectivity_plus, internet_connection_checker_plus |
-| UI | flutter_animate, shimmer, lottie, flutter_markdown, cached_network_image |
-| Preferences | shared_preferences |
+
+| Category | Technology | Version |
+|---|---|---|
+| Framework | Flutter | 3.x (Dart SDK ≥ 3.3.0) |
+| State management | flutter_riverpod | 2.5.1 |
+| HTTP | dio | 5.4.3 |
+| Local storage | hive + hive_flutter | 2.2.3 |
+| Secure storage | flutter_secure_storage | latest |
+| Voice STT | speech_to_text | 7.3.0 |
+| Voice TTS | flutter_tts | 4.0.2 |
+| Audio record | record | 7.1.1 |
+| Audio play | audioplayers | 6.0.0 |
+| Network check | connectivity_plus | 6.0.3 |
+| Internet check | internet_connection_checker_plus | 2.5.1 |
+| Markdown render | flutter_markdown | 0.7.3 |
+| Animations | flutter_animate | 4.5.0 |
+| Lottie JSON | lottie | 3.1.2 |
+| Shimmer skeletons | shimmer | 3.0.0 |
+| File picker | file_picker | 8.1.2 |
+| Permissions | permission_handler | 11.3.1 |
+| SVG | flutter_svg | 2.0.10 |
+| i18n / dates | intl | 0.19.0 |
+| UUID generation | uuid | 4.4.2 |
 
 ### Admin Dashboard
-| Layer | Technology |
+
+| Category | Technology | Version |
+|---|---|---|
+| Framework | Flutter Web | 3.x |
+| HTTP + interceptors | dio | 5.x |
+| Routing | go_router | latest |
+| Secure token storage | flutter_secure_storage | latest |
+| Charts | fl_chart | latest |
+| Animations | flutter_animate | 4.x |
+| Date formatting | intl | 0.19.0 |
+
+---
+
+---
+
+## 5. Module 1 — Authentication & Authorization
+
+### Overview
+
+The authentication module is the security backbone of the entire platform. It provides a complete identity management system with JWT-based stateless authentication, multi-factor verification via OTP, granular role-based access control, full session management, and a mobile-optimised password recovery flow. Every other module depends on this one for identifying who is making a request and what they are allowed to do.
+
+**Module path:** `backend/app/auth/`
+
+### Key Design Decisions
+
+| Decision | Rationale |
 |---|---|
-| Framework | Flutter Web (Dart) |
-| Routing | go_router |
-| Charts / Analytics | fl_chart or similar |
+| **UUID string IDs** (not auto-increment integers) | Prevents enumeration attacks and works correctly across distributed systems |
+| **Access token TTL = 15 min, Refresh token TTL = 30 days** | Short-lived access tokens limit blast radius of token theft; long-lived refresh tokens keep mobile users logged in |
+| **Token hashes stored in DB** | Individual sessions and tokens can be revoked server-side — a compromised token can be invalidated without rotating the secret key |
+| **OTP stored as bcrypt hash** | Raw OTP codes are never stored; even if the DB is leaked, codes cannot be read |
+| **Email + phone verified separately** | Allows independent verification of each contact method without coupling them |
+| **Mock providers in development** | SMTP and SMS are replaced by a mock that logs to console, so no external accounts are needed during development |
+
+### Database Schema
+
+```mermaid
+erDiagram
+    users {
+        string id PK "UUID"
+        string full_name
+        string email UK
+        string phone UK
+        string password_hash
+        string role "patient|doctor|admin|super_admin"
+        string language "en|hi|ne|bh"
+        bool is_active
+        bool email_verified
+        bool phone_verified
+        datetime created_at
+        datetime updated_at
+        datetime last_login
+    }
+    refresh_tokens {
+        string id PK
+        string user_id FK
+        string token_hash
+        string device_info
+        string ip_address
+        bool is_revoked
+        datetime expires_at
+        datetime last_used_at
+    }
+    otp_codes {
+        string id PK
+        string user_id FK
+        string purpose "phone_verify|password_reset"
+        string code_hash
+        int attempts
+        bool is_used
+        datetime expires_at
+    }
+    email_verification {
+        string id PK
+        string user_id FK
+        string token_hash
+        bool is_used
+        datetime expires_at
+    }
+    password_reset {
+        string id PK
+        string user_id FK
+        string token_hash
+        bool is_used
+        datetime expires_at
+    }
+    user_sessions {
+        string id PK
+        string user_id FK
+        string refresh_token_id FK
+        string device_info
+        string ip_address
+        bool is_active
+        datetime expires_at
+        datetime last_active_at
+    }
+    roles {
+        string id PK
+        string name UK
+    }
+    permissions {
+        string id PK
+        string name UK
+    }
+    role_permissions {
+        string id PK
+        string role_id FK
+        string permission_id FK
+    }
+
+    users ||--o{ refresh_tokens : "has"
+    users ||--o{ otp_codes : "has"
+    users ||--o{ email_verification : "has"
+    users ||--o{ password_reset : "has"
+    users ||--o{ user_sessions : "has"
+    roles ||--o{ role_permissions : "grants"
+    permissions ||--o{ role_permissions : "granted by"
+```
+
+### Role Hierarchy
+
+```
+super_admin  ← Full platform control (create admins, delete users, change system settings)
+    │
+  admin      ← Content moderation, user management, analytics (cannot change other admins)
+    │
+ doctor      ← View assigned patient records, read-only health data
+    │
+patient      ← Own data only (default role for all new registrations)
+```
+
+### Complete API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/auth/register` | Public | Create new user account |
+| `POST` | `/auth/verify-email` | Public | Verify email using token from email link |
+| `POST` | `/auth/resend-email-verification` | Public | Re-send verification email |
+| `POST` | `/auth/send-phone-otp` | JWT | Send 6-digit OTP to registered phone |
+| `POST` | `/auth/verify-phone` | JWT | Confirm phone with OTP |
+| `POST` | `/auth/login` | Public | Authenticate, receive access + refresh tokens |
+| `POST` | `/auth/refresh` | Public | Exchange refresh token for new token pair |
+| `POST` | `/auth/logout` | JWT | Revoke current session |
+| `POST` | `/auth/logout-all` | JWT | Revoke all sessions across all devices |
+| `POST` | `/auth/forgot-password` | Public | Request password reset via email link |
+| `POST` | `/auth/forgot-password-otp` | Public | Request reset via 6-digit OTP (mobile-friendly) |
+| `POST` | `/auth/verify-reset-otp` | Public | Verify OTP → receive a short-lived reset token |
+| `POST` | `/auth/reset-password` | Public | Set new password using reset token |
+| `GET` | `/auth/me` | JWT | Get current authenticated user's profile |
+| `GET` | `/auth/sessions` | JWT | List all active sessions for current user |
+| `POST` | `/auth/sessions/revoke` | JWT | Revoke a specific session by ID |
+| `POST` | `/auth/change-role` | Admin | Promote or demote a user's role |
+
+### Authentication Flow (Full Sequence)
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant APP as Mobile App
+    participant API as Auth API
+    participant DB as Database
+    participant SMTP as Email/SMS Provider
+
+    Note over U, SMTP: ── REGISTRATION ──
+    U->>APP: Fill register form
+    APP->>API: POST /auth/register {full_name, email, phone, password}
+    API->>API: Hash password with bcrypt
+    API->>DB: INSERT users (email_verified=false, phone_verified=false)
+    API->>DB: INSERT email_verification {token_hash, expires=24h}
+    API->>SMTP: Send verification email with token link
+    API-->>APP: 201 Created
+
+    Note over U, SMTP: ── EMAIL VERIFICATION ──
+    U->>APP: Click email link
+    APP->>API: POST /auth/verify-email {token}
+    API->>DB: Find token_hash, check not used / not expired
+    API->>DB: UPDATE users SET email_verified=true
+    API->>DB: UPDATE email_verification SET is_used=true
+    API-->>APP: 200 OK
+
+    Note over U, SMTP: ── LOGIN ──
+    U->>APP: Enter email + password
+    APP->>API: POST /auth/login {email, password}
+    API->>DB: Fetch user by email
+    API->>API: bcrypt.verify(password, hash)
+    API->>DB: INSERT refresh_tokens {token_hash, expires=30d}
+    API->>DB: INSERT user_sessions {device_info, ip, expires=30d}
+    API->>DB: UPDATE users SET last_login=now()
+    API-->>APP: 200 {access_token (15min), refresh_token (30d)}
+    APP->>APP: Store tokens in flutter_secure_storage
+
+    Note over U, SMTP: ── SILENT REFRESH (background) ──
+    APP->>API: POST /auth/refresh {refresh_token}
+    API->>DB: Validate token_hash, check not revoked
+    API->>DB: Issue new access + refresh tokens
+    API-->>APP: 200 {new access_token, new refresh_token}
+
+    Note over U, SMTP: ── FORGOT PASSWORD (OTP, mobile) ──
+    U->>APP: Enter email on forgot-password screen
+    APP->>API: POST /auth/forgot-password-otp {email}
+    API->>DB: INSERT otp_codes {purpose=password_reset, code_hash, expires=10min}
+    API->>SMTP: Send 6-digit OTP via SMS / email
+    API-->>APP: 200 OTP sent
+
+    U->>APP: Enter 6-digit OTP
+    APP->>API: POST /auth/verify-reset-otp {email, otp}
+    API->>DB: Validate code_hash, check attempts ≤ 3 and not expired
+    API->>DB: Mark OTP as used
+    API-->>APP: 200 {reset_token (5min)}
+
+    U->>APP: Enter new password
+    APP->>API: POST /auth/reset-password {reset_token, new_password}
+    API->>API: Hash new password
+    API->>DB: UPDATE users SET password_hash
+    API->>DB: Revoke all existing refresh tokens for this user
+    API-->>APP: 200 Password changed
+```
+
+### Token Storage on Mobile
+
+The mobile app uses `flutter_secure_storage` which maps to the platform's native secure storage:
+
+| Platform | Backing storage |
+|---|---|
+| Android | Android Keystore + EncryptedSharedPreferences |
+| iOS | Keychain |
+
+This means tokens survive app restarts, survive background kills, but are cleared on factory reset or app uninstall. They are never stored in plain `SharedPreferences`.
+
+### Dependency Injection in FastAPI
+
+Every protected endpoint uses one of these FastAPI dependencies:
+
+```python
+# Any authenticated user
+CurrentUser = Annotated[UserModel, Depends(get_current_user)]
+
+# Admin or Super Admin only
+AdminUser = Annotated[UserModel, Depends(get_admin_user)]
+
+# Role-specific guard
+require_role(Role.SUPER_ADMIN)   # raises 403 if role doesn't match
+```
 
 ---
 
-## 4. Backend — FastAPI
+---
 
-The backend is a single FastAPI application that serves all features through a versioned REST API at `/api/v1/`. It uses SQLAlchemy's async engine throughout, so all database operations are non-blocking. In development it runs against SQLite (zero config), and in production it connects to PostgreSQL.
+## 6. Module 2 — Medical Chatbot
 
-### 4.1 Architecture
+### Overview
 
-The app is created in `backend/app/main.py` using a factory pattern (`create_app()`). Each feature is a self-contained Python package with its own `routes.py`, `services.py`, `schemas.py`, and `models.py`. All routers are registered in the factory with the shared `/api/v1` prefix.
+The Medical Chatbot is the flagship feature of the platform. It is a conversational AI assistant that answers health questions, discusses symptoms, provides general medical guidance, and detects life-threatening emergencies — all in the user's native language. Unlike a simple FAQ bot, it maintains full conversation history across sessions, supports multi-turn dialogue, and operates even without internet connectivity by falling back to a pre-built FAISS semantic knowledge base.
 
-Startup and shutdown lifecycle hooks in `backend/app/core/startup.py` handle:
-- Loading environment variables from `.env`
-- Running `Base.metadata.create_all()` to auto-create all tables in development
-- Initializing the FAISS vector index and loading the ML symptom-checker model
-- Graceful shutdown of async resources
+**Module path:** `backend/app/medical_chatbot/`
 
-CORS is configured to allow all origins in development and is restricted to `CORS_ORIGINS` in production. Static file uploads (profile images, prescription PDFs, medical images) are served from `/uploads`.
+### Core Capabilities
 
-### 4.2 Authentication & Authorization
+| Capability | Detail |
+|---|---|
+| **Multi-turn conversation** | Loads last 20 messages as context on every request |
+| **9-model LLM failover** | Automatically cycles through 9 free OpenRouter models on rate-limit (HTTP 429) |
+| **Provider cascade** | OpenRouter → Google Gemini → Groq — tried in order at startup |
+| **Offline fallback** | FAISS vector search over medical knowledge base when all LLMs unreachable |
+| **Emergency detection** | Keyword scan runs *before* any LLM call — zero-latency emergency responses |
+| **Language auto-detection** | Detects and responds in English, Hindi, Nepali, Bhojpuri, Bengali, and others |
+| **Conversation persistence** | All messages stored in DB with timestamps, response time, confidence, token count |
+| **Two chat modes** | `/chat` (full DB-persisted conversation) and `/simple-chat` (stateless, no DB writes) |
 
-Module path: `backend/app/auth/`
+### AI Provider Architecture
 
-A complete authentication system with the following endpoints:
+```mermaid
+flowchart TD
+    START([Startup: _initialize]) --> A{CHATBOT_OPENROUTER_API_KEY\nset in .env?}
+    A -- Yes --> B[Provider = OpenRouter\nModel = gemma-4-26b-a4b-it:free]
+    A -- No --> C{CHATBOT_LLM_API_KEY\nset and starts with AIzaSy?}
+    C -- Yes --> D[Provider = Gemini\nModel = gemini-2.0-flash]
+    C -- No --> E{CHATBOT_GROQ_API_KEY set?}
+    E -- Yes --> F[Provider = Groq\nModel = llama-3.3-70b-versatile]
+    E -- No --> G[❌ RuntimeError\nNo AI provider configured]
+    B --> READY([GeminiService ready])
+    D --> READY
+    F --> READY
+```
 
-| Method | Endpoint | Description |
+### OpenRouter Free-Model Failover Chain
+
+When any model returns HTTP 429 (rate limited), the service automatically tries the next model in this list. This is transparent to the user — they never see an error unless **all 9 models** are exhausted simultaneously.
+
+| Priority | Model ID |
+|---|---|
+| 1 (primary) | `google/gemma-4-26b-a4b-it:free` |
+| 2 | `google/gemma-4-31b-it:free` |
+| 3 | `nvidia/nemotron-3-super-120b-a12b:free` |
+| 4 | `nvidia/nemotron-3-nano-30b-a3b:free` |
+| 5 | `nvidia/nemotron-nano-9b-v2:free` |
+| 6 | `openai/gpt-oss-20b:free` |
+| 7 | `nvidia/nemotron-3-ultra-550b-a55b:free` |
+| 8 | `inclusionai/ling-3.0-tiny:free` |
+| 9 | `poolside/laguna-xs-2.1:free` |
+
+If all are exhausted: user receives *"All free AI models are currently rate-limited. Please wait 1 minute and try again."* — the windows reset within 60 seconds.
+
+### Emergency Detection System
+
+Emergency detection runs **before any API call** via a pure keyword scan. This guarantees sub-millisecond response for life-threatening situations regardless of LLM availability.
+
+**Physical emergency keywords (sample):**
+`chest pain · heart attack · cardiac arrest · can't breathe · severe bleeding · stroke · unconscious · seizure · overdose · snake bite · electric shock · सीने में दर्द · सांस नहीं · बेहोश`
+
+**Mental health crisis keywords:**
+`suicide · kill myself · want to die · end my life · self harm · cutting myself · खुदकुशी · आत्महत्या`
+
+Emergency response includes:
+- 🚨 Bold emergency banner
+- Direct dial numbers: **108** (India ambulance) · **102** (Nepal) · **112** (Global)
+- Step-by-step first-aid instructions while waiting for help
+- For mental health: iCall (9152987821), Vandrevala Foundation (1860-2662-345)
+
+### Complete API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/chatbot/chat` | JWT | Full persisted chat with conversation memory |
+| `POST` | `/chatbot/simple-chat` | JWT | Stateless single-turn chat (no DB writes) |
+| `GET` | `/chatbot/conversations` | JWT | List user's conversations (paginated, filterable) |
+| `GET` | `/chatbot/conversations/{id}` | JWT | Full conversation with all messages |
+| `DELETE` | `/chatbot/conversations/{id}` | JWT | Delete single conversation |
+| `DELETE` | `/chatbot/conversations` | JWT | Delete all conversations for current user |
+| `POST` | `/chatbot/feedback` | JWT | Rate conversation 1–5 stars + optional text |
+| `GET` | `/chatbot/health` | Public | AI provider health check |
+
+### Chat Request / Response Schema
+
+**Request — POST /chatbot/chat**
+```json
+{
+  "message": "I have had a headache for two days and feel feverish",
+  "conversation_id": "550e8400-e29b-41d4-a716-446655440000",
+  "language": "en"
+}
+```
+*`conversation_id` is optional — omit to start a new conversation.*
+
+**Response**
+```json
+{
+  "assistant_message": "A 2-day headache with fever can have several causes...\n\n⚠️ I am an AI providing general health education only — always consult a qualified doctor.",
+  "conversation_id": "550e8400-e29b-41d4-a716-446655440000",
+  "message_id": 142,
+  "timestamp": "2026-08-07T10:23:45.123Z",
+  "confidence": 0.85,
+  "emergency_detected": false,
+  "recommendations": ["Consult a qualified healthcare professional for personalised medical advice."],
+  "follow_up_questions": [],
+  "response_time": 2.34,
+  "tokens_used": 187
+}
+```
+
+### Full Chat Pipeline (Flowchart)
+
+```mermaid
+flowchart TD
+    A([User sends message]) --> B[Validate message\nmax 2000 chars]
+    B --> C{Rate limit check\nmax 500 msgs/day}
+    C -- Exceeded --> D[❌ RateLimitExceededException]
+    C -- OK --> E{conversation_id\nprovided?}
+    E -- Yes --> F[Load existing conversation\nfrom DB]
+    E -- No --> G[Create new conversation\nAuto-generate title]
+    F --> H{Belongs to\ncurrent user?}
+    H -- No --> I[❌ 403 Access Denied]
+    H -- Yes --> J
+    G --> J[Check message count\n≤ MAX_CONVERSATION_MESSAGES]
+    J -- Exceeded --> K[❌ ConversationLimitException]
+    J -- OK --> L[Save user message to DB]
+    L --> M[Load last 20 messages\nas context history]
+    M --> N{Emergency keyword\ndetected?}
+    N -- Yes --> O[Return hardcoded\nemergency response\nNO LLM CALL]
+    N -- No --> P{GeminiService\ninitialized?}
+    P -- No --> Q[Return 'AI not configured'\nerror message]
+    P -- Yes --> R[Call GeminiService.chat]
+    R --> S{Provider type?}
+    S -- OpenRouter/Groq --> T[Build messages array\nwith system prompt + history]
+    S -- Gemini --> U[Build plain-text prompt\nwith history]
+    T --> V[Try model 1 of 9]
+    V --> W{HTTP 429\nrate limited?}
+    W -- Yes --> X{More models\nin failover list?}
+    X -- Yes --> Y[Try next model]
+    Y --> W
+    X -- No --> Z[❌ All models exhausted]
+    W -- No / Success --> AA[LLM text response]
+    U --> AB[Call Gemini API]
+    AB --> AA
+    O --> AC[Save assistant message to DB]
+    AA --> AC
+    Q --> AC
+    AC --> AD[Return ChatResponse\nwith all metadata]
+    AD --> AE([Client receives response])
+
+    style O fill:#ff6b6b,color:#fff
+    style D fill:#ff9999,color:#000
+    style Z fill:#ff9999,color:#000
+```
+
+### System Prompt
+
+Every LLM request is prefixed with this medical safety system prompt:
+
+```
+You are an AI Healthcare Assistant for Rural Areas.
+
+RULES:
+- Never diagnose diseases or prescribe medicines.
+- Always recommend consulting a doctor for medical concerns.
+- Keep replies concise (2-3 paragraphs or a short bullet list).
+- Use simple, friendly language with helpful emojis.
+- Detect the user's language and reply in the SAME language.
+- For emergencies: immediately tell them to call 108 (India) / 102 (Nepal) / 112 (Global).
+- End every reply with: ⚠️ I am an AI providing general health education only —
+  always consult a qualified doctor.
+```
+
+### Database Models
+
+```
+conversations
+  ├── id (int PK)
+  ├── uuid (UUID, exposed to API)
+  ├── user_id (FK → users.id, string)
+  ├── title (auto-generated from first message)
+  ├── language
+  ├── is_active
+  └── created_at / updated_at
+
+messages
+  ├── id (int PK)
+  ├── conversation_id (FK)
+  ├── sender (user | assistant)
+  ├── message (text)
+  ├── response_time (float, seconds)
+  ├── confidence (float 0–1)
+  ├── emergency_detected (bool)
+  ├── tokens_used (int)
+  ├── metadata (JSON)
+  └── created_at
+
+chatbot_feedback
+  ├── id, conversation_id, message_id
+  ├── rating (1–5)
+  ├── feedback_text
+  └── feedback_type
+
+chatbot_sessions
+  └── (session tracking for analytics)
+```
+
+### Mobile App Integration
+
+The mobile chatbot UI (`features/medical_chatbot/`) works as follows:
+
+1. **Chatbot Home Page** — Riverpod provider loads the conversation list (`GET /chatbot/conversations`). Each tile shows the title, date, and message count.
+2. **Chat Page** — Sends messages via `POST /chatbot/chat`, renders responses as markdown bubbles using `flutter_markdown`. A typing indicator (Lottie animation) shows while the AI is processing.
+3. **Offline mode** — When connectivity is lost, the Riverpod provider switches to the local FAISS-backed response generator without any user action required.
+4. **Voice input** — Microphone button on the chat input bar triggers STT (`speech_to_text` package). The transcript is populated into the text field and can be edited before sending.
+
+---
+
+---
+
+## 7. Module 3 — Symptom Checker & Disease Prediction
+
+### Overview
+
+The Symptom Checker is an ML-powered clinical decision support tool. Users select symptoms from a structured vocabulary of 230 symptoms organised across 13 body-system categories, optionally provide demographic and clinical context, and receive a ranked list of possible conditions with confidence scores, a risk level, and actionable recommendations. The model is trained with scikit-learn and loaded from a serialised joblib file at server startup.
+
+**Module path:** `backend/app/symptom_checker/`
+
+### How It Works
+
+The prediction pipeline converts a user's symptom selection into a **230-dimensional binary feature vector** (1 = symptom present, 0 = absent), feeds it into the trained multi-class classifier, and returns the top-5 predicted diseases sorted by probability. Risk assessment is computed as a weighted combination of the prediction confidence, symptom severity, and duration.
+
+```mermaid
+flowchart LR
+    A([User selects symptoms\n+ demographic info]) --> B[POST /symptom-checker/predict]
+    B --> C{Model loaded?}
+    C -- No --> D[HTTP 503\nModel unavailable]
+    C -- Yes --> E[Build 230-dim\nbinary feature vector]
+    E --> F[Add numeric features:\nage, gender, severity,\nduration, BMI]
+    F --> G[scikit-learn classifier\npredict_proba]
+    G --> H[Top-5 diseases\nwith confidence scores]
+    H --> I[Risk score calculation\nconfidence × severity weight]
+    I --> J{Risk score}
+    J -->|≥ 85| K[CRITICAL\nemergency_alert=true]
+    J -->|70–84| L[HIGH]
+    J -->|50–69| M[MEDIUM]
+    J -->|< 50| N[LOW]
+    K & L & M & N --> O[Generate recommendations\nbased on risk level]
+    O --> P[Save to symptom_check_history]
+    P --> Q([Return PredictionResponse])
+
+    style K fill:#dc2626,color:#fff
+    style L fill:#ea580c,color:#fff
+    style M fill:#ca8a04,color:#fff
+    style N fill:#16a34a,color:#fff
+```
+
+### Symptom Categories (13 Body Systems)
+
+| Category | Example Symptoms |
+|---|---|
+| **General / Systemic** | fever, fatigue, weight loss, night sweats, loss of appetite |
+| **Respiratory** | cough, shortness of breath, wheezing, chest tightness, sputum |
+| **Cardiovascular** | chest pain, palpitations, swollen ankles, irregular heartbeat |
+| **Neurological** | headache, dizziness, numbness, seizures, confusion, memory loss |
+| **Digestive / GI** | nausea, vomiting, abdominal pain, diarrhoea, constipation, bloating |
+| **Musculoskeletal** | joint pain, back pain, muscle weakness, stiffness, swelling |
+| **ENT** | sore throat, ear pain, runny nose, nasal congestion, hearing loss |
+| **Dermatological** | rash, itching, skin discolouration, hives, bruising |
+| **Urological** | frequent urination, painful urination, blood in urine |
+| **Ophthalmological** | blurred vision, eye pain, redness, double vision |
+| **Psychological** | anxiety, depression, insomnia, mood swings, panic attacks |
+| **Endocrine** | excessive thirst, excessive hunger, cold intolerance, hair loss |
+| **Reproductive / Other** | irregular periods, discharge, pelvic pain |
+
+**Total: 230 symptoms across 13 categories**
+
+### Prediction Input Schema
+
+```json
+{
+  "symptoms": ["fever", "headache", "fatigue", "nausea"],
+  "age": 28,
+  "gender": "female",
+  "weight_kg": 58,
+  "height_cm": 162,
+  "duration_days": 3,
+  "severity": 3,
+  "existing_conditions": ["diabetes"],
+  "current_medications": [],
+  "allergies": [],
+  "is_pregnant": false
+}
+```
+
+### Prediction Response Schema
+
+```json
+{
+  "predictions": [
+    {
+      "disease": "Typhoid Fever",
+      "confidence": 0.82,
+      "description": "A bacterial infection caused by Salmonella typhi...",
+      "icd_code": "A01.0"
+    },
+    {
+      "disease": "Viral Fever",
+      "confidence": 0.71,
+      "description": "...",
+      "icd_code": "A99"
+    }
+  ],
+  "risk_level": "HIGH",
+  "risk_score": 74.5,
+  "emergency_alert": false,
+  "recommendations": [
+    "Seek medical attention within 24 hours.",
+    "Stay hydrated and rest.",
+    "Do not self-medicate with antibiotics."
+  ],
+  "disclaimer": "This is a decision-support tool. Always consult a qualified doctor.",
+  "checked_at": "2026-08-07T10:30:00Z"
+}
+```
+
+### Complete API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/symptom-checker/predict` | JWT | Run disease prediction from symptom list |
+| `GET` | `/symptom-checker/symptoms` | Public | List all 230 recognisable symptoms |
+| `GET` | `/symptom-checker/symptoms/categorized` | Public | Symptoms organised by body system |
+| `GET` | `/symptom-checker/diseases` | Public | List all known diseases in the model |
+| `POST` | `/symptom-checker/batch-predict` | JWT | Batch predictions (multiple patients) |
+| `GET` | `/symptom-checker/model-info` | Public | Model version, accuracy metrics, loaded status |
+| `POST` | `/symptom-checker/reload` | Admin | Hot-reload the model without server restart |
+
+### Model Lifecycle
+
+```mermaid
+stateDiagram-v2
+    [*] --> Loading : Server startup\non_startup() hook
+    Loading --> Loaded : joblib.load() success
+    Loading --> Unavailable : File not found\n(HTTP 503 on predict)
+    Loaded --> Predicting : POST /predict request
+    Predicting --> Loaded : Response returned
+    Loaded --> Reloading : POST /reload (admin)
+    Reloading --> Loaded : Hot-reload success
+    Reloading --> Unavailable : Reload failure
+```
+
+**Model file path:** `ai_models/saved_models/symptom_checker/trained.joblib`
+
+If this file is absent at startup, the `/predict` endpoint returns HTTP 503. The model can be hot-reloaded via the admin API without restarting the server — useful for deploying updated model versions in production.
+
+### Risk Level Thresholds
+
+| Risk Level | Score Range | Meaning | User Action |
+|---|---|---|---|
+| **CRITICAL** | 85 – 100 | Potentially life-threatening | Emergency services immediately |
+| **HIGH** | 70 – 84 | Urgent medical attention needed | Visit hospital within 24 hours |
+| **MEDIUM** | 50 – 69 | Medical consultation recommended | See a doctor within a few days |
+| **LOW** | 0 – 49 | Low probability of serious illness | Monitor symptoms, rest |
+
+### History Persistence
+
+Every prediction is saved to `symptom_check_history` for later review by the user and the admin analytics dashboard:
+
+```
+symptom_check_history
+  ├── id, user_id (nullable for anonymous)
+  ├── symptoms (JSON array)
+  ├── age, gender, weight, height
+  ├── duration_days, severity
+  ├── predicted_disease (top-1 disease name)
+  ├── confidence (float)
+  ├── risk_level, risk_score
+  ├── is_emergency (bool)
+  └── created_at
+```
+
+### Mobile App Integration
+
+The disease prediction feature (`features/disease_prediction/`) has three screens:
+
+1. **Disease Prediction Home** — Entry screen with description, quick-start button, and recent prediction history list
+2. **Symptom Selector** — Multi-select chip grid organised by body system category tabs. Users tap symptoms, fill in age/gender/severity/duration, and submit
+3. **Prediction Result Page** — Shows the ranked disease list with confidence progress bars, risk badge (colour-coded), first-aid recommendations, and a "Save to Health Records" button
+
+A 401 interceptor on the Riverpod provider automatically redirects to the login screen if the session has expired — no silent blank screens.
+
+---
+
+---
+
+## 8. Module 4 — Emergency Assessment & SOS
+
+### Overview
+
+The Emergency module provides rapid AI-assisted triage for potentially life-threatening situations. It accepts patient symptoms and demographic data, computes a numerical risk score, returns step-by-step first-aid instructions, and — when the user triggers SOS — immediately notifies all stored emergency contacts via SMS and email. Anonymous access is intentionally supported so that bystanders can use the tool without having an account.
+
+**Module path:** `backend/app/emergency/`
+
+### Key Design Decisions
+
+| Decision | Rationale |
+|---|---|
+| **Anonymous assessments allowed** | A bystander helping an unconscious patient should not be blocked by a login screen |
+| **First-aid guides embedded in API response** | Guides work offline — the app caches them so no network call is needed during an actual emergency |
+| **SOS rate-limited** | Prevents accidental repeated triggers that would spam contacts |
+| **Risk score 0–100 (numeric)** | Granular scoring allows threshold configuration via admin settings without code changes |
+| **Configurable thresholds** | Critical/High/Medium/Low thresholds are stored in `system_settings` table and adjustable via admin dashboard |
+
+### Risk Scoring Model
+
+The AI risk scoring engine evaluates:
+- **Symptom severity and combination** — certain symptom clusters (e.g. chest pain + shortness of breath) carry exponentially higher weight
+- **Patient demographics** — age extremes (< 5 years, > 65 years) and pre-existing conditions (diabetes, hypertension, heart disease) multiply risk
+- **Symptom duration** — acute-onset high-severity symptoms score higher than chronic slow-onset ones
+- **Vital sign indicators** — user-reported heart rate, temperature, blood pressure where provided
+
+### Default Risk Thresholds (configurable via admin)
+
+| Level | Score Range | Colour | Recommended Action |
+|---|---|---|---|
+| **CRITICAL** | 90 – 100 | 🔴 Red | Call emergency services immediately (108/112) |
+| **HIGH** | 75 – 89 | 🟠 Orange | Go to nearest hospital emergency room now |
+| **MEDIUM** | 50 – 74 | 🟡 Yellow | Seek urgent care within hours |
+| **LOW** | 0 – 49 | 🟢 Green | Monitor at home, visit clinic if not improving |
+
+### Complete API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/emergency/assessment` | Optional JWT | Run AI emergency assessment (anonymous OK) |
+| `GET` | `/emergency/history` | JWT | Past assessments for authenticated user |
+| `GET` | `/emergency/assessment/{id}` | JWT | Get single assessment detail |
+| `GET` | `/emergency/contacts` | JWT | List emergency contacts |
+| `POST` | `/emergency/contacts` | JWT | Add emergency contact |
+| `PUT` | `/emergency/contacts/{id}` | JWT | Update emergency contact |
+| `DELETE` | `/emergency/contacts/{id}` | JWT | Remove emergency contact |
+| `POST` | `/emergency/sos` | JWT | Trigger SOS alert to all contacts |
+| `GET` | `/emergency/first-aid` | Public | All first-aid guide cards (offline-safe) |
+
+### Emergency Assessment Flow
+
+```mermaid
+flowchart TD
+    A([User opens Emergency module]) --> B{Is user\nlogged in?}
+    B -- Yes --> C[Load emergency contacts\nfrom DB]
+    B -- No --> D[Anonymous mode\nNo contacts available]
+    C --> E[Emergency Assessment Form]
+    D --> E
+
+    E --> F[User fills:\nsymptoms, age, gender,\nexisting conditions, location]
+    F --> G[POST /emergency/assessment]
+
+    G --> H[AI Risk Scoring Engine]
+    H --> I[Compute risk score 0–100]
+    I --> J[Determine risk level]
+
+    J --> K[Fetch matching first-aid guide\nfrom knowledge base]
+    K --> L[List recommended\nhospital types]
+    L --> M[Save to emergency_assessments\nDB table]
+    M --> N[Return EmergencyAssessmentResponse]
+
+    N --> O([Result Screen shown to user])
+
+    O --> P{Risk Level?}
+    P -->|CRITICAL| Q[🔴 Auto-display SOS button\nwith emergency numbers]
+    P -->|HIGH| R[🟠 Strong recommendation\nto seek ER care]
+    P -->|MEDIUM/LOW| S[🟡🟢 Standard guidance]
+
+    Q --> T{User taps SOS?}
+    T -- Yes --> U[POST /emergency/sos]
+    U --> V{Rate limit\npassed?}
+    V -- No --> W[❌ Too many SOS requests\nPlease wait]
+    V -- Yes --> X[Fetch all emergency contacts]
+    X --> Y[Send SMS to each contact\nvia Twilio/mock]
+    X --> Z[Send email to each contact\nvia SMTP/mock]
+    Y & Z --> AA([SOS Sent confirmation\nwith timestamp])
+
+    style Q fill:#dc2626,color:#fff
+    style W fill:#ff9999,color:#000
+    style AA fill:#16a34a,color:#fff
+```
+
+### Assessment Request / Response Schema
+
+**Request**
+```json
+{
+  "symptoms": ["chest pain", "shortness of breath", "sweating"],
+  "age": 52,
+  "gender": "male",
+  "existing_conditions": ["hypertension", "diabetes"],
+  "current_medications": ["metformin"],
+  "duration_minutes": 20,
+  "location": {
+    "latitude": 27.7172,
+    "longitude": 85.3240,
+    "description": "Kathmandu, Nepal"
+  }
+}
+```
+
+**Response**
+```json
+{
+  "assessment_id": "ea-00142",
+  "risk_score": 91.5,
+  "risk_level": "CRITICAL",
+  "is_emergency": true,
+  "emergency_type": "Possible Cardiac Event",
+  "first_aid_steps": [
+    "Call 102 (Nepal) or 108 (India) immediately.",
+    "Have the person sit or lie down in a comfortable position.",
+    "Loosen tight clothing around neck and chest.",
+    "If the person loses consciousness and stops breathing, begin CPR.",
+    "Do NOT give food, water, or medication by mouth."
+  ],
+  "recommended_facilities": ["Cardiac Care Hospital", "Emergency Room", "ICU"],
+  "recommendations": [
+    "Go to the nearest hospital emergency room immediately.",
+    "Do not drive yourself — call an ambulance."
+  ],
+  "emergency_numbers": {
+    "india": "108",
+    "nepal": "102",
+    "global": "112"
+  },
+  "assessed_at": "2026-08-07T10:45:00Z"
+}
+```
+
+### First-Aid Guide Coverage
+
+The `/emergency/first-aid` endpoint returns embedded guides for:
+
+| Condition | Key Steps Covered |
+|---|---|
+| Heart Attack | Recognition signs, CPR instructions, medication (aspirin) guidance |
+| Stroke | FAST test (Face, Arms, Speech, Time), positioning |
+| Choking | Heimlich manoeuvre (adult and child), back blows |
+| Severe Burns | Cool water, no ice, sterile covering |
+| Fractures | Immobilisation, splinting, do-not-move rules |
+| Anaphylaxis | Epinephrine auto-injector, position, airway |
+| Drowning | Recovery position, CPR sequence |
+| Snake Bite | Immobilise, remove jewellery, no incision/suction |
+| Electric Shock | Safe approach, CPR if needed |
+| Seizure | Safe space, recovery position, timing |
+| Severe Bleeding | Direct pressure, tourniquet guidance |
+| Diabetic Emergency | Signs of hypo/hyperglycaemia, glucose administration |
+
+### Database Models
+
+```
+emergency_assessments
+  ├── id (int PK)
+  ├── user_id (nullable — anonymous support)
+  ├── age, gender
+  ├── symptoms (JSON array)
+  ├── existing_conditions (JSON array)
+  ├── risk_score (float 0–100)
+  ├── risk_level (LOW | MEDIUM | HIGH | CRITICAL)
+  ├── is_emergency (bool)
+  ├── emergency_type (string, e.g. "Possible Cardiac Event")
+  ├── first_aid_steps (JSON array)
+  ├── location (JSON)
+  └── created_at
+
+emergency_contacts
+  ├── id, user_id (FK)
+  ├── name, relationship
+  ├── phone, email
+  ├── is_primary (bool)
+  └── created_at
+```
+
+### Mobile App Screens
+
+| Screen | Purpose |
+|---|---|
+| **Emergency Home** | Quick-access grid: Assessment, Contacts, First-Aid Guides, SOS button |
+| **Emergency Assessment Page** | Multi-step form: symptom selection → patient details → submit |
+| **Emergency Result Page** | Risk badge, score meter, first-aid steps, SOS trigger button |
+| **Emergency History Page** | Chronological list of past assessments with risk badges |
+| **Emergency Contacts** | CRUD list for managing SOS recipients |
+
+---
+
+---
+
+## 9. Module 5 — Personal Health Records (PHR)
+
+### Overview
+
+The Personal Health Records module is a secure digital health vault that allows users to store, organise, and retrieve their complete medical history in one place. It covers five distinct record types — medical profile, medical history entries, prescriptions, medical images, and a unified chronological timeline — all linked to the authenticated user and optionally shared with their care team.
+
+**Module path:** `backend/app/health_records/`
+
+### Record Types
+
+| Record Type | What It Stores |
+|---|---|
+| **Medical Profile** | Blood group, height, weight, BMI, allergies, chronic conditions, current medications, smoking/alcohol status, activity level, family history |
+| **Medical History** | Past and current conditions (diagnoses, surgeries, chronic illnesses, family history) with status tracking (active / resolved / managed) |
+| **Prescriptions** | Doctor name, hospital, diagnosis, medicines list, dosage instructions, prescription date, validity, optional PDF upload |
+| **Medical Images** | X-rays, MRI/CT scans, ultrasound reports, lab reports — with body part tagging, scan date, and doctor annotation |
+| **Medical Timeline** | Auto-aggregated chronological feed of all record types plus events pushed from other modules (symptom checks, emergency assessments) |
+
+### Module Architecture
+
+```mermaid
+flowchart TD
+    A([User opens Health Records]) --> B[GET /health-records/summary\nCounts + last activity dates]
+    B --> C{User selects section}
+
+    C --> D[Medical Profile\nGET/PUT /health-records/profile]
+    C --> E[Medical History\nGET/POST/PUT/DELETE /health-records/history]
+    C --> F[Prescriptions\nGET/POST/DELETE /health-records/prescriptions]
+    C --> G[Medical Images\nGET/POST/DELETE /health-records/images]
+    C --> H[Unified Timeline\nGET /health-records/timeline]
+
+    D --> D1[Edit blood group,\nallergies, chronic conditions,\ncurrent meds, vitals]
+    E --> E1[Add condition with\ncategory: current/past/surgery/chronic/family\nstatus: active/resolved/managed]
+    F --> F1[Upload prescription\nmultipart/form-data\nPDF or image]
+    F1 --> F2[File saved to\n/uploads/prescriptions/]
+    F2 --> F3[URL stored in DB\nserved as static asset]
+    G --> G1[Upload medical image\nmultipart/form-data]
+    G1 --> G2[File saved to\n/uploads/images/]
+    H --> H1[Merges all record types\nby event_date descending]
+    H --> H2[Also receives external events via\nPOST /health-records/timeline/external\nfrom emergency + symptom modules]
+```
+
+### Complete API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/health-records/summary` | JWT | Dashboard counts and last activity per record type |
+| `GET` | `/health-records/profile` | JWT | Get medical profile |
+| `PUT` | `/health-records/profile` | JWT | Create or update medical profile (upsert) |
+| `GET` | `/health-records/history` | JWT | List medical history entries (filterable by category/status) |
+| `POST` | `/health-records/history` | JWT | Add a new history entry |
+| `PUT` | `/health-records/history/{id}` | JWT | Update history entry |
+| `DELETE` | `/health-records/history/{id}` | JWT | Delete history entry |
+| `GET` | `/health-records/prescriptions` | JWT | List prescriptions (paginated) |
+| `POST` | `/health-records/prescriptions` | JWT | Upload prescription with optional file attachment |
+| `DELETE` | `/health-records/prescriptions/{id}` | JWT | Delete prescription and associated file |
+| `GET` | `/health-records/images` | JWT | List medical images |
+| `POST` | `/health-records/images` | JWT | Upload medical image |
+| `DELETE` | `/health-records/images/{id}` | JWT | Delete image |
+| `GET` | `/health-records/timeline` | JWT | Unified chronological medical timeline |
+| `POST` | `/health-records/timeline/external` | JWT | Push event from another module (emergency, symptom) |
+
+### Database Schema
+
+```mermaid
+erDiagram
+    users ||--o| user_medical_profiles : "has one"
+    users ||--o{ medical_history : "has many"
+    users ||--o{ prescriptions : "has many"
+    users ||--o{ medical_images : "has many"
+    users ||--o{ timeline_events : "has many"
+
+    user_medical_profiles {
+        string id PK
+        string user_id FK
+        string blood_group
+        float height_cm
+        float weight_kg
+        float bmi
+        string smoking_status
+        string alcohol_status
+        string activity_level
+        json allergies
+        json chronic_diseases
+        json current_medications
+        json family_history
+        datetime updated_at
+    }
+
+    medical_history {
+        string id PK
+        string user_id FK
+        string disease_name
+        string category "current|past|surgery|chronic|family"
+        string status "active|resolved|managed"
+        date diagnosis_date
+        string doctor_name
+        string hospital_name
+        text notes
+    }
+
+    prescriptions {
+        string id PK
+        string user_id FK
+        string doctor_name
+        string hospital_name
+        string diagnosis
+        date prescription_date
+        date valid_until
+        json medicines
+        text instructions
+        string file_url
+    }
+
+    medical_images {
+        string id PK
+        string user_id FK
+        string title
+        string image_type "xray|mri|ct|ultrasound|lab|other"
+        string body_part
+        string doctor_name
+        date scan_date
+        string file_url
+    }
+
+    timeline_events {
+        string id PK
+        string user_id FK
+        string event_type
+        string title
+        text description
+        string icon_emoji
+        datetime event_date
+        string source_module
+    }
+```
+
+### File Upload Flow
+
+```mermaid
+sequenceDiagram
+    participant APP as Mobile App
+    participant API as Health Records API
+    participant FS as File System (/uploads/)
+    participant DB as Database
+
+    APP->>API: POST /health-records/prescriptions\nContent-Type: multipart/form-data\n{doctor_name, diagnosis, medicines[], file}
+    API->>API: Validate file type\n(PDF, JPG, PNG only)\nMax size: 10MB
+    API->>FS: Save file to\n/uploads/prescriptions/<uuid>.<ext>
+    FS-->>API: File path confirmed
+    API->>DB: INSERT prescriptions\n{...metadata, file_url="/uploads/prescriptions/<uuid>.<ext>"}
+    DB-->>API: Record created
+    API-->>APP: 201 {prescription_id, file_url}
+    APP->>APP: Display prescription card\nwith download link
+```
+
+Files are served directly by FastAPI's `StaticFiles` mount at `/uploads/`. In production, this mount should be replaced with a CDN or object storage (S3 / GCS) for scalability.
+
+### Timeline Aggregation
+
+The unified timeline endpoint (`GET /health-records/timeline`) merges records from all five tables into a single chronologically sorted feed:
+
+```
+Timeline Event Sources:
+  ├── medical_history entries     → "Diagnosed with Typhoid Fever" 🏥
+  ├── prescriptions               → "Prescription from Dr. Sharma" 💊
+  ├── medical_images              → "Chest X-Ray uploaded" 🩻
+  ├── emergency_assessments       → "Emergency Assessment: HIGH risk" 🚨
+  └── symptom_check_history       → "Symptom Check: Fever + Headache" 🔍
+
+All sorted by event_date DESC → newest first
+```
+
+### Medical History Categories
+
+| Category | Description |
+|---|---|
+| `current` | Active conditions the user currently has |
+| `past` | Resolved conditions from the past |
+| `surgery` | Surgical procedures performed |
+| `chronic` | Long-term chronic conditions requiring ongoing management |
+| `family` | Family history entries (hereditary risk factors) |
+
+### Mobile PHR Screens
+
+| Screen | Key Features |
+|---|---|
+| **PHR Home / Summary** | Count cards for each section, quick-add buttons |
+| **Medical Profile Editor** | Form with blood group picker, allergy tags, condition checkboxes, vitals sliders |
+| **Medical History List** | Filterable list by category and status, swipe-to-delete |
+| **Prescriptions List** | Card grid with doctor/diagnosis info, PDF viewer integration, upload FAB |
+| **Medical Images Gallery** | Grid view with image type filter, full-screen viewer |
+| **Unified Timeline** | Chronological feed with colour-coded event type icons |
+
+---
+
+---
+
+## 10. Module 6 — Health Education
+
+### Overview
+
+The Health Education module is a multilingual content management and delivery system for health articles. It provides categorised browsing, full-text search, reading progress tracking, bookmarks, and a personalised recommendation engine that surfaces articles based on each user's reading history. All content auto-seeds from a built-in dataset on first request, requiring zero manual setup in development.
+
+**Module path:** `backend/app/health_education/`
+
+### Core Features
+
+| Feature | Detail |
+|---|---|
+| **Auto-seeding** | `SeedService.seed()` runs on every dashboard/category/article request; inserts default content only if the table is empty — idempotent |
+| **Multilingual content** | Articles exist in `en`, `hi`, `ne`, `bh` — client passes `?language=` param |
+| **Reading progress tracking** | Stores scroll position (0–100%) and completion flag per user per article |
+| **Recommendation engine** | Reads the user's last 20 completed/in-progress articles, finds their most-read categories, returns unseen articles from those categories |
+| **Bookmarks** | Per-user saved article list, independent of reading progress |
+| **Featured articles** | Admin-flagged articles surfaced at the top of the dashboard |
+| **View counter** | Incremented atomically on each `GET /articles/{id}` call |
+
+### Complete API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/education/dashboard` | JWT | Full dashboard: featured + categories + recommendations + recent reading + bookmarks |
+| `GET` | `/education/categories` | JWT | All health categories with article counts |
+| `GET` | `/education/articles` | JWT | Paginated article list (filter by category, language) |
+| `GET` | `/education/articles/{id}` | JWT | Article detail — increments view count |
+| `GET` | `/education/featured` | JWT | Featured articles (limit configurable) |
+| `GET` | `/education/search` | JWT | Full-text search across title + body |
+| `GET` | `/education/recommendations` | JWT | Personalised recommendations |
+| `GET` | `/education/bookmarks` | JWT | User's bookmarked articles |
+| `POST` | `/education/bookmarks` | JWT | Bookmark an article |
+| `DELETE` | `/education/bookmarks/{id}` | JWT | Remove a bookmark |
+| `POST` | `/education/reading-progress/{id}` | JWT | Update scroll position and completion state |
+| `GET` | `/education/health` | Public | Module health check |
+
+### Content & Category Structure
+
+Articles are organised into health categories. Each category has a slug (used as the filter key), an icon, a colour, and an article count.
+
+**Sample categories:**
+`maternal-health` · `child-health` · `nutrition` · `diabetes-management` · `heart-health` · `mental-health` · `hygiene-sanitation` · `vaccination` · `first-aid` · `respiratory-health` · `skin-care` · `eye-care` · `oral-health`
+
+Each article contains:
+- `title`, `summary`, `body` (full Markdown content)
+- `category_id`, `language` (`en|hi|ne|bh`)
+- `tags` (JSON array)
+- `read_time_minutes` (estimated)
+- `is_featured` (bool, set by admin)
+- `is_published` (bool — draft/live toggle via admin dashboard)
+- `view_count`, `created_at`, `updated_at`
+
+### Education Module Flow
+
+```mermaid
+flowchart TD
+    A([User opens Health Education]) --> B[GET /education/dashboard\n?language=en]
+    B --> C[SeedService.seed\nInsert defaults if empty]
+    C --> D[DashboardService.get_dashboard]
+
+    D --> E[Featured Articles\nArticleService.get_featured]
+    D --> F[All Categories\nCategoryService.list_categories]
+    D --> G[Recommendations\nArticleService.get_recommendations]
+    D --> H[Recent Reading\nReadingHistoryService]
+    D --> I[Bookmarks\nBookmarkService.list_bookmarks]
+
+    E & F & G & H & I --> J([Dashboard rendered])
+
+    J --> K{User Action}
+
+    K -->|Browse category| L[GET /education/articles\n?category=child-health&language=hi]
+    K -->|Search| M[GET /education/search?q=diabetes]
+    K -->|View recommendation| N[GET /education/articles/:id]
+
+    L --> N
+    M --> N
+
+    N --> O[ArticleService.get_article_detail\nIncrement view_count atomically]
+    O --> P[POST /education/reading-progress/:id\n{last_read_position: 45, is_completed: false}]
+    P --> Q[ReadingHistoryService.update_progress\nUpsert reading_history record]
+    Q --> R[Reading history drives\nfuture recommendations]
+
+    N --> S{Bookmark?}
+    S -- Yes --> T[POST /education/bookmarks\n{article_id}]
+    T --> U[BookmarkService.add_bookmark\nIdempotent — no duplicates]
+
+    style R fill:#74c69d,color:#000
+```
+
+### Recommendation Engine Logic
+
+```mermaid
+flowchart LR
+    A[GET /education/recommendations] --> B[Load user's last 20\nreading_history records]
+    B --> C[Extract category_ids\nfrom read articles]
+    C --> D[Rank categories by\nfrequency of reads]
+    D --> E[Top 3 most-read\ncategories]
+    E --> F[Fetch unseen published articles\nfrom those categories]
+    F --> G{Enough articles\nfound?}
+    G -- Yes --> H[Return top N articles]
+    G -- No --> I[Pad with popular articles\nfrom any category\nby view_count DESC]
+    I --> H
+    H --> J([Recommendations returned\nto client])
+```
+
+### Database Schema
+
+```
+health_categories
+  ├── id (string PK, UUID)
+  ├── name, slug (unique)
+  ├── description, icon, color
+  └── article_count (denormalised)
+
+health_articles
+  ├── id (string PK, UUID)
+  ├── category_id (FK)
+  ├── title, summary, body (Markdown)
+  ├── language (en|hi|ne|bh)
+  ├── tags (JSON array)
+  ├── read_time_minutes
+  ├── is_featured, is_published
+  ├── view_count
+  ├── author, source_url
+  └── created_at, updated_at
+
+reading_history
+  ├── id, user_id (FK), article_id (FK)
+  ├── last_read_position (0–100 %)
+  ├── is_completed (bool)
+  ├── read_count (incremented per visit)
+  └── last_read_at
+
+bookmarks
+  ├── id, user_id (FK), article_id (FK)
+  └── created_at
+  [UNIQUE constraint on user_id + article_id]
+```
+
+### Article Dashboard Response Structure
+
+```json
+{
+  "featured": [ ...HealthArticleSummary ],
+  "categories": [ ...HealthCategoryResponse ],
+  "recommendations": [ ...HealthArticleSummary ],
+  "recent_reading": [ ...ReadingHistoryResponse ],
+  "bookmarks": [ ...HealthArticleSummary ],
+  "language": "en"
+}
+```
+
+### Mobile App Screens
+
+| Screen | Key Features |
+|---|---|
+| **Education Home / Dashboard** | Featured hero card, horizontal category scroll, recommendation grid |
+| **Article List** | Paginated cards with category filter chips and search bar |
+| **Article Detail** | Full Markdown rendering via `flutter_markdown`, estimated read time, bookmark toggle, reading progress auto-saved on scroll |
+| **Bookmarks Screen** | User's saved articles with remove option |
+| **Search Results** | Instant results matching title and body content |
+
+Articles are cached locally in Hive so previously read content remains accessible offline.
+
+---
+
+## 11. Module 7 — Voice Assistant
+
+### Overview
+
+The Voice Assistant module provides a complete hands-free healthcare interaction pipeline. Users can speak health questions and receive spoken answers — without typing a single character. It uses a three-tier cascade for both Speech-to-Text and Text-to-Speech, prioritising accuracy and quality at the top tier and falling back to fully offline options at the bottom, ensuring functionality even without internet connectivity.
+
+**Module path:** `backend/app/voice/`
+
+### STT Tier Cascade
+
+```mermaid
+flowchart LR
+    AUDIO([Audio File Input]) --> A{Tier 1:\nOpenAI Whisper\nlocal model}
+    A -- Available --> B[Transcribe locally\nBest accuracy\nWorks offline]
+    A -- Not available --> C{Tier 2:\nGoogle Speech\nRecognition}
+    C -- Available + Internet --> D[Google STT API\nFree tier\nGood accuracy]
+    C -- Not available --> E{Tier 3:\nVosk\nfully offline}
+    E -- Available --> F[Vosk local model\nLower accuracy\nCompletely offline]
+    E -- Not available --> G[❌ STT unavailable\nReturn error]
+    B & D & F --> H([Transcript text])
+```
+
+### TTS Tier Cascade
+
+```mermaid
+flowchart LR
+    TEXT([Text to synthesise]) --> A{Tier 1:\nMicrosoft Edge TTS\nneural voices}
+    A -- Internet available --> B[Neural voice synthesis\nen-IN / hi-IN / ne-NP\nBest quality]
+    A -- Offline --> C{Tier 2:\ngTTS\nGoogle Translate TTS}
+    C -- Internet available --> D[Google TTS\nMp3 output]
+    C -- Offline --> E{Tier 3:\npyttsx3\nsystem voice}
+    E --> F[System TTS\nCompletely offline\nBasic quality]
+    B & D & F --> G([Base64 MP3 audio])
+```
+
+### Supported Voice Languages
+
+| Language | STT Code | TTS Voice (Edge) | Locale |
+|---|---|---|---|
+| English (India) | `en-IN` | `en-IN-NeerjaNeural` | `en-IN` |
+| Hindi | `hi-IN` | `hi-IN-SwaraNeural` | `hi-IN` |
+| Nepali | `ne-NP` | `ne-NP-HemkalaNeural` | `ne-NP` |
+| Bhojpuri | `bh` | Falls back to `hi-IN` | `hi-IN` |
+| Bengali | `bn-IN` | `bn-IN-TanishaaNeural` | `bn-IN` |
+| Tamil | `ta-IN` | `ta-IN-PallaviNeural` | `ta-IN` |
+| Telugu | `te-IN` | `te-IN-ShrutiNeural` | `te-IN` |
+| Marathi | `mr-IN` | `mr-IN-AarohiNeural` | `mr-IN` |
+
+### Complete API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/voice/stt` | JWT | Upload audio file → receive transcript text |
+| `POST` | `/voice/tts` | JWT | Send text → receive base64 MP3 audio |
+| `POST` | `/voice/chat` | JWT | Full pipeline: audio → STT → AI chatbot → TTS → audio response |
+| `GET` | `/voice/languages` | Public | List all supported languages and voices |
+| `GET` | `/voice/health` | Public | Check availability of each STT/TTS engine |
+
+### Full Voice Chat Pipeline
+
+```mermaid
+sequenceDiagram
+    actor U as User
+    participant APP as Mobile App
+    participant VAPI as Voice API
+    participant STT as STT Engine
+    participant CHAT as Chatbot Service
+    participant TTS as TTS Engine
+
+    U->>APP: Hold mic button and speak
+    APP->>APP: record package records audio\nas WAV/M4A file
+    APP->>VAPI: POST /voice/chat\n{audio: <binary>, conversation_id?, language?}
+
+    VAPI->>STT: Transcribe audio
+    Note over STT: Whisper → Google STT → Vosk\n(first available tier used)
+    STT-->>VAPI: transcript = "मुझे दो दिन से बुखार है"
+
+    VAPI->>VAPI: Auto-detect language → "hi"
+
+    VAPI->>CHAT: ChatbotService.process_chat\n{message: transcript, language: "hi"}
+    Note over CHAT: Same full pipeline as /chatbot/chat\nEmergency detection → LLM failover → DB persist
+    CHAT-->>VAPI: reply_text = "बुखार के कई कारण हो सकते हैं..."
+
+    VAPI->>TTS: Synthesise reply_text\nin language "hi"
+    Note over TTS: Edge TTS (hi-IN-SwaraNeural)\n→ gTTS → pyttsx3
+    TTS-->>VAPI: audio_bytes (MP3)
+
+    VAPI->>VAPI: base64.encode(audio_bytes)
+    VAPI-->>APP: {\n  transcript: "मुझे दो दिन से बुखार है",\n  reply_text: "बुखार के कई कारण...",\n  audio_base64: "//NExAA...",\n  language: "hi",\n  emergency: false,\n  conversation_id: "uuid"\n}
+
+    APP->>APP: Show text reply in chat bubble
+    APP->>APP: audioplayers plays base64 MP3
+    APP->>U: User hears spoken response
+```
+
+### Voice Chat Request / Response
+
+**Request — POST /voice/chat**
+```
+Content-Type: multipart/form-data
+Fields:
+  - audio: <binary audio file> (WAV, M4A, MP3, OGG)
+  - conversation_id: "uuid" (optional)
+  - language: "hi" (optional — auto-detected if omitted)
+```
+
+**Response**
+```json
+{
+  "transcript": "मुझे दो दिन से बुखार है",
+  "reply_text": "बुखार के कई कारण हो सकते हैं...\n\n⚠️ मैं केवल सामान्य स्वास्थ्य जानकारी प्रदान करने वाला AI हूं।",
+  "audio_base64": "//NExAAA...",
+  "audio_mime_type": "audio/mp3",
+  "language_detected": "hi",
+  "emergency_detected": false,
+  "conversation_id": "550e8400-e29b-41d4-a716-446655440000",
+  "response_time_seconds": 4.21
+}
+```
+
+### Whisper Model Configuration
+
+| Model Size | Disk | RAM | Accuracy | Speed |
+|---|---|---|---|---|
+| `tiny` | 39 MB | ~1 GB | Lowest | Fastest |
+| `base` | 74 MB | ~1 GB | Good | Fast — **recommended default** |
+| `small` | 244 MB | ~2 GB | Better | Moderate |
+| `medium` | 769 MB | ~5 GB | High | Slow |
+
+Set via `WHISPER_MODEL_SIZE` in `.env`. The `base` model offers the best balance of accuracy and speed for low-resource devices.
+
+### Mobile Integration
+
+The mobile chatbot (`chat_page.dart`) includes a microphone button that:
+1. Requests microphone permission via `permission_handler`
+2. Records audio using the `record` package (outputs M4A on iOS, WAV on Android)
+3. Sends the audio file to `POST /voice/chat`
+4. Populates the transcript in the chat bubble and plays the audio response via `audioplayers`
+5. Falls back to text-only mode if microphone permission is denied
+
+---
+
+---
+
+## 12. Module 8 — Offline Sync
+
+### Overview
+
+The Offline Sync module enables the app to function fully without internet connectivity and synchronise accumulated local changes back to the server when connectivity returns. It uses **Hive** (a fast key-value NoSQL database) as the on-device store and exposes a set of server-side sync endpoints for bidirectional data exchange. Real-time network state changes are detected by `connectivity_plus` and `internet_connection_checker_plus`, which trigger automatic sync transparently in the background.
+
+**Module path:** `backend/app/offline_sync/`
+
+### Offline Data Strategy
+
+The platform uses a two-layer offline approach:
+
+| Layer | Technology | Purpose |
 |---|---|---|
-| POST | `/auth/register` | Create a new user account |
-| POST | `/auth/verify-email` | Verify email using token |
-| POST | `/auth/resend-email-verification` | Resend verification email |
-| POST | `/auth/send-phone-otp` | Send SMS OTP to registered phone |
-| POST | `/auth/verify-phone` | Verify phone with OTP |
-| POST | `/auth/login` | Login, returns access + refresh tokens |
-| POST | `/auth/refresh` | Refresh access token |
-| POST | `/auth/logout` | Revoke current session |
-| POST | `/auth/logout-all` | Revoke all sessions (all devices) |
-| POST | `/auth/forgot-password` | Request password reset via email link |
-| POST | `/auth/forgot-password-otp` | Request password reset via 6-digit OTP (mobile-friendly) |
-| POST | `/auth/verify-reset-otp` | Verify OTP and receive a reset token |
-| POST | `/auth/reset-password` | Set new password using reset token |
-| GET | `/auth/me` | Get current user profile |
-| GET | `/auth/sessions` | List active sessions |
-| POST | `/auth/sessions/revoke` | Revoke a specific session |
-| POST | `/auth/change-role` | Change user role (admin only) |
+| **Structured data cache** | Hive (on-device) | Conversations, symptom history, health records, education articles |
+| **AI knowledge base** | FAISS index (bundled in assets) | Chatbot responses when LLM is unreachable |
+| **Pending write queue** | Hive box `pendingQueue` | Mutations made offline that need to be pushed to server |
+| **Sync metadata** | Hive box `syncMeta` | Last sync timestamps per data type |
 
-**Key design decisions:**
-- Access tokens expire in 15 minutes; refresh tokens last 30 days
-- Tokens are stored in the database with hashes — individual sessions can be revoked
-- User IDs are UUID strings (not integers), which is enforced throughout the system
-- Roles: `patient`, `doctor`, `admin` — enforced via FastAPI dependency injection
-- Email and phone verification are tracked separately on the user record
-- All OTP codes are stored as hashed values and single-use
-- SMTP email and Twilio SMS are configurable; a mock provider is used in development
+### Network State Machine
 
-**Database models:** `users`, `roles`, `permissions`, `role_permissions`, `refresh_tokens`, `otp_codes`, `email_verification`, `phone_verification`, `password_reset`, `user_sessions`
+```mermaid
+stateDiagram-v2
+    [*] --> Checking : App launch
+    Checking --> Online : connectivity_plus detects WiFi/Mobile\n+ internet_connection_checker_plus\nconfirms real internet
+    Checking --> Offline : No connectivity detected
 
----
+    Online --> Offline : Network lost
+    Offline --> Online : Network restored
 
-### 4.3 Medical Chatbot
+    Online --> Syncing : Pending queue not empty\n(auto-triggered on reconnect)
+    Syncing --> Online : Sync complete
+    Syncing --> SyncError : Sync failed (conflict / server error)
+    SyncError --> Online : Retry after backoff
 
-Module path: `backend/app/medical_chatbot/`
+    Online --> FetchingCache : User opens feature\nfor first time / stale cache
+    FetchingCache --> Online : Cache updated
 
-An LLM-powered medical assistant that maintains full conversation history.
+    note right of Offline : App uses Hive cache\nChatbot uses FAISS index\nWrites go to pendingQueue
+    note right of Online : Normal API mode\nAll writes go directly to server
+```
 
-| Method | Endpoint | Description |
+### Complete API Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/offline/upload/` | JWT | Push pending queue items from device to server |
+| `GET` | `/offline/download/` | JWT | Download latest data snapshot for device cache |
+| `POST` | `/offline/sync/` | JWT | Full bidirectional sync in a single round-trip |
+| `GET` | `/offline/history/` | JWT | Sync history log for the user |
+| `GET` | `/offline/settings/` | JWT | Get offline sync preferences |
+| `PUT` | `/offline/settings/` | JWT | Update sync preferences (auto-sync interval, WiFi-only, etc.) |
+
+### Bidirectional Sync Flow
+
+```mermaid
+sequenceDiagram
+    participant APP as Mobile App (Hive)
+    participant NET as Network Monitor
+    participant API as Offline Sync API
+    participant DB as Server Database
+
+    Note over APP, DB: ── OFFLINE PERIOD ──
+    APP->>APP: User creates prescription\n(no internet)
+    APP->>APP: Write to Hive: health_records box
+    APP->>APP: Add to pendingQueue:\n{type: "prescription", action: "create", data: {...}}
+
+    Note over APP, DB: ── RECONNECTION ──
+    NET->>APP: connectivity_plus fires\nNetworkChanged(online=true)
+    APP->>NET: internet_connection_checker_plus\nconfirms real internet (GET /health)
+    NET->>APP: Confirmed online
+
+    APP->>API: POST /offline/sync/\n{last_synced_at: "2026-08-07T08:00:00Z",\n pending_items: [...]}
+
+    API->>API: Process pending_items
+    loop For each pending item
+        API->>DB: Apply mutation\n(INSERT / UPDATE / DELETE)
+        DB-->>API: Result (success / conflict)
+    end
+
+    API->>DB: Fetch all records changed\nsince last_synced_at
+    DB-->>API: Delta records
+
+    API-->>APP: {\n  synced_items: [{id, status},...],\n  server_changes: [{type, data},...],\n  sync_timestamp: "2026-08-07T10:30:00Z"\n}
+
+    APP->>APP: Apply server_changes to Hive boxes
+    APP->>APP: Clear synced items from pendingQueue
+    APP->>APP: Update syncMeta.last_synced_at
+```
+
+### Hive Box Structure (On-Device)
+
+```
+Hive boxes:
+  ├── auth_box
+  │     └── {access_token, refresh_token, user_profile}
+  ├── conversations_box
+  │     └── List<ConversationModel> (last 50 conversations)
+  ├── messages_box_{conversation_id}
+  │     └── List<MessageModel>
+  ├── symptom_history_box
+  │     └── List<SymptomCheckResult>
+  ├── health_records_box
+  │     ├── medical_profile
+  │     ├── history_entries[]
+  │     └── prescriptions[]
+  ├── education_box
+  │     ├── articles[] (cached for offline reading)
+  │     └── bookmarks[]
+  ├── pending_queue_box
+  │     └── List<PendingAction> — queued mutations
+  └── sync_meta_box
+        └── {last_synced_at, sync_count, last_error}
+```
+
+### Conflict Resolution Strategy
+
+When an item in the pending queue conflicts with a server record (both modified offline and on server since last sync), the platform applies **last-write-wins** with the server timestamp taking precedence:
+
+```
+Conflict Resolution Rules:
+  1. Server DELETE wins over client UPDATE (record was removed on server)
+  2. Server UPDATE wins if server.updated_at > client.updated_at
+  3. Client UPDATE wins if client.updated_at > server.updated_at
+  4. Conflicts are logged to sync_history with status="conflict_resolved"
+```
+
+### Offline Sync Settings
+
+Users can configure sync behaviour via `GET/PUT /offline/settings/`:
+
+| Setting | Default | Description |
 |---|---|---|
-| POST | `/chatbot/chat` | Send a message and receive AI response |
-| GET | `/chatbot/conversations` | List user's conversations (paginated, filterable) |
-| GET | `/chatbot/conversations/{id}` | Get full conversation with all messages |
-| DELETE | `/chatbot/conversations/{id}` | Delete a conversation |
-| POST | `/chatbot/feedback` | Rate a conversation (1–5 stars + text) |
-| GET | `/chatbot/health` | Service health check |
+| `auto_sync_enabled` | `true` | Automatically sync when connectivity restores |
+| `wifi_only` | `false` | Only sync on WiFi (saves mobile data) |
+| `sync_interval_minutes` | `30` | Background sync interval when online |
+| `max_offline_days` | `7` | How many days of data to keep in local cache |
+| `sync_health_records` | `true` | Include health records in sync |
+| `sync_conversations` | `true` | Include chatbot conversations in sync |
 
-**How it works:**
-- The chatbot service tries an online LLM first (Gemini, OpenAI, or Claude based on configuration)
-- If the LLM is unavailable or the API key is invalid, it falls back to a FAISS-powered offline semantic search against a pre-built medical knowledge base
-- Responses include emergency detection — if the user describes a potential emergency, the chatbot flags it and suggests calling emergency services
-- Follow-up question suggestions are returned alongside every response
-- Language auto-detection allows the user to write in Hindi, Nepali, or English and receive a response in the same language
-- Conversations and messages are persisted in the database (`conversations`, `messages`, `chatbot_feedback`, `chatbot_sessions` tables)
+### Mobile Sync Centre Screen
+
+The **Sync Centre** (`/offline`) screen provides full visibility into sync state:
+- Last sync timestamp and status badge (Success / Error / Pending)
+- Count of pending queue items waiting to be synced
+- Manual "Sync Now" button
+- Sync history list (last 20 sync events with item counts)
+- Storage usage breakdown per Hive box
+- Clear cache option (with warning)
 
 ---
 
-### 4.4 Symptom Checker
+## 13. Module 9 — Notifications & Feedback
 
-Module path: `backend/app/symptom_checker/`
+### Overview
 
-An ML-based disease prediction engine trained on a 230-symptom dataset.
+The Notifications module delivers both in-app and push notifications to users for health reminders, emergency alerts, and system messages. The Feedback module collects star ratings and free-text feedback on chatbot conversations to drive continuous improvement.
 
-| Method | Endpoint | Description |
+**Module paths:** `backend/app/notifications/` · `backend/app/feedback/`
+
+### Notifications Endpoints
+
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `GET` | `/notifications/` | JWT | List notifications (paginated, unread-first) |
+| `GET` | `/notifications/unread-count` | JWT | Count of unread notifications |
+| `POST` | `/notifications/mark-read/{id}` | JWT | Mark single notification as read |
+| `POST` | `/notifications/mark-all-read` | JWT | Mark all notifications as read |
+| `POST` | `/notifications/register-device` | JWT | Register FCM push token for device |
+| `DELETE` | `/notifications/register-device` | JWT | Unregister push token on logout |
+| `GET` | `/notifications/preferences` | JWT | Get notification preferences |
+| `PUT` | `/notifications/preferences` | JWT | Update preferences (enable/disable types) |
+
+### Notification Types
+
+| Type | Trigger | Example |
 |---|---|---|
-| POST | `/symptom-checker/predict` | Predict diseases from symptom list |
-| GET | `/symptom-checker/symptoms` | List all 230 recognizable symptoms |
-| GET | `/symptom-checker/symptoms/categorized` | Symptoms organized by body system |
-| GET | `/symptom-checker/diseases` | List all known diseases |
-| POST | `/symptom-checker/batch-predict` | Batch predictions |
-| GET | `/symptom-checker/model-info` | Model metadata and accuracy metrics |
-| POST | `/symptom-checker/reload` | Hot-reload the model (admin) |
+| `emergency_alert` | SOS triggered | "SOS sent to 3 contacts at 10:45 AM" |
+| `high_risk_assessment` | Risk level HIGH/CRITICAL | "Your symptom check shows HIGH risk. Please seek care." |
+| `medication_reminder` | Scheduled | "Time to take your Metformin 500mg" |
+| `appointment_reminder` | Upcoming visit | "Doctor appointment tomorrow at 2:00 PM" |
+| `sync_complete` | Offline sync done | "12 records synced successfully" |
+| `system_message` | Admin broadcast | "Platform maintenance on Sunday 2–4 AM" |
 
-**Prediction input includes:**
-- List of symptom names (from the 230-symptom vocabulary)
-- Age, gender, weight, height
-- Symptom duration and severity (1–4)
-- Existing conditions, current medications, allergies
-- Pregnancy status
+### Feedback Endpoints
 
-**Prediction output includes:**
-- Top 5 diseases with confidence scores
-- Risk assessment: `low`, `medium`, `high`, or `critical`
-- Medical recommendations
-- Emergency alert flag if symptoms indicate urgent care is needed
-
-**Symptoms are organized into body-system categories:** General, Respiratory, Cardiovascular, Neurological, Digestive, Musculoskeletal, ENT, Dermatological, Urological, Ophthalmological, Psychological, Endocrine, and others.
+| Method | Endpoint | Auth | Description |
+|---|---|---|---|
+| `POST` | `/feedback/` | JWT | Submit feedback (rating 1–5 + optional text) |
+| `GET` | `/feedback/` | JWT | List user's submitted feedback |
+| `GET` | `/feedback/summary` | Admin | Aggregate statistics (avg rating, distribution) |
+| `GET` | `/feedback/list` | Admin | All feedback paginated (for admin review) |
 
 ---
 
-### 4.5 Emergency Module
-
-Module path: `backend/app/emergency/`
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/emergency/assessment` | Run AI emergency assessment (auth optional) |
-| GET | `/emergency/history` | Past assessments for authenticated user |
-| GET | `/emergency/assessment/{id}` | Get a specific assessment |
-| GET | `/emergency/contacts` | List emergency contacts |
-| POST | `/emergency/contacts` | Add emergency contact |
-| PUT | `/emergency/contacts/{id}` | Update emergency contact |
-| DELETE | `/emergency/contacts/{id}` | Delete emergency contact |
-| POST | `/emergency/sos` | Trigger SOS alert to all contacts |
-| GET | `/emergency/first-aid` | All first-aid guides (offline-safe) |
-
-**Assessment pipeline:**
-- Takes symptoms, patient data, and location
-- Returns a numerical risk score, risk level (`low` / `moderate` / `high` / `critical`), and step-by-step first-aid guidance
-- Lists recommended nearby hospital types based on the situation
-- Anonymous assessments are supported (no login required) — these are stored without a user link
-
-**SOS feature:**
-- Sends alerts to all stored emergency contacts via SMS/email
-- Rate-limited to prevent accidental repeated triggers
-
-**First-aid guides** cover common emergencies (heart attack, stroke, choking, burns, fractures, allergic reactions, etc.) and are fully embedded in the API response so they work offline.
-
 ---
 
-### 4.6 Health Records (PHR)
+## 14. Mobile App — Flutter
 
-Module path: `backend/app/health_records/`
+### Overview
 
-A personal health record vault where users can store and manage all their medical data.
+The mobile application is a Flutter app targeting Android and iOS. It follows a **feature-first clean architecture** with Riverpod 2.x for state management and a strict separation between data, domain, and presentation layers within each feature. The app is designed to be offline-capable from day one — every network call has a Hive cache counterpart, and the connectivity layer switches modes transparently.
 
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/health-records/summary` | Dashboard summary (counts, last activity) |
-| GET | `/health-records/profile` | Get medical profile |
-| PUT | `/health-records/profile` | Create or update medical profile |
-| GET | `/health-records/history` | List medical history entries (filterable) |
-| POST | `/health-records/history` | Add a history entry |
-| PUT | `/health-records/history/{id}` | Update history entry |
-| DELETE | `/health-records/history/{id}` | Delete history entry |
-| GET | `/health-records/prescriptions` | List prescriptions |
-| POST | `/health-records/prescriptions` | Upload prescription (with optional file) |
-| DELETE | `/health-records/prescriptions/{id}` | Delete prescription |
-| GET | `/health-records/images` | List medical images |
-| POST | `/health-records/images` | Upload medical image (X-ray, MRI, CT, etc.) |
-| DELETE | `/health-records/images/{id}` | Delete image |
-| GET | `/health-records/timeline` | Unified chronological medical timeline |
-| POST | `/health-records/timeline/external` | Push event from another module |
+**Directory:** `mobile_app/`
 
-The medical profile stores blood group, allergies, chronic conditions, current medications, and baseline health metrics. Files (prescription PDFs and medical images) are stored on disk under `/uploads` and served as static files.
-
----
-
-### 4.7 Health Education
-
-Module path: `backend/app/health_education/`
-
-A content management system for health education articles with personalization.
-
-| Method | Endpoint | Description |
-|---|---|---|
-| GET | `/education/dashboard` | Full dashboard (featured, categories, recommendations, bookmarks) |
-| GET | `/education/categories` | All health categories |
-| GET | `/education/articles` | Paginated article list (filterable by category, language) |
-| GET | `/education/articles/{id}` | Article detail + increments view count |
-| GET | `/education/featured` | Featured articles |
-| GET | `/education/search` | Full-text search |
-| GET | `/education/recommendations` | Personalized recommendations based on reading history |
-| GET | `/education/bookmarks` | User's saved articles |
-| POST | `/education/bookmarks` | Save article to bookmarks |
-| DELETE | `/education/bookmarks/{id}` | Remove bookmark |
-| POST | `/education/reading-progress/{id}` | Track reading progress |
-
-The module auto-seeds initial articles on first request using `SeedService`. Content supports multiple languages: English (`en`), Hindi (`hi`), Nepali (`ne`), and Bhojpuri (`bh`). Reading history drives the recommendation engine.
-
----
-
-### 4.8 Voice Assistant
-
-Module path: `backend/app/voice/`
-
-A three-tier voice processing pipeline: Speech-to-Text → AI → Text-to-Speech.
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/voice/stt` | Upload audio file → get transcript |
-| POST | `/voice/tts` | Text → base64 MP3 audio |
-| POST | `/voice/chat` | Full pipeline: audio → STT → AI → TTS → audio response |
-| GET | `/voice/languages` | Supported languages list |
-| GET | `/voice/health` | Engine availability check |
-
-**STT stack (priority order):**
-1. OpenAI Whisper (local model, best accuracy, works offline)
-2. Google Speech Recognition (free, requires internet)
-3. Vosk (fully offline, lower accuracy)
-
-**TTS stack (priority order):**
-1. Microsoft Edge TTS neural voices (free, best quality) — supports `en-IN`, `hi-IN`, `ne-NP`
-2. Google TTS (gTTS)
-3. pyttsx3 system voice (fully offline)
-
-**Supported languages for voice:** English, Hindi, Nepali, Bhojpuri, Bengali, Tamil, Telugu, Marathi. Language auto-detection is available.
-
-**Voice chat pipeline** (`/voice/chat`):
-- Accepts an audio file and optional conversation ID
-- Runs STT to get transcript
-- Detects language and intent
-- Calls the chatbot AI (online or offline FAISS)
-- Detects emergency keywords
-- Synthesizes the response as audio
-- Returns both text and base64-encoded audio in one response
-
----
-
-### 4.9 Offline Sync
-
-Module path: `backend/app/offline_sync/`
-
-Enables bidirectional synchronization between the server and the mobile app's local Hive database.
-
-| Method | Endpoint | Description |
-|---|---|---|
-| POST | `/offline/upload/` | Upload pending queue items from device to server |
-| GET | `/offline/download/` | Download latest data to cache on device |
-| POST | `/offline/sync/` | Full bidirectional sync in one round-trip |
-| GET | `/offline/history/` | Sync history for the user |
-| GET | `/offline/settings/` | Get offline settings |
-| PUT | `/offline/settings/` | Update offline settings |
-
-The sync system allows users to use the app without an internet connection and push/pull changes when connectivity is restored.
-
----
-
-### 4.10 Database
-
-**Development:** SQLite (`app.db` file in the backend directory) — no setup required.
-
-**Production:** PostgreSQL — configure `DATABASE_URL` in `.env`.
-
-The app uses SQLAlchemy's async engine throughout. In development, all tables are auto-created on startup via `Base.metadata.create_all()`. For production, Alembic handles migrations.
-
-Redis is used for caching and rate limiting (configurable via `REDIS_URL`).
-
----
-
-## 5. Mobile App — Flutter
-
-Directory: `mobile_app/`
-
-A Flutter mobile application for Android and iOS that connects to the FastAPI backend.
-
-### 5.1 Architecture & State Management
-
-The app follows a layered feature-first architecture:
+### Architecture Pattern
 
 ```
 lib/
+├── main.dart                       ← App entry point, Hive init, ProviderScope
+├── config/
+│   └── api_config.dart             ← Resolves backend URL at runtime
+│                                      (WiFi IP / emulator / dart-define override)
+├── constants/
+│   └── api_constants.dart          ← All API path strings as constants
 ├── core/
-│   ├── api/            # HTTP client, interceptors, error handling
-│   ├── local_db/       # Hive-based local database service
-│   ├── network/        # NetworkConfig — persisted backend URL
-│   └── routing/        # Named route constants and go_router config
+│   ├── api/
+│   │   ├── api_client.dart         ← Dio singleton with JWT interceptor
+│   │   └── api_interceptor.dart    ← Auto-refresh on 401, error normalisation
+│   ├── local_db/
+│   │   └── local_db_service.dart   ← Hive box open/close lifecycle management
+│   └── network/
+│       └── network_config.dart     ← Persisted backend URL via SharedPreferences
 └── features/
-    └── <feature>/
+    └── <feature_name>/
         ├── data/
-        │   ├── datasources/   # Remote (API) and local (Hive) data sources
-        │   └── repositories/  # Repository implementations
+        │   ├── datasources/
+        │   │   ├── <feature>_remote_datasource.dart   ← REST API calls
+        │   │   └── <feature>_local_datasource.dart    ← Hive read/write
+        │   └── repositories/
+        │       └── <feature>_repository_impl.dart     ← Combines remote + local
         ├── domain/
-        │   ├── entities/      # Pure data models
-        │   └── repositories/  # Repository interfaces
+        │   ├── entities/
+        │   │   └── <feature>_model.dart               ← Pure Dart models
+        │   └── repositories/
+        │       └── <feature>_repository.dart          ← Abstract interface
         └── presentation/
-            ├── controllers/   # Riverpod providers / state notifiers
-            ├── pages/         # Screen widgets
-            └── widgets/       # Reusable UI components
+            ├── controllers/
+            │   └── <feature>_provider.dart            ← Riverpod StateNotifier
+            ├── pages/
+            │   └── <feature>_page.dart                ← Screen widgets
+            └── widgets/
+                └── (reusable UI components)
 ```
 
-State is managed with **Riverpod 2.x**. Every feature has its own set of providers, keeping state isolated and preventing cross-feature side effects.
+### State Management — Riverpod 2.x
 
-### 5.2 Features & Screens
+Every feature exposes its own set of providers. State is fully isolated — a state change in the chatbot module never triggers a rebuild in the emergency module.
 
-**Authentication flow:**
-- Splash screen with auto-login check
-- Onboarding / welcome screens for new users
-- Registration with email + phone
-- Email and phone OTP verification
-- Login with email + password
-- Forgot password via OTP (mobile-optimized flow)
-- OTP entry and reset password screens
-- Profile completion (name, age, gender, language preference)
-- Guest mode (limited access without an account)
-- Backend URL setup page (shown on first launch on a new network)
+```mermaid
+flowchart LR
+    A[User interaction\non screen widget] --> B[ConsumerWidget\nref.read/watch provider]
+    B --> C[StateNotifier\nor AsyncNotifier]
+    C --> D{Online?}
+    D -- Yes --> E[Repository Impl\nRemote DataSource\nDio HTTP call]
+    D -- No --> F[Repository Impl\nLocal DataSource\nHive read]
+    E --> G[Cache result\nto Hive]
+    G --> H[Emit new state]
+    F --> H
+    H --> I[Widget rebuilds\nwith new data]
+```
 
-**Home Dashboard** (`/home`):
-- Overview cards linking to all major features
-- Quick-access buttons for emergency and chatbot
-- Health summary from the PHR module
-- Connectivity status indicator
+**Provider types used:**
 
-**Medical Chatbot** (`/chatbot`):
-- Chatbot home screen listing all past conversations
-- Chat screen with real-time message bubbles
-- Supports text and voice input
-- Markdown rendering for formatted responses
-- Loading/typing indicator
-- Offline mode automatically falls back to FAISS responses
-
-**Symptom Checker** (`/symptom-checker`):
-- Multi-select symptom input (categorized by body system)
-- Patient info form (age, gender, duration, severity)
-- Results screen with disease predictions, confidence scores, and recommendations
-
-**Emergency** (`/emergency`):
-- Emergency home with quick-access guides and SOS button
-- Emergency assessment form (symptoms + patient info)
-- Assessment result screen with risk level, first-aid steps, and hospital recommendations
-- Emergency contacts management
-
-**Health Records** (`/records`):
-- Dashboard summary screen
-- Medical profile editor (blood group, allergies, chronic conditions)
-- Medical history list and create/edit forms
-- Prescriptions list with file upload support
-- Medical images gallery with upload
-- Unified medical timeline
-
-**Health Education** (`/health-education`):
-- Article list with category filtering and search
-- Article detail with markdown rendering and reading-progress tracking
-- Bookmarks screen
-
-**Offline Module** (`/offline`):
-- Offline dashboard showing cached data status
-- Offline symptom checker (uses local model)
-- Offline chatbot (uses FAISS knowledge base)
-- Sync center showing history and manual sync trigger
-
-**Other screens:**
-- Nearby healthcare facilities (`/nearby-healthcare`)
-- Disease prediction history (`/history`)
-- User profile (`/profile`)
-- App settings (`/settings`)
-
-### 5.3 Offline Mode
-
-Offline support uses a two-layer approach:
-
-1. **Hive on-device storage** — all chatbot conversations, symptom check history, health records, and education articles are cached locally using Hive (a fast key-value NoSQL database for Flutter).
-2. **FAISS knowledge base** — a pre-built vector index of medical knowledge is bundled in `assets/offline/` and used by the chatbot when there is no internet connection.
-3. **Sync center** — when connectivity is restored, the app syncs pending local changes to the server using the `/offline/sync/` endpoint.
-4. **Connectivity detection** — `connectivity_plus` and `internet_connection_checker_plus` are used to detect network state changes in real time and switch between online and offline modes seamlessly.
-
-### 5.4 Key Packages
-
-| Package | Purpose |
+| Riverpod Provider | When used |
 |---|---|
-| `flutter_riverpod` | State management |
-| `hive` + `hive_flutter` | Local database (offline cache) |
-| `speech_to_text` | On-device speech recognition |
-| `flutter_tts` | Text-to-speech playback |
-| `record` | Audio recording for voice messages |
-| `audioplayers` | Audio playback for TTS responses |
-| `connectivity_plus` | Network state detection |
-| `internet_connection_checker_plus` | Actual internet reachability check |
-| `shared_preferences` | Persistent non-sensitive settings (backend URL, etc.) |
-| `flutter_secure_storage` | Encrypted token storage (keychain/keystore) |
-| `flutter_animate` | UI animations |
-| `flutter_markdown` | Render chatbot markdown responses |
-| `lottie` | JSON-based loading and animation assets |
-| `shimmer` | Loading skeleton placeholders |
-| `cached_network_image` | Cached profile and article images |
-| `file_picker` | Pick prescription/image files for upload |
-| `permission_handler` | Microphone and storage permissions |
-| `intl` | Date/time formatting and internationalization |
-| `uuid` | Client-side UUID generation for offline records |
+| `StateNotifierProvider` | Mutable state with complex logic (auth, chatbot, emergency) |
+| `AsyncNotifierProvider` | Async data fetching with loading/error/data states |
+| `FutureProvider` | One-shot async reads (model info, categories list) |
+| `StreamProvider` | Real-time connectivity state from `connectivity_plus` |
 
----
+### Complete Navigation Map
 
-## 6. Admin Dashboard — Flutter Web
+```mermaid
+flowchart TD
+    A([App Launch]) --> B[SplashPage\n2s + token check]
+    B --> C{Valid token\nin secure storage?}
+    C -- No --> D[OnboardingPage\nFirst launch only]
+    C -- Yes --> HOME
+    D --> E[WelcomePage\nLogin / Register]
 
-Directory: `admin_dashboard/`
+    E --> F[RegisterPage]
+    E --> G[LoginPage]
 
-A Flutter Web application for platform administrators and healthcare managers.
+    F --> H[VerifyEmailPage]
+    H --> I[VerifyPhonePage]
+    I --> J[CompleteProfilePage]
+    J --> HOME
 
-**All 11 phases complete:**
+    G --> HOME
 
-| Module | Route | Purpose |
+    HOME[HomeDashboardPage] --> CHAT[ChatbotHomePage]
+    HOME --> SYM[DiseasePredictionHomePage]
+    HOME --> EMR[EmergencyHomePage]
+    HOME --> PHR[HealthRecordsHome]
+    HOME --> EDU[HealthEducationHome]
+    HOME --> PROF[ProfilePage]
+    HOME --> SET[SettingsPage]
+
+    CHAT --> CHATROOM[ChatPage\nconversation_id]
+
+    SYM --> SYMPTOM_SEL[SymptomSelectorPage]
+    SYMPTOM_SEL --> PRED_RESULT[PredictionResultPage]
+    PRED_RESULT --> PHR
+
+    EMR --> EMR_ASSESS[EmergencyAssessmentPage]
+    EMR --> EMR_CONTACTS[EmergencyContactsPage]
+    EMR --> FIRST_AID[FirstAidGuidePage]
+    EMR_ASSESS --> EMR_RESULT[EmergencyResultPage]
+    EMR_RESULT --> SOS[SOS Sent Screen]
+
+    PHR --> MED_PROFILE[MedicalProfilePage]
+    PHR --> MED_HIST[MedicalHistoryPage]
+    PHR --> PRESCRIPTIONS[PrescriptionsPage]
+    PHR --> MED_IMAGES[MedicalImagesPage]
+    PHR --> TIMELINE[TimelinePage]
+
+    EDU --> ARTICLE_LIST[ArticleListPage]
+    EDU --> BOOKMARKS[BookmarksPage]
+    ARTICLE_LIST --> ARTICLE_DETAIL[ArticleDetailPage]
+```
+
+### API Config — URL Resolution Priority
+
+`lib/config/api_config.dart` resolves the backend URL at runtime using this priority chain:
+
+```
+1. --dart-define=BACKEND_URL=http://...  ← CI / team overrides
+2. Android emulator (IS_EMULATOR=true)  ← http://10.0.2.2:8000
+3. Physical Android device              ← http://<_wifiBackendUrl>:8000
+4. Web / Desktop                        ← http://localhost:8000
+```
+
+To change the WiFi IP, update `_wifiBackendUrl` in `api_config.dart`:
+```dart
+static const String _wifiBackendUrl = 'http://192.168.x.x:8000';
+```
+
+### HTTP Client — Dio Interceptor
+
+The Dio client (`core/api/api_client.dart`) includes an interceptor that:
+
+1. **Adds `Authorization: Bearer <token>`** to every request from `flutter_secure_storage`
+2. **On HTTP 401** — calls `POST /auth/refresh` with the stored refresh token
+3. **If refresh succeeds** — retries the original request with the new access token
+4. **If refresh fails** — clears all tokens, navigates to `WelcomePage`
+5. **On HTTP 4xx/5xx** — normalises the error into a human-readable `ApiException` with `statusCode`, `message`, and `detail`
+
+### Key Packages and Their Roles
+
+| Package | Role in the App |
+|---|---|
+| `flutter_riverpod 2.5.1` | State management across all features |
+| `dio 5.4.3` | HTTP client with interceptor chain |
+| `hive + hive_flutter 2.2.3` | Fast key-value local DB for offline caching |
+| `flutter_secure_storage` | Encrypted JWT token storage (Keychain / Keystore) |
+| `speech_to_text 7.3.0` | On-device STT for voice input in chat |
+| `flutter_tts 4.0.2` | TTS playback for voice responses |
+| `record 7.1.1` | Audio recording (WAV/M4A) for `/voice/chat` |
+| `audioplayers 6.0.0` | Play base64 MP3 audio responses |
+| `connectivity_plus 6.0.3` | Detect WiFi/mobile/none connectivity |
+| `internet_connection_checker_plus` | Confirm actual internet vs. captive portal |
+| `flutter_markdown 0.7.3` | Render AI chatbot responses as rich Markdown |
+| `flutter_animate 4.5.0` | Entrance animations on list items and cards |
+| `lottie 3.1.2` | JSON-based loading spinner and state animations |
+| `shimmer 3.0.0` | Skeleton loading placeholders while fetching |
+| `cached_network_image 3.3.1` | Lazy-load and cache profile/article images |
+| `file_picker 8.1.2` | Attach prescription PDFs and medical images |
+| `permission_handler 11.3.1` | Microphone and storage permission requests |
+| `flutter_svg 2.0.10` | SVG icons and illustrations |
+| `intl 0.19.0` | Date/time formatting and locale-aware display |
+| `uuid 4.4.2` | Client-side UUID generation for offline records |
+
+### Splash & First-Launch Flow
+
+```mermaid
+sequenceDiagram
+    participant APP as App (SplashPage)
+    participant SS as flutter_secure_storage
+    participant API as Backend
+
+    APP->>APP: Show logo + animation (1.5s)
+    APP->>SS: Read access_token
+    SS-->>APP: token (or null)
+
+    alt token exists
+        APP->>API: GET /auth/me (Bearer token)
+        alt 200 OK
+            API-->>APP: user profile
+            APP->>APP: Navigate to HomeDashboardPage
+        else 401 Unauthorized
+            APP->>API: POST /auth/refresh
+            alt refresh OK
+                API-->>APP: new tokens
+                APP->>SS: Store new tokens
+                APP->>APP: Navigate to HomeDashboardPage
+            else refresh failed
+                APP->>SS: Clear all tokens
+                APP->>APP: Navigate to WelcomePage
+            end
+        end
+    else no token
+        APP->>APP: First launch? → OnboardingPage
+        APP->>APP: Returning user? → WelcomePage
+    end
+```
+
+### Offline Mode Visual Indicators
+
+The app communicates connectivity state clearly to users:
+
+| State | Visual Indicator | Behaviour |
 |---|---|---|
-| `authentication` | `/login` | Admin login with JWT, session restore, auto-redirect |
-| `dashboard` | `/dashboard` | Platform overview: 8 KPI cards, 4 trend charts, recent activity |
-| `users` | `/users` | User list, search, activate/deactivate, role change, delete |
-| `emergency` | `/emergency` | Emergency assessment monitoring, risk cards, SOS tracking |
-| `chatbot` | `/chatbot` | Conversation monitoring, language distribution, emergency flags |
-| `education` | `/education` | Health article CRUD, publish/draft toggle, category filters |
-| `analytics` | `/analytics` | Symptom analytics: frequency charts, risk/age/gender distribution |
-| `datasets` | `/datasets` | AI dataset version management, activate/deactivate |
-| `reports` | `/reports` | Period-selectable charts: registrations, risk, chatbot, emergency |
-| `logs` | `/logs` | Admin action audit trail with module/severity filters |
-| `settings` | `/settings` | System settings editor (grouped), danger zone |
-
-**Shared infrastructure:**
-- Collapsible sidebar with 11 nav items
-- Top bar with notifications bell (badge + dropdown panel), dark mode toggle, user chip
-- Shimmer loading states, fade page transitions, responsive grid layouts
-- 51 unit tests across 5 test files (all passing)
-
-The dashboard communicates with the same FastAPI backend using admin-scoped JWT tokens. Routing is handled by `go_router` and the theme is in `lib/core/theme.dart`.
+| **Online** | No banner | Full API mode |
+| **Offline** | Orange banner "You are offline — using cached data" | Hive + FAISS mode |
+| **Syncing** | Blue banner "Syncing…" with progress | Background sync in progress |
+| **Sync Error** | Red banner "Sync failed — tap to retry" | Manual retry available |
 
 ---
 
-## 7. AI Models Layer
+---
 
-Directory: `ai_models/`
+## 15. Admin Dashboard — Flutter Web
 
-Standalone Python code for training, evaluating, and serving the ML and AI components.
+### Overview
 
-### Chatbot Engine (`ai_models/chatbot/`)
-- `chatbot_engine.py` — Core engine orchestrating online (LLM) and offline (FAISS) modes
-- `conversation_manager.py` — Tracks conversation context, turn history, and language state
-- `prompt_templates.py` — System prompts and instruction templates for different LLM providers
-- `response_generator.py` — Post-processes raw LLM output into structured chat responses
+The Admin Dashboard is a Flutter Web application that gives platform administrators and healthcare managers full visibility and control over the entire platform. It connects to the same FastAPI backend via admin-scoped JWT tokens and provides 15 distinct management panels behind a collapsible sidebar. All data tables are paginated, searchable, and filterable. The dashboard supports both light and dark mode with a custom theme.
 
-### Model Configuration (`ai_models/configs/`)
-- `model_config.yaml` — Model IDs, token limits, temperature settings, fallback order
-- `inference_config.yaml` — Inference parameters, batch sizes, caching settings
+**Directory:** `admin_dashboard/`
 
-### Saved Models (`ai_models/saved_models/`)
-- `symptom_checker/` — Trained scikit-learn classification model (joblib format) with the 230-feature symptom vocabulary
-- `faiss_index/` — Pre-built FAISS vector index (`index.faiss` + metadata) for semantic search on the medical knowledge base
+### Shared UI Infrastructure
 
-### Scripts (`ai_models/scripts/`)
-- `build_faiss_index.py` — Reads medical datasets, generates embeddings using `sentence-transformers/all-MiniLM-L6-v2`, and builds the FAISS index. Runs once; takes 5–20 minutes depending on hardware.
+```mermaid
+flowchart LR
+    subgraph Shell["App Shell (app.dart)"]
+        SIDEBAR["Collapsible Sidebar\n15 nav items\n(expand/collapse on hover)"]
+        TOPBAR["Top Bar\n• Notifications bell + badge + dropdown\n• Dark/light mode toggle\n• Admin user chip + logout"]
+        CONTENT["Content Area\n(go_router page rendering)"]
+    end
 
-### Datasets (`ai_models/datasets/`)
-Medical Q&A datasets and symptom-disease training data used for model training and index building.
+    SIDEBAR --> CONTENT
+    TOPBAR --> CONTENT
+
+    subgraph Shared["Shared Widgets"]
+        DTC["DataTableCard\nPaginated sortable table\nwith search + filter slots"]
+        SB["StatusBadge\nColour-coded active/inactive"]
+        SHIMMER["Shimmer placeholders\nfor all loading states"]
+        FADE["Fade page transitions\nvia flutter_animate"]
+    end
+```
+
+**Collapsible Sidebar Navigation:**
+
+| Icon | Route | Panel |
+|---|---|---|
+| 📊 | `/dashboard` | Dashboard & KPIs |
+| 👥 | `/users` | User Management |
+| 🩺 | `/doctors` | Doctors Management |
+| 🚨 | `/emergency` | Emergency Monitoring |
+| 💬 | `/chatbot` | Chatbot Monitoring |
+| 📚 | `/education` | Health Education CMS |
+| 📈 | `/analytics` | Symptom Analytics |
+| 🗄️ | `/datasets` | Dataset Management |
+| 📋 | `/reports` | Reports & Charts |
+| 🔍 | `/logs` | Audit Logs |
+| ⚙️ | `/settings` | System Settings |
+| 🏥 | `/health-records` | Health Records Admin |
+| 👤 | `/profile` | Admin Profile |
+| 💡 | `/disease-prediction` | Disease Prediction Stats |
+| 💬 | `/feedback` | User Feedback |
+
+### Token Management in Admin Dashboard
+
+The Dio client (`lib/core/api.dart`) uses `flutter_secure_storage` and a token refresh interceptor identical to the mobile app:
+
+```
+On every request:     Add Authorization: Bearer <access_token>
+On HTTP 401:          POST /auth/refresh → retry with new token
+If refresh fails:     clearTokens() → navigate to /login
+```
 
 ---
 
-## 8. Environment Configuration
+### Panel 1 — Dashboard & KPIs
 
-Copy `.env.example` to `backend/.env` and fill in the required values.
+**Route:** `/dashboard` · **Provider:** `DashboardNotifier`
+
+The central landing screen after login. Loads `GET /admin/dashboard` and `GET /admin/system/health` in parallel.
+
+**8 KPI Cards:**
+
+| Card | Metric | API Source |
+|---|---|---|
+| Total Users | Registered user count | `stats.total_users` |
+| Active Users | `is_active = true` count | `stats.active_users` |
+| Total Conversations | All chatbot conversations | `stats.total_conversations` |
+| Emergency Assessments | Total assessments | `stats.total_emergencies` |
+| High Risk Cases | Risk ≥ HIGH count | `stats.high_risk_count` |
+| Published Articles | Live education content | `stats.published_articles` |
+| Average Chat Rating | Mean feedback score | `stats.avg_rating` |
+| Active Sessions | Currently active JWT sessions | `stats.active_sessions` |
+
+**4 Trend Charts (fl_chart):**
+- User registrations over last 30 days (line chart)
+- Emergency assessments over last 30 days (bar chart)
+- Chatbot conversations over last 30 days (line chart)
+- Risk level distribution (doughnut chart)
+
+**System Health Panel:**
+Calls `GET /admin/system/health` and displays a colour-coded status badge for each subsystem: `database` · `api` · `symptom_checker` · `chatbot` · `emergency_system` · `storage`
+
+```mermaid
+flowchart LR
+    A[DashboardNotifier.load] --> B[GET /admin/dashboard]
+    A --> C[GET /admin/system/health]
+    B --> D[Parse DashboardStats\n+ recentUsers\n+ recentEmergencies\n+ trend arrays]
+    C --> E[Parse system health map]
+    D & E --> F[Emit DashboardState\n→ Widget rebuilds]
+    F --> G[8 KPI cards]
+    F --> H[4 trend charts]
+    F --> I[System health badges]
+    F --> J[Recent users table]
+    F --> K[Recent emergencies list]
+```
+
+---
+
+### Panel 2 — User Management
+
+**Route:** `/users` · **Provider:** `UsersNotifier`
+
+Full CRUD management of all registered users with bulk operations and CSV/JSON export.
+
+**Features:**
+- Paginated data table (20/page) with search by name/email
+- Filter by role (`patient` · `doctor` · `admin` · `super_admin`) and status (`active` · `inactive`)
+- Stat chips: Total · Active · Inactive · Doctors · Admins
+- Per-row actions: View Details · Activate/Deactivate · Change Role · Delete
+- Multi-row checkbox selection → Bulk Action bar (Activate / Deactivate / Delete)
+- Add User dialog — creates admin-verified account bypassing password-strength rules
+- Export dialog — downloads users as CSV or JSON (`GET /admin/export/users`)
+
+**Admin API calls used:**
+
+| Action | Endpoint |
+|---|---|
+| Load users | `GET /admin/users?search=&role=&is_active=&page=` |
+| View user detail | `GET /admin/users/{id}` |
+| Activate/Deactivate | `PATCH /admin/users/{id}/status` |
+| Change role | `PATCH /admin/users/{id}/role` |
+| Delete user | `DELETE /admin/users/{id}` |
+| Bulk action | `POST /admin/users/bulk-action` |
+| Create user | `POST /admin/users` |
+| Export | `GET /admin/export/users?format=csv` |
+
+**User Detail Dialog shows:** Full name · Email · Phone · Role · Status · Email Verified · Language · Chat sessions count · Emergency checks count · Joined date · Last login
+
+---
+
+### Panel 3 — Doctors Management
+
+**Route:** `/doctors`
+
+Dedicated panel for managing doctor accounts — a filtered view of users with `role = doctor` plus a "Create Doctor" form.
+
+**Features:**
+- Filterable list of all doctors (search + active status filter)
+- Create Doctor dialog (email + password + name — pre-verified on creation)
+- Activate/Deactivate per doctor
+- Shows: specialisation (if set), email, phone, active status, last login
+
+**Admin API calls:**
+
+| Action | Endpoint |
+|---|---|
+| List doctors | `GET /admin/doctors?search=&is_active=&page=` |
+| Create doctor | `POST /admin/doctors` |
+| Toggle status | `PATCH /admin/doctors/{id}/status` |
+
+---
+
+### Panel 4 — Emergency Monitoring
+
+**Route:** `/emergency`
+
+Real-time monitoring of emergency assessments platform-wide.
+
+**Features:**
+- Risk-level summary cards: Critical · High · Medium · Low (from `GET /admin/emergency/stats`)
+- Paginated assessment list filtered by risk level and `is_emergency` flag
+- Each row shows: user name · age · gender · risk score · risk level badge · emergency type · date
+- Expandable row reveals full symptoms list and first-aid steps used
+- Emergency config editor (thresholds stored in `system_settings` — no code deploy needed):
+  - Critical threshold (default 90)
+  - High threshold (default 75)
+  - Medium threshold (default 50)
+  - Auto-SOS threshold (default 95)
+  - Auto-SOS enabled toggle
+  - Notify admin on SOS toggle
+
+**Admin API calls:**
+
+| Action | Endpoint |
+|---|---|
+| Stats | `GET /admin/emergency/stats` |
+| List assessments | `GET /admin/emergency?risk_level=&is_emergency=&page=` |
+| Get config | `GET /admin/emergency/config` |
+| Update config | `PUT /admin/emergency/config` |
+
+---
+
+### Panel 5 — Chatbot Monitoring
+
+**Route:** `/chatbot`
+
+Monitor all chatbot conversations across the platform, view language distribution, and manage chatbot configuration.
+
+**Features:**
+- Stats bar: total conversations · total messages · emergency flags · average response time · average rating
+- Paginated conversation table with filters: search · language · `has_emergency`
+- Each row: user name · conversation title · language · message count · has emergency flag · date
+- Click row to view full conversation transcript in a side panel
+- Delete conversation (admin can delete any conversation)
+- Language distribution doughnut chart
+- Chatbot config editor (temperature · max tokens · context window · emergency detection toggle · safety settings)
+
+**Admin API calls:**
+
+| Action | Endpoint |
+|---|---|
+| Stats | `GET /admin/chatbot/stats` |
+| List conversations | `GET /admin/chatbot/conversations?search=&language=&has_emergency=&page=` |
+| Delete conversation | `DELETE /admin/chatbot/conversations/{id}` |
+| Get config | `GET /admin/chatbot/config` |
+| Update config | `PUT /admin/chatbot/config` |
+
+---
+
+### Panel 6 — Health Education CMS
+
+**Route:** `/education`
+
+Content management system for health articles — full CRUD with publish/draft toggle.
+
+**Features:**
+- Article list with search · category filter · language filter · published status filter
+- Create Article dialog (title · summary · body Markdown · category · language · tags · read time · featured toggle)
+- Edit article inline (PUT)
+- Publish/unpublish toggle per article
+- Delete article with confirmation
+- Category list with article counts
+
+**Admin API calls:**
+
+| Action | Endpoint |
+|---|---|
+| List articles | `GET /admin/education/articles?search=&category_id=&language=&is_published=&page=` |
+| Create article | `POST /admin/education/articles` |
+| Update article | `PUT /admin/education/articles/{id}` |
+| Delete article | `DELETE /admin/education/articles/{id}` |
+
+---
+
+### Panel 7 — Symptom Analytics
+
+**Route:** `/analytics`
+
+Deep analytics on symptom checker usage across the platform.
+
+**Features:**
+- Summary cards: total predictions · total emergency flags · model status
+- Top 20 most-reported symptoms (horizontal bar chart)
+- Risk level distribution (pie chart: LOW / MEDIUM / HIGH / CRITICAL)
+- Age group distribution (histogram: 0–18 · 19–35 · 36–55 · 56+)
+- Gender distribution (donut: male · female · other)
+- Top emergency types (bar chart)
+- Symptom frequency trend over last 30/60/90 days (line chart)
+- Disease prediction stats: model version · total predictions · top 10 diseases table
+- Prediction history table with risk/emergency filters
+- Disease model config editor (confidence threshold · emergency keywords · risk thresholds)
+- Hot-reload model button (admin can deploy a new model version without restart)
+
+**Admin API calls:**
+
+| Action | Endpoint |
+|---|---|
+| Stats | `GET /admin/analytics/stats` |
+| Symptom frequency | `GET /admin/analytics/symptom-frequency?limit=20` |
+| Trend | `GET /admin/analytics/trend?days=30` |
+| Risk distribution | `GET /admin/analytics/risk-distribution` |
+| Gender distribution | `GET /admin/analytics/gender-distribution` |
+| Age distribution | `GET /admin/analytics/age-distribution` |
+| Emergency types | `GET /admin/analytics/emergency-types` |
+| Disease prediction stats | `GET /admin/disease-prediction/stats` |
+| Prediction history | `GET /admin/disease-prediction/history?risk_level=&is_emergency=&page=` |
+| Reload model | `POST /admin/disease-prediction/reload-model` |
+
+---
+
+### Panel 8 — Dataset Management
+
+**Route:** `/datasets` · **Provider:** `DatasetNotifier`
+
+Version management for AI training datasets. Admins can register new dataset versions, activate a specific version for production, and remove obsolete ones.
+
+**Features:**
+- Dataset list with type filter (`symptom_checker` · `chatbot_knowledge` · `education`)
+- Stats card: total datasets · active datasets · total records
+- Create Dataset dialog (name · type · version · description)
+- Activate dataset (marks as active, deactivates all others of same type — logged with `severity=warning`)
+- Delete dataset with confirmation
+- Each row shows: name · type · version · record count · file size · active badge · uploaded by · date
+
+**Admin API calls:**
+
+| Action | Endpoint |
+|---|---|
+| List datasets | `GET /admin/datasets?dataset_type=&page=` |
+| Stats | `GET /admin/datasets/stats` |
+| Create | `POST /admin/datasets` |
+| Activate | `PATCH /admin/datasets/{id}/activate` |
+| Delete | `DELETE /admin/datasets/{id}` |
+
+---
+
+### Panel 9 — Reports & Charts
+
+**Route:** `/reports`
+
+Period-selectable aggregate reports for executive-level platform overview.
+
+**Features:**
+- Period selector: 7 · 14 · 30 · 60 · 90 · 180 · 365 days
+- User registration trend (line chart)
+- Chatbot conversation volume (bar chart)
+- Emergency assessment volume + risk level breakdown (stacked bar)
+- Risk level distribution over time (area chart)
+- Article views and engagement (line chart)
+- All charts rendered with `fl_chart`
+
+**Admin API call:** `GET /admin/reports?days=30`
+
+---
+
+### Panel 10 — Audit Logs
+
+**Route:** `/logs`
+
+Immutable audit trail of all admin actions across the platform.
+
+**Features:**
+- Paginated log table (50/page) with filters: module · severity · admin user
+- Module filter covers: `users` · `authentication` · `chatbot` · `emergency` · `education` · `datasets` · `settings` · `disease_prediction` · `doctors`
+- Severity filter: `info` (default) · `warning` (destructive actions) · `error`
+- Each row: timestamp · admin name · action · module · target resource · IP address · severity badge
+- Colour-coded severity: info = blue · warning = amber · error = red
+
+**Admin API call:** `GET /admin/logs?module=&severity=&admin_id=&page=`
+
+**Logged actions (sample):**
+
+| Action | Severity | Trigger |
+|---|---|---|
+| `user.activate` / `user.deactivate` | info | Status toggle |
+| `user.delete` | warning | User deletion |
+| `user.change_role` | warning | Role change |
+| `users.bulk_activate` / `bulk_delete` | warning | Bulk operations |
+| `article.create` / `article.update` | info | CMS changes |
+| `article.delete` | warning | Content removal |
+| `dataset.activate` | warning | Dataset version switch |
+| `model.reload` | warning | ML model hot-reload |
+| `auth.revoke_session` | warning | Force session termination |
+| `settings.update` | info | System config change |
+| `emergency.config_update` | warning | Risk threshold change |
+
+---
+
+### Panel 11 — System Settings
+
+**Route:** `/settings`
+
+Grouped system configuration editor with a danger zone for destructive operations.
+
+**Features:**
+- Settings grouped by category: `General` · `AI / Chatbot` · `Emergency` · `Notifications` · `Security`
+- Inline edit for each setting key/value pair
+- Save per setting or save all (PATCH)
+- Danger Zone section: clear all sessions · revoke all tokens · reset to defaults
+- System metrics panel: CPU usage · memory usage · disk usage (via `GET /admin/system/metrics` using `psutil`)
+
+**Admin API calls:**
+
+| Action | Endpoint | Role Required |
+|---|---|---|
+| Get all settings | `GET /admin/settings` | Admin |
+| Update setting | `PATCH /admin/settings/{key}` | Super Admin |
+| Get system metrics | `GET /admin/system/metrics` | Admin |
+| Get system health | `GET /admin/system/health` | Admin |
+
+---
+
+### Panel 12 — Health Records Admin
+
+**Route:** `/health-records`
+
+Platform-wide visibility into user health records for clinical oversight.
+
+**Features:**
+- Tabbed view: Medical Profiles · Prescriptions · Medical Images · History · Timeline
+- Each tab: paginated table with search and filters, per-record view detail
+- Stats card: total profiles · prescriptions · images · history entries · timeline events
+- Medical profiles: blood group distribution, chronic disease frequency
+- Prescriptions: list with doctor/hospital/diagnosis, download file links
+- Medical history: filter by category/status, disease frequency chart
+
+**Admin API calls:**
+`GET /admin/health-records/profiles` · `/prescriptions` · `/images` · `/medical-history` · `/timeline` · `/stats`
+
+---
+
+### Panel 13 — Authentication Management (within Admin)
+
+Accessible from the Logs / Settings panels.
+
+**Features:**
+- Active sessions list (all users) with revoke button
+- Refresh token list with revoke button
+- OTP codes audit log (pending vs. used counts)
+- Manually verify user email or phone (Super Admin)
+- Revoke all sessions for a specific user
+
+**Admin API calls:**
+`GET /admin/auth/sessions` · `DELETE /admin/auth/sessions/{id}` · `DELETE /admin/auth/sessions/user/{user_id}` · `GET /admin/auth/tokens` · `DELETE /admin/auth/tokens/{id}` · `GET /admin/auth/otp-logs` · `PATCH /admin/auth/verify-email/{user_id}` · `PATCH /admin/auth/verify-phone/{user_id}`
+
+---
+
+### Admin Dashboard — Complete Flow
+
+```mermaid
+flowchart TD
+    A([Admin opens browser]) --> B[GET / → redirect /login]
+    B --> C[AdminLoginPage\nEmail + Password form]
+    C --> D[POST /admin/auth/login\nor POST /api/v1/auth/login]
+    D --> E{Valid admin\ncredentials?}
+    E -- No --> F[Show error snackbar]
+    F --> C
+    E -- Yes --> G[Store JWT in\nflutter_secure_storage]
+    G --> H[Navigate to /dashboard]
+
+    H --> I[DashboardNotifier.load\nGET /admin/dashboard\nGET /admin/system/health]
+    I --> J[Render 8 KPI cards\n4 trend charts\nSystem health badges]
+
+    J --> K{Admin selects panel}
+    K -->|Users| L[UsersNotifier.load\nGET /admin/users]
+    K -->|Analytics| M[GET /admin/analytics/*\n6 parallel calls]
+    K -->|Emergency| N[GET /admin/emergency\nGET /admin/emergency/stats]
+    K -->|Chatbot| O[GET /admin/chatbot/conversations\nGET /admin/chatbot/stats]
+    K -->|Education| P[GET /admin/education/articles]
+    K -->|Datasets| Q[DatasetNotifier.loadDatasets\n+ loadStats]
+    K -->|Reports| R[GET /admin/reports?days=30]
+    K -->|Logs| S[GET /admin/logs]
+    K -->|Settings| T[GET /admin/settings\nGET /admin/system/metrics]
+
+    style G fill:#74c69d,color:#000
+```
+
+---
+
+---
+
+## 16. AI Models Layer
+
+### Overview
+
+The `ai_models/` directory contains all standalone Python code for training, evaluating, and managing the machine learning and AI components. This layer is decoupled from the FastAPI backend — it produces serialised model artefacts that the backend loads at startup.
+
+**Directory:** `ai_models/`
+
+### Symptom Checker Model
+
+The disease prediction model is a multi-class scikit-learn classifier trained on a curated symptom-disease dataset.
+
+**Training pipeline:**
+
+```mermaid
+flowchart LR
+    A[Raw CSV dataset\nsymptoms × diseases] --> B[Data cleaning\nNormalise symptom names\nRemove duplicates]
+    B --> C[Feature engineering\nBuild 230-dim binary vocabulary]
+    C --> D[Train/test split\n80% / 20%]
+    D --> E[Fit classifier\nRandom Forest / Gradient Boosting]
+    E --> F[Evaluate on test set\nAccuracy · Precision · Recall · F1]
+    F --> G{Accuracy\n≥ threshold?}
+    G -- No --> H[Tune hyperparameters\nGridSearchCV]
+    H --> E
+    G -- Yes --> I[joblib.dump\nsaved_models/symptom_checker/trained.joblib]
+    I --> J[Save vocabulary\nsaved_models/symptom_checker/vocabulary.json]
+```
+
+**Saved artefacts:**
+
+| File | Purpose |
+|---|---|
+| `saved_models/symptom_checker/trained.joblib` | Serialised scikit-learn classifier |
+| `saved_models/symptom_checker/vocabulary.json` | 230-symptom vocabulary → feature index mapping |
+| `saved_models/symptom_checker/diseases.json` | Disease label → ICD code mapping |
+| `saved_models/symptom_checker/metadata.json` | Model version, accuracy metrics, training date |
+
+### FAISS Offline Knowledge Base
+
+The FAISS index is a dense vector index over a medical knowledge corpus. It powers the chatbot's offline mode and the voice assistant's offline responses.
+
+**Build pipeline:**
+
+```mermaid
+flowchart TD
+    A[Run: python ai_models/scripts/build_faiss_index.py] --> B[Load medical Q&A datasets\nfrom ai_models/datasets/]
+    B --> C[Split into chunks\n~200 tokens each]
+    C --> D[Generate embeddings\nsentence-transformers\nall-MiniLM-L6-v2]
+    D --> E[Build FAISS IndexFlatIP\n384-dimensional inner product index]
+    E --> F[Save index\nsaved_models/faiss_index/index.faiss]
+    F --> G[Save metadata\nsaved_models/faiss_index/metadata.json\nchunk text + source mapping]
+    G --> H[Copy to mobile app\nassets/offline/chatbot/]
+
+    style A fill:#2563eb,color:#fff
+```
+
+**Runtime usage (offline chatbot):**
+
+```
+User query → sentence-transformers embed → FAISS search top-5 chunks
+→ Concatenate chunk texts → Feed to simple template response generator
+→ Return response (no LLM call required)
+```
+
+**Build time:** 5–20 minutes depending on dataset size and hardware. Run once before first use.
+
+### Model Configuration Files
+
+| File | Key Settings |
+|---|---|
+| `configs/model_config.yaml` | Model IDs, token limits, temperature, fallback provider order |
+| `configs/inference_config.yaml` | Batch sizes, cache TTL, confidence thresholds, FAISS top-k |
+
+### Chatbot Engine Components
+
+| File | Purpose |
+|---|---|
+| `chatbot/chatbot_engine.py` | Orchestrates online (LLM) vs offline (FAISS) mode selection |
+| `chatbot/conversation_manager.py` | Tracks turn history, language state, context window |
+| `chatbot/prompt_templates.py` | System prompts per provider (OpenRouter / Gemini / Groq) |
+| `chatbot/response_generator.py` | Post-processes raw LLM output → structured ChatResponse |
+
+---
+
+## 17. Environment Configuration
+
+Copy `.env.example` to `backend/.env`. The minimum required keys to start the server are `JWT_SECRET_KEY` and `CHATBOT_OPENROUTER_API_KEY`.
 
 ```env
-# App
+# ── Application ───────────────────────────────────────────────────────────────
 APP_NAME=AI Healthcare Assistant API
-ENVIRONMENT=development        # development | production
+ENVIRONMENT=development          # development | production | test
 DEBUG=true
 API_PREFIX=/api/v1
 APP_BASE_URL=http://localhost:8000
 
-# Database (leave blank in dev to use SQLite automatically)
-DATABASE_URL=postgresql+asyncpg://postgres:YOUR_PASSWORD@localhost:5432/healthcare_db
-MONGODB_URL=mongodb://localhost:27017
+# ── Database ──────────────────────────────────────────────────────────────────
+# Leave blank in development → auto uses sqlite+aiosqlite:///./app.db
+DATABASE_URL=postgresql+asyncpg://postgres:PASSWORD@localhost:5432/healthcare_db
 REDIS_URL=redis://localhost:6379/0
 
-# JWT
-JWT_SECRET_KEY=your-long-random-secret-key
+# ── Security ──────────────────────────────────────────────────────────────────
+JWT_SECRET_KEY=your-long-random-256-bit-secret-key-here    # REQUIRED
 JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=15
+REFRESH_TOKEN_EXPIRE_DAYS=30
 
-# LLM (set at least one)
-CHATBOT_LLM_PROVIDER=gemini             # gemini | openai | anthropic
-CHATBOT_LLM_API_KEY=your-api-key
-OPENAI_API_KEY=your-openai-key
-ANTHROPIC_API_KEY=your-anthropic-key
+# ── AI Providers ──────────────────────────────────────────────────────────────
+# Set at least CHATBOT_OPENROUTER_API_KEY (free at openrouter.ai/keys)
 
-# Voice
-WHISPER_MODEL_SIZE=base                 # tiny | base | small | medium
-VOICE_STT_ENGINE=google                 # whisper | google | vosk
-VOICE_TTS_ENGINE=edge                   # edge | gtts | pyttsx3
+CHATBOT_OPENROUTER_API_KEY=sk-or-v1-...                   # REQUIRED (primary)
+CHATBOT_OPENROUTER_MODEL=google/gemma-4-26b-a4b-it:free
 
-# Email (SMTP)
+CHATBOT_LLM_API_KEY=AIzaSy...                              # Gemini fallback
+CHATBOT_LLM_MODEL=gemini-2.0-flash
+
+CHATBOT_GROQ_API_KEY=gsk_...                               # Groq fallback
+CHATBOT_GROQ_MODEL=llama-3.3-70b-versatile
+
+CHATBOT_LLM_MAX_TOKENS=800
+CHATBOT_LLM_TEMPERATURE=0.7
+CHATBOT_LLM_REQUEST_TIMEOUT=60
+
+# ── Voice ─────────────────────────────────────────────────────────────────────
+WHISPER_MODEL_SIZE=base                # tiny | base | small | medium
+VOICE_STT_ENGINE=google                # whisper | google | vosk
+VOICE_TTS_ENGINE=edge                  # edge | gtts | pyttsx3
+
+# ── Email (SMTP) ──────────────────────────────────────────────────────────────
 SMTP_HOST=smtp.gmail.com
 SMTP_PORT=587
 SMTP_USER=your-email@gmail.com
-SMTP_PASSWORD=your-app-password
+SMTP_PASSWORD=your-app-password        # Gmail: use App Password, not account password
 SMTP_FROM=noreply@healthcareai.com
+SMTP_USE_TLS=true
 
-# SMS (Twilio)
-SMS_PROVIDER=mock                       # mock | twilio
-TWILIO_ACCOUNT_SID=your-sid
+# ── SMS (Twilio) ──────────────────────────────────────────────────────────────
+SMS_PROVIDER=mock                      # mock (dev) | twilio (prod)
+TWILIO_ACCOUNT_SID=ACxxxxxxxxxxxxxxxx
 TWILIO_AUTH_TOKEN=your-token
 TWILIO_FROM_NUMBER=+1234567890
 
-# Firebase (optional)
+# ── Firebase (optional — for push notifications) ──────────────────────────────
 FIREBASE_PROJECT_ID=your-project-id
+FIREBASE_CREDENTIALS_PATH=./firebase-credentials.json
 
-# CORS
-CORS_ORIGINS=*                          # comma-separated URLs in production
+# ── CORS ──────────────────────────────────────────────────────────────────────
+# Development: CORS allows any localhost/127.0.0.1 origin on any port
+# Production: set to explicit comma-separated URLs
+CORS_ORIGINS=*
+
+# ── Storage ───────────────────────────────────────────────────────────────────
+UPLOAD_DIR=./app/uploads               # Local disk (dev)
+MAX_UPLOAD_SIZE_MB=10
 ```
 
-In **development**, `DATABASE_URL` can be left blank — the app will automatically use `sqlite+aiosqlite:///./app.db`. In development mode CORS also allows any `localhost` or `127.0.0.1` origin on any port, which is required for Flutter Web and the admin dashboard.
+**Development shortcuts:**
+- `DATABASE_URL` blank → SQLite auto-created at `backend/app.db`
+- `SMS_PROVIDER=mock` → OTPs logged to console (no Twilio account needed)
+- `SMTP` unconfigured → emails logged to console (no Gmail account needed)
+- `CORS_ORIGINS=*` + `ENVIRONMENT=development` → any `localhost` port allowed
 
 ---
 
-## 9. Getting Started
+## 18. Getting Started
 
 ### Prerequisites
 
-| Tool | Version | Check |
+| Tool | Minimum Version | Install Check |
 |---|---|---|
-| Python | 3.11+ | `python --version` |
-| Flutter SDK | 3.x | `flutter --version` |
-| PostgreSQL | 14+ (optional in dev) | `psql --version` |
-| FFmpeg | any | `ffmpeg -version` (needed for audio conversion) |
+| Python | 3.11 | `python --version` |
+| Flutter SDK | 3.0 | `flutter --version` |
+| FFmpeg | Any | `ffmpeg -version` (required for audio format conversion) |
+| Git | Any | `git --version` |
+| PostgreSQL | 14+ | Only for production — dev uses SQLite |
+| Redis | 7+ | Only needed if `REDIS_URL` is set |
 
-### Option A — One-click startup (Windows)
+### Option A — One-Click Start (Windows)
 
 ```batch
+# Start backend + build FAISS index on first run
 start_all.bat
+
+# Start admin dashboard (separate terminal)
+start_admin_dashboard.bat
 ```
 
-This script will:
-1. Check Python and Flutter installations
-2. Create and activate a virtual environment (`.venv`)
-3. Install all Python dependencies from `requirements.txt`
-4. Create `backend/.env` from `.env.example` if it doesn't exist
-5. Build the FAISS knowledge index (first run only — takes 5–20 min)
-6. Start the FastAPI server at `http://0.0.0.0:8000`
+`start_all.bat` does the following automatically:
+1. Creates `.venv` if not present
+2. Activates the virtual environment
+3. Installs all Python dependencies from `requirements.txt`
+4. Copies `.env.example` → `backend/.env` if `.env` doesn't exist
+5. Builds the FAISS index (`build_faiss_index.py`) on first run
+6. Starts Uvicorn at `http://0.0.0.0:8000` with hot-reload
 
-### Option B — Manual setup
+### Option B — Manual Setup
 
-**Backend:**
+**Step 1 — Python backend**
+
 ```powershell
 # From project root
 python -m venv .venv
 .venv\Scripts\Activate.ps1
+
 pip install -r requirements.txt
 
-# Create and configure backend/.env
-copy .env.example backend\.env
-# Edit backend\.env — set JWT_SECRET_KEY and CHATBOT_LLM_API_KEY at minimum
+# Configure environment
+Copy-Item .env.example backend\.env
+# Open backend\.env and set JWT_SECRET_KEY + CHATBOT_OPENROUTER_API_KEY
 
-# Build FAISS index (first time only)
+# Build FAISS offline knowledge index (first time only — 5–20 min)
 python ai_models\scripts\build_faiss_index.py
 
 # Start the server
@@ -700,87 +2869,225 @@ cd backend
 python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-Use `--host 0.0.0.0` (not `localhost`) so physical Android/iOS devices on the same WiFi can reach the server.
+> Use `--host 0.0.0.0` — not `localhost` — so physical Android/iOS devices on the same WiFi can reach the server.
 
-**Mobile app:**
+**Step 2 — Mobile app**
+
 ```powershell
 cd mobile_app
 flutter pub get
 flutter run
 ```
 
-On first launch on a new device/network, the app displays a setup screen where you enter the backend URL (e.g., `http://192.168.x.x:8000`). This URL is saved with `shared_preferences` so you only need to enter it once.
+On first launch on a new device or network, the app shows a setup screen prompting for the backend URL (e.g., `http://192.168.x.x:8000`). This is saved to `SharedPreferences` and only needs to be entered once per network.
 
-**Admin dashboard:**
+**Step 3 — Admin dashboard**
+
 ```powershell
 cd admin_dashboard
 flutter pub get
 flutter run -d chrome
 ```
 
-### Verify the backend is running
+### Verify Everything Is Running
+
+```powershell
+# Backend health check
+Invoke-WebRequest http://localhost:8000/health | Select-Object -Expand Content
+# Expected: {"status":"healthy","server":"running","database":"connected","version":"1.0.0"}
+```
+
+| URL | Purpose |
+|---|---|
+| `http://localhost:8000/docs` | Swagger UI — interactive API explorer for all endpoints |
+| `http://localhost:8000/redoc` | ReDoc — clean API reference documentation |
+| `http://localhost:8000/health` | Quick connectivity check used by mobile app |
+| `http://localhost:8000/openapi.json` | Raw OpenAPI 3.0 spec |
+
+### First-Time Admin Login
+
+The `backend/app/admin/seed.py` seeder creates a default super-admin on first startup:
 
 ```
-GET http://localhost:8000/health
-→ { "status": "ok", "version": "1.0.0" }
+Email:    admin@healthcare.com
+Password: Admin@123
+Role:     super_admin
 ```
 
-Swagger UI: `http://localhost:8000/docs`
-
-ReDoc: `http://localhost:8000/redoc`
+> **Change this immediately** after first login via the Profile panel.
 
 ---
 
-## 10. API Reference
+## 19. API Reference Summary
 
-All API endpoints are under `/api/v1/`. Interactive documentation is auto-generated by FastAPI.
+All endpoints are under `/api/v1/`. Full interactive documentation is at `http://localhost:8000/docs`.
 
-| Module | Base path | Endpoints |
-|---|---|---|
-| Auth | `/api/v1/auth` | 17 endpoints |
-| Users | `/api/v1/users` | Profile management |
-| Medical Chatbot | `/api/v1/chatbot` | 6 endpoints |
-| Symptom Checker | `/api/v1/symptom-checker` | 7 endpoints |
-| Emergency | `/api/v1/emergency` | 9 endpoints |
-| Health Records | `/api/v1/health-records` | 15 endpoints |
-| Health Education | `/api/v1/education` | 11 endpoints |
-| Voice Assistant | `/api/v1/voice` | 5 endpoints |
-| Offline Sync | `/api/v1/offline` | 7 endpoints |
-| Notifications | `/api/v1/notifications` | 7 endpoints |
-| Admin Dashboard | `/api/v1/admin` | 36 endpoints |
-
-All authenticated endpoints require a `Bearer` token in the `Authorization` header:
-
+All authenticated requests require:
 ```
 Authorization: Bearer <access_token>
 ```
 
-Access tokens are obtained from `POST /api/v1/auth/login` and expire after 15 minutes. Use `POST /api/v1/auth/refresh` with a refresh token to get a new access token.
+Access tokens are obtained from `POST /api/v1/auth/login` (15-minute expiry).
+Refresh via `POST /api/v1/auth/refresh` (30-day refresh token).
 
----
-
-## 11. Bug Fixes & Known Issues Resolved
-
-Ten bugs were identified and fixed across the backend and mobile app. These are documented in `.kiro/specs/ai-healthcare-full-fix/design.md`.
-
-| # | Area | Bug | Fix |
+| Module | Base Path | Endpoint Count | Auth Required |
 |---|---|---|---|
-| C1 | Backend | UUID user IDs were force-cast to `int` in the chatbot dependency, causing `ValueError` on every request | Removed the `int()` cast — IDs are now passed as strings throughout |
-| C2 | Backend | Chatbot DB models were never imported at startup, so their tables were never created | Added chatbot model imports to the startup table-creation hook |
-| C3 | Mobile | Backend IP was hardcoded (`192.168.18.26`), making the app unusable on any other network | Added `NetworkConfig` service + `BackendSetupPage` to configure and persist the URL at runtime |
-| C4 | Mobile | Auth tokens were kept only in memory; users were logged out every app restart | Migrated token storage to `flutter_secure_storage` (device keychain/keystore) |
-| C5 | Mobile | `completeProfile` silently swallowed 422 validation errors and retried with PUT | Error handling was added to surface 422 responses correctly |
-| C6 | Backend | Symptom checker inserted its `sys.path` entry at module import time, before the path was validated | Moved the path insertion inside the `_load_model` method |
-| C7 | Mobile | Symptom checker page had no 401 handler; expired tokens caused a silent blank screen | Added a 401 handler that redirects to the login screen |
-| C8 | Backend | LLM service had no fallback when the API key was invalid or the service was unreachable | Added try/except around all LLM calls with automatic fallback to FAISS offline mode |
-| C9 | Backend | Chatbot router was registered without the shared `/api/v1` prefix | Fixed the router registration to use `settings.api_prefix` like all other routers |
-| C10 | Mobile | Six packages required by existing code were missing from `pubspec.yaml` | Added all missing packages: `flutter_secure_storage`, `flutter_markdown`, `lottie`, `shimmer`, `internet_connection_checker_plus`, `record` |
+| Authentication | `/api/v1/auth` | 17 | Mixed (public + JWT) |
+| Users & Profiles | `/api/v1/users` | 8 | JWT |
+| Medical Chatbot | `/api/v1/chatbot` | 8 | JWT |
+| Symptom Checker | `/api/v1/symptom-checker` | 7 | Mixed |
+| Emergency | `/api/v1/emergency` | 9 | Mixed (optional JWT) |
+| Health Records | `/api/v1/health-records` | 15 | JWT |
+| Health Education | `/api/v1/education` | 12 | Mixed |
+| Voice Assistant | `/api/v1/voice` | 5 | JWT |
+| Offline Sync | `/api/v1/offline` | 6 | JWT |
+| Notifications | `/api/v1/notifications` | 8 | JWT |
+| Feedback | `/api/v1/feedback` | 4 | Mixed |
+| Admin | `/api/v1/admin` | 60+ | Admin JWT |
+| **Total** | | **~160 endpoints** | |
 
 ---
 
-## Notes
+## 20. Network & WiFi Configuration
 
-- The symptom checker model file must be present in `ai_models/saved_models/symptom_checker/` before starting the backend. If it is not found, the `/symptom-checker/predict` endpoint returns HTTP 503.
-- The FAISS index must be built before the offline chatbot and voice chat features work. Run `python ai_models/scripts/build_faiss_index.py` once before first use.
-- In production, set `ENVIRONMENT=production` in `.env`. This disables debug mode, switches the CORS policy to use the explicit `CORS_ORIGINS` list, and expects PostgreSQL instead of SQLite.
-- Firebase Cloud Messaging is configured via `FIREBASE_PROJECT_ID` but is optional. If not set, push notifications are skipped.
+### Changing WiFi Networks
+
+When your development machine connects to a different WiFi network, it gets a new LAN IP address. Two files must be updated:
+
+**1. Mobile app** — `mobile_app/lib/config/api_config.dart`
+```dart
+static const String _wifiBackendUrl = 'http://192.168.X.X:8000';
+//                                              ^^^^^^^^^^^^
+//                                         Replace with new IP
+```
+
+**2. Admin dashboard** — `admin_dashboard/lib/core/constants.dart`
+```dart
+static const String _backendHost = '192.168.X.X:8000';
+```
+
+**Find your new IP on Windows:**
+```powershell
+ipconfig
+# Look for "IPv4 Address" under the WiFi adapter section
+```
+
+Then rebuild both apps (`flutter run`).
+
+### OpenRouter Rate Limit Handling
+
+The chatbot uses OpenRouter's free tier. When any model returns HTTP 429 (rate limited), the `GeminiService` automatically and silently tries the next model in the 9-model failover chain. No code changes or restarts are needed. If all 9 models are simultaneously exhausted (rare), users see a friendly message and the service recovers within ~60 seconds as rate-limit windows reset.
+
+### Backend Must Use `--host 0.0.0.0`
+
+Running Uvicorn with `--host localhost` binds only to the loopback interface. Physical mobile devices on the same WiFi cannot reach a `localhost`-bound server. Always start with:
+
+```powershell
+python -m uvicorn app.main:app --host 0.0.0.0 --port 8000
+```
+
+---
+
+## 21. Bug Fixes & Resolved Issues
+
+Ten critical bugs were identified across the backend and mobile app and fully resolved. Complete design documentation is in `.kiro/specs/ai-healthcare-full-fix/design.md`.
+
+| # | Component | Root Cause | Fix Applied |
+|---|---|---|---|
+| **C1** | Backend — Chatbot dependency | UUID user IDs were cast to `int()` inside the chatbot FastAPI dependency, causing `ValueError: invalid literal for int()` on every chat request | Removed the `int()` cast — user IDs are now passed as strings throughout the entire chatbot module |
+| **C2** | Backend — Chatbot startup | Chatbot ORM models (`Conversation`, `Message`, `Feedback`, `ChatbotSession`) were never imported at startup, so `create_all()` never created their tables, causing 500 errors on first use | Added chatbot model imports to the `on_startup()` lifecycle hook before `Base.metadata.create_all()` |
+| **C3** | Mobile — Network config | Backend IP was hardcoded as `192.168.18.26` in a constant, making the app completely unusable on any other network | Introduced `NetworkConfig` (SharedPreferences-backed) + `BackendSetupPage` + runtime `ApiConfig.baseUrl` resolution with emulator/WiFi/override priority chain |
+| **C4** | Mobile — Auth persistence | JWT tokens were stored only in memory via Riverpod state; users were forcibly logged out on every app restart or background kill | Migrated all token storage to `flutter_secure_storage` (Android Keystore / iOS Keychain); tokens now survive restarts |
+| **C5** | Mobile — Profile completion | `completeProfile()` swallowed HTTP 422 validation errors silently and retried the request with a PUT instead of surfacing the error to the user | Added explicit 422 error handling in the auth provider that extracts field-level validation errors and displays them in the UI |
+| **C6** | Backend — Symptom checker | `sys.path` manipulation to locate the ML model file was executed at module import time, before the path had been validated, causing `ImportError` during app startup on some deployments | Moved the `sys.path` insertion inside the `_load_model()` method so it runs lazily on first prediction request |
+| **C7** | Mobile — Symptom checker | The symptom checker Riverpod provider had no HTTP 401 handler; when a user's token expired mid-session, the screen went blank with no error or redirect | Added a 401 interceptor in the provider that clears stored tokens and redirects to the login screen |
+| **C8** | Backend — Chatbot AI | `GeminiService` propagated raw exceptions from the LLM provider with no catch block, causing unhandled 500 errors when the API key was invalid or the service was temporarily unreachable | Wrapped all LLM calls in try/except with typed handling for `TimeoutError`, `ValueError` (bad key), `RuntimeError` (quota/rate), and a FAISS offline fallback for connectivity failures |
+| **C9** | Backend — Router registration | The chatbot router was registered in `create_app()` without the `settings.api_prefix` (`/api/v1`), making all chatbot endpoints unreachable at the expected URL while all other modules worked correctly | Fixed the `app.include_router(chatbot_router, prefix=settings.api_prefix)` call to match the registration pattern of every other router |
+| **C10** | Mobile — Dependencies | Six packages required by existing feature code were missing from `pubspec.yaml`, causing `dart pub get` to fail and the app to not compile | Added all six missing packages: `flutter_secure_storage` · `flutter_markdown` · `lottie` · `shimmer` · `internet_connection_checker_plus` · `record` |
+
+---
+
+## 22. Notes & Production Checklist
+
+### Required Before First Use
+
+- [ ] **Build FAISS index** — run `python ai_models/scripts/build_faiss_index.py` once
+- [ ] **Symptom checker model** — ensure `ai_models/saved_models/symptom_checker/trained.joblib` exists; otherwise `/symptom-checker/predict` returns HTTP 503
+- [ ] **Set `JWT_SECRET_KEY`** — use a cryptographically random 256-bit string; never commit it to git
+- [ ] **Set `CHATBOT_OPENROUTER_API_KEY`** — free key from [openrouter.ai/keys](https://openrouter.ai/keys)
+- [ ] **Change default admin password** — default is `Admin@123`; change immediately after first login
+
+### Production Deployment Checklist
+
+- [ ] Set `ENVIRONMENT=production` in `.env` — disables debug mode, enforces CORS restrictions
+- [ ] Set `DATABASE_URL` to a PostgreSQL connection string — do not use SQLite in production
+- [ ] Set `CORS_ORIGINS` to explicit frontend URL(s), not `*`
+- [ ] Configure real SMTP credentials — set `SMS_PROVIDER=twilio` with Twilio credentials
+- [ ] Replace `/uploads/` static file serving with CDN or object storage (S3 / GCS)
+- [ ] Set up Alembic for database migrations — `alembic upgrade head`
+- [ ] Configure Redis for caching and rate limiting — set `REDIS_URL`
+- [ ] Enable HTTPS — run behind Nginx or a reverse proxy with TLS termination
+- [ ] Set `FIREBASE_PROJECT_ID` for push notifications (optional)
+- [ ] Set `WHISPER_MODEL_SIZE=small` or higher for better STT accuracy in production
+
+### Security Considerations
+
+- All tokens are stored as bcrypt hashes in the database — raw tokens never persist
+- OTP codes are single-use and expire in 10 minutes
+- File uploads are validated for MIME type and size before saving
+- All SQL queries use SQLAlchemy's parameterised ORM — no raw string concatenation
+- Admin endpoints are protected by `require_role(Role.ADMIN, Role.SUPER_ADMIN)` dependencies
+- Destructive operations (delete, bulk-action, model reload) require `Role.SUPER_ADMIN`
+- All admin actions are written to the `activity_logs` audit table with IP address and severity
+
+### Useful Commands
+
+```powershell
+# Activate virtual environment
+.venv\Scripts\Activate.ps1
+
+# Install / update dependencies
+pip install -r requirements.txt
+
+# Start backend with hot-reload
+cd backend
+python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+# Build FAISS index
+python ai_models\scripts\build_faiss_index.py
+
+# Flutter mobile app
+cd mobile_app ; flutter pub get ; flutter run
+
+# Flutter admin dashboard
+cd admin_dashboard ; flutter pub get ; flutter run -d chrome
+
+# Generate Hive type adapters (if models change)
+cd mobile_app
+dart run build_runner build --delete-conflicting-outputs
+
+# Flutter build release APK
+cd mobile_app
+flutter build apk --release
+```
+
+### Known Limitations
+
+| Limitation | Notes |
+|---|---|
+| FAISS index must be pre-built | Offline chatbot does not work until `build_faiss_index.py` has run once |
+| Voice STT accuracy | Whisper `base` model works well for English/Hindi; accuracy drops for Bhojpuri/Nepali dialects |
+| Free LLM rate limits | OpenRouter free tier has per-model rate limits; 9-model chain mitigates but does not eliminate queuing during peak hours |
+| File storage | `/uploads/` is local disk — not suitable for multi-instance production deployments without shared storage |
+| Push notifications | Requires Firebase setup; silently skipped if `FIREBASE_PROJECT_ID` is not configured |
+| iOS voice | `flutter_tts` and `speech_to_text` require microphone permission entitlements in `Info.plist` for iOS builds |
+
+---
+
+<div align="center">
+
+*Built with FastAPI · Flutter · OpenRouter · scikit-learn · FAISS · Hive*
+
+*Designed for rural South Asia — making healthcare guidance accessible to everyone*
+
+</div>

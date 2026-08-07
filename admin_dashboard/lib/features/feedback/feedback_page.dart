@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -316,7 +316,7 @@ class _BreakdownCard extends StatelessWidget {
                     const SizedBox(width: 8),
                     SizedBox(width: 50,
                         child: LinearProgressIndicator(value: pct.toDouble(), minHeight: 6,
-                            backgroundColor: color.withOpacity(0.15),
+                            backgroundColor: color.withValues(alpha: 0.15),
                             valueColor: AlwaysStoppedAnimation(color))),
                     const SizedBox(width: 8),
                     Text('${e.value}', style: Theme.of(context).textTheme.labelSmall
@@ -387,7 +387,7 @@ class _CategoryBadge extends StatelessWidget {
     final color = _colors[category] ?? AppColors.lightTextMuted;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-      decoration: BoxDecoration(color: color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+      decoration: BoxDecoration(color: color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
       child: Text(category.replaceAll('_', ' ').toUpperCase(),
           style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: color)),
     );
@@ -404,7 +404,7 @@ class _PriorityBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
-        decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(6)),
+        decoration: BoxDecoration(color: _color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(6)),
         child: Text(priority.toUpperCase(),
             style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _color)),
       );
@@ -421,7 +421,7 @@ class _StatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Container(
         padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-        decoration: BoxDecoration(color: _color.withOpacity(0.1), borderRadius: BorderRadius.circular(20)),
+        decoration: BoxDecoration(color: _color.withValues(alpha: 0.1), borderRadius: BorderRadius.circular(20)),
         child: Text(status.replaceAll('_', ' ').toUpperCase(),
             style: TextStyle(fontSize: 9, fontWeight: FontWeight.w700, color: _color)),
       );
@@ -590,7 +590,7 @@ class _FeedbackDetailDialog extends StatelessWidget {
                           decoration: BoxDecoration(
                             color: AppColors.warningSurface,
                             borderRadius: BorderRadius.circular(10),
-                            border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                            border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
                           ),
                           child: Text(item.adminNotes!, style: Theme.of(context).textTheme.bodyMedium),
                         ),
@@ -785,7 +785,7 @@ class _ErrorBanner extends StatelessWidget {
         decoration: BoxDecoration(
           color: AppColors.errorSurface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.error.withOpacity(0.3)),
+          border: Border.all(color: AppColors.error.withValues(alpha: 0.3)),
         ),
         child: Row(children: [
           const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),

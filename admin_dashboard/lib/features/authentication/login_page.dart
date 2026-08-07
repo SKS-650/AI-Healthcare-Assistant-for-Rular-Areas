@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
@@ -56,7 +56,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
     return Scaffold(
       backgroundColor:
-          isDark ? AppColors.darkBg : const Color(0xFF0EA5A0).withOpacity(0.04),
+          isDark ? AppColors.darkBg : const Color(0xFF0EA5A0).withValues(alpha: 0.04),
       body: Row(
         children: [
           // ── Left panel (hero) ─────────────────────────────────────────────
@@ -85,7 +85,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       height: 300,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
+                        color: Colors.white.withValues(alpha: 0.05),
                       ),
                     ),
                   ),
@@ -97,7 +97,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                       height: 250,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withOpacity(0.05),
+                        color: Colors.white.withValues(alpha: 0.05),
                       ),
                     ),
                   ),
@@ -113,7 +113,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           width: 64,
                           height: 64,
                           decoration: BoxDecoration(
-                            color: Colors.white.withOpacity(0.15),
+                            color: Colors.white.withValues(alpha: 0.15),
                             borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(Icons.local_hospital_rounded,
@@ -141,7 +141,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                           'Admin Dashboard — Complete control\nover your healthcare platform.',
                           style:
                               Theme.of(context).textTheme.bodyLarge?.copyWith(
-                                    color: Colors.white.withOpacity(0.85),
+                                    color: Colors.white.withValues(alpha: 0.85),
                                     height: 1.6,
                                   ),
                         )
@@ -172,7 +172,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                                             .bodyLarge
                                             ?.copyWith(
                                                 color: Colors.white
-                                                    .withOpacity(0.9),
+                                                    .withValues(alpha: 0.9),
                                                 fontWeight: FontWeight.w500),
                                       ),
                                     ],
@@ -299,7 +299,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
                             color: AppColors.primarySurface,
                             borderRadius: BorderRadius.circular(10),
                             border: Border.all(
-                                color: AppColors.primary.withOpacity(0.3)),
+                                color: AppColors.primary.withValues(alpha: 0.3)),
                           ),
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.start,

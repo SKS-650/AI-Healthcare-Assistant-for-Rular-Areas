@@ -405,7 +405,7 @@ class _NotifTile extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.fromLTRB(16, 10, 12, 10),
         decoration: BoxDecoration(
-          color: item.isRead ? null : _typeColor.withOpacity(0.05),
+          color: item.isRead ? null : _typeColor.withValues(alpha: 0.05),
           border: Border(
             bottom: BorderSide(
                 color: isDark ? AppColors.darkBorder : AppColors.lightBorder,
@@ -419,7 +419,7 @@ class _NotifTile extends StatelessWidget {
               width: 32,
               height: 32,
               decoration: BoxDecoration(
-                color: _typeColor.withOpacity(0.12),
+                color: _typeColor.withValues(alpha: 0.12),
                 borderRadius: BorderRadius.circular(8),
               ),
               child: Icon(_typeIcon, color: _typeColor, size: 16),

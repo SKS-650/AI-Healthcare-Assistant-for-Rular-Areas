@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 
 // ── Brand palette ─────────────────────────────────────────────────────────────
@@ -99,7 +99,7 @@ class AppTheme {
         onSurface:        textCol,
         surfaceContainerHighest: isDark ? AppColors.darkSurface2 : AppColors.lightSurface2,
         outline:          border,
-        outlineVariant:   border.withOpacity(0.5),
+        outlineVariant:   border.withValues(alpha: 0.5),
       ),
       scaffoldBackgroundColor: bg,
       textTheme: base.copyWith(

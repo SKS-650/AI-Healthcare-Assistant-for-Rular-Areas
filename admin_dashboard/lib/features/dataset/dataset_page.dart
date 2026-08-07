@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -97,7 +97,7 @@ class DatasetPage extends ConsumerWidget {
           ],
           rows: state.datasets.map((d) => DataRow(
             color: WidgetStateProperty.resolveWith((_) =>
-                d.isActive ? AppColors.success.withOpacity(0.04) : null),
+                d.isActive ? AppColors.success.withValues(alpha: 0.04) : null),
             cells: [
               DataCell(Text(d.name, style: Theme.of(context).textTheme.bodyMedium
                   ?.copyWith(fontWeight: FontWeight.w600))),
@@ -152,9 +152,9 @@ class _TypeBreakdownCard extends StatelessWidget {
                 return Container(
                   padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
                   decoration: BoxDecoration(
-                    color: color.withOpacity(0.1),
+                    color: color.withValues(alpha: 0.1),
                     borderRadius: BorderRadius.circular(10),
-                    border: Border.all(color: color.withOpacity(0.3)),
+                    border: Border.all(color: color.withValues(alpha: 0.3)),
                   ),
                   child: Row(mainAxisSize: MainAxisSize.min, children: [
                     Container(width: 8, height: 8,
