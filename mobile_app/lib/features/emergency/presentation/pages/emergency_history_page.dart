@@ -335,18 +335,18 @@ class _EmptyHistory extends StatelessWidget {
                     fontSize: 13,
                     color: DesignTokens.textStrong)),
             const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
-              const _EmergencyPill(
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: const [
+              _EmergencyPill(
                 emoji: '🚑', number: '102', label: 'Ambulance',
                 color: DesignTokens.danger,
               ),
-              const SizedBox(width: 10),
-              const _EmergencyPill(
+              SizedBox(width: 10),
+              _EmergencyPill(
                 emoji: '🚓', number: '100', label: 'Police',
                 color: Color(0xFF1D4ED8),
               ),
-              const SizedBox(width: 10),
-              const _EmergencyPill(
+              SizedBox(width: 10),
+              _EmergencyPill(
                 emoji: '🔥', number: '101', label: 'Fire',
                 color: Color(0xFFEA580C),
               ),

@@ -1,4 +1,4 @@
-/// Reusable connection-status banner / chip widget.
+﻿/// Reusable connection-status banner / chip widget.
 ///
 /// Drop anywhere in the widget tree — it listens to [serverStatusProvider]
 /// and automatically shows / hides itself based on server reachability.
@@ -113,7 +113,7 @@ class _BannerTile extends StatelessWidget {
                     Text(
                       status.hint,
                       style: TextStyle(
-                        color: status.foreground.withOpacity(0.85),
+                        color: status.foreground.withValues(alpha: 0.85),
                         fontSize: 11,
                       ),
                     ),
@@ -263,7 +263,7 @@ class ServerOfflinePage extends StatelessWidget {
                 Text(
                   status.hint,
                   style: theme.textTheme.bodyMedium?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.7),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
                     height: 1.5,
                   ),
                   textAlign: TextAlign.center,
@@ -278,7 +278,7 @@ class ServerOfflinePage extends StatelessWidget {
                 Text(
                   'Backend: ${_backendUrl()}',
                   style: theme.textTheme.labelSmall?.copyWith(
-                    color: theme.colorScheme.onSurface.withOpacity(0.45),
+                    color: theme.colorScheme.onSurface.withValues(alpha: 0.45),
                   ),
                 ),
               ],

@@ -1,4 +1,4 @@
-import 'package:flutter/material.dart';
+﻿import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 // ignore_for_file: prefer_const_constructors
@@ -439,7 +439,7 @@ class _PatientInfoStepState extends ConsumerState<_PatientInfoStep> {
                       label: 'Weight (kg)',
                       icon: Icons.monitor_weight_outlined,
                       hasError: _weightError,
-                      errorText: '1�300',
+                      errorText: '1\u2013300',
                       onChanged: (v) => _onWeightChanged(v, ctrl),
                     ),
                   ),
@@ -450,7 +450,7 @@ class _PatientInfoStepState extends ConsumerState<_PatientInfoStep> {
                       label: 'Height (cm)',
                       icon: Icons.straighten_rounded,
                       hasError: _heightError,
-                      errorText: '30�250',
+                      errorText: '30\u2013250',
                       onChanged: (v) => _onHeightChanged(v, ctrl),
                     ),
                   ),
@@ -860,7 +860,7 @@ class _SymptomsStepState extends ConsumerState<_SymptomsStep> {
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 4),
             child: Text(
-              '${state.symptoms.length} symptom${state.symptoms.length == 1 ? '' : 's'} added � tap any chip to remove',
+              '${state.symptoms.length} symptom${state.symptoms.length == 1 ? '' : 's'} added \u2014 tap any chip to remove',
               style: const TextStyle(
                   color: DesignTokens.textSubtle,
                   fontSize: 12),
@@ -1137,13 +1137,13 @@ class _SeverityChip extends StatelessWidget {
   String _emoji() {
     switch (severity) {
       case SymptomSeverity.mild:
-        return '??';
+        return '😊';
       case SymptomSeverity.moderate:
-        return '??';
+        return '😐';
       case SymptomSeverity.severe:
-        return '??';
+        return '😣';
       case SymptomSeverity.critical:
-        return '??';
+        return '🚨';
     }
   }
 
