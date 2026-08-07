@@ -402,6 +402,16 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
     await _persistOnboarding();
   }
 
+  @override
+  Future<void> resetOnboarding() async {
+    _seenOnboarding = false;
+    _initialized = false; // force re-init so in-memory state resets too
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      await prefs.remove(_kSeenOnboarding);
+    } catch (_) {}
+  }
+
   // ── Token refresh ─────────────────────────────────────────────────────────
 
   /// Attempt to silently refresh the access token using the stored refresh token.

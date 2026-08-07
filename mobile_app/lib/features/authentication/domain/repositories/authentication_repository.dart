@@ -52,4 +52,7 @@ abstract class AuthenticationRepository {
 
   /// Mark onboarding as seen.
   Future<void> markOnboardingSeen();
+
+  /// Reset the onboarding flag (used on fresh install / reinstall).
+  Future<void> resetOnboarding();
 }
