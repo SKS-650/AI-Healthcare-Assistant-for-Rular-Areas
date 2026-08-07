@@ -48,26 +48,53 @@ class ChatMessageModel extends ChatMessage {
     );
   }
 
-  /// Build from a backend /chatbot/chat response body.
+  /// Build from a backend /chatbot/chat or /chatbot/simple-chat response body.
+  ///
+  /// Field priority for the reply text:
+  ///   1. assistant_message  ← standard ChatResponse field
+  ///   2. reply              ← SimpleChatResponse field
+  ///   3. message            ← legacy / fallback
+  ///   4. response           ← very old schema fallback
   factory ChatMessageModel.fromBackendResponse(Map<String, dynamic> data) {
-    final responseText = data['response']?.toString()
-        ?? data['assistant_message']?.toString()
-        ?? data['message']?.toString()
-        ?? 'I received your message.';
+    // Extract the reply text — try each field in priority order
+    String responseText = 'I received your message.';
+    final am = data['assistant_message']?.toString() ?? '';
+    final rp = data['reply']?.toString() ?? '';
+    final ms = data['message']?.toString() ?? '';
+    final rs = data['response']?.toString() ?? '';
+
+    if (am.isNotEmpty) {
+      responseText = am;
+    } else if (rp.isNotEmpty) {
+      responseText = rp;
+    } else if (ms.isNotEmpty) {
+      responseText = ms;
+    } else if (rs.isNotEmpty) {
+      responseText = rs;
+    }
+
+    // Parse timestamp if provided by the backend
+    DateTime createdAt = DateTime.now();
+    final ts = data['timestamp']?.toString();
+    if (ts != null && ts.isNotEmpty) {
+      createdAt = DateTime.tryParse(ts) ?? DateTime.now();
+    }
 
     return ChatMessageModel(
-      id:             'bot-${DateTime.now().millisecondsSinceEpoch}',
-      text:           responseText,
-      sender:         ChatSender.bot,
-      createdAt:      DateTime.now(),
-      isEmergency:    data['emergency_detected'] as bool? ?? false,
+      id:            'bot-${DateTime.now().millisecondsSinceEpoch}',
+      text:          responseText,
+      sender:        ChatSender.bot,
+      createdAt:     createdAt,
+      isEmergency:   data['emergency_detected'] as bool? ?? false,
       followUpQuestions: (data['follow_up_questions'] as List?)
-                              ?.map((e) => e.toString())
-                              .toList() ?? const [],
-      isOnlineMode:   (data['mode'] as String?) == 'online',
-      intent:         data['intent']?.toString(),
-      audioBase64:    data['audio_base64']?.toString(),
-      confidence:     (data['confidence'] as num?)?.toDouble() ?? 0.8,
+                             ?.map((e) => e.toString())
+                             .toList() ??
+                         const [],
+      // Mark as online whenever the server returned a real AI response
+      isOnlineMode:  true,
+      intent:        data['intent']?.toString(),
+      audioBase64:   data['audio_base64']?.toString(),
+      confidence:    (data['confidence'] as num?)?.toDouble() ?? 0.85,
     );
   }
 

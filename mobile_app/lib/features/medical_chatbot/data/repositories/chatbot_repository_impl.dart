@@ -17,19 +17,24 @@ import '../models/chat_message_model.dart';
 import '../models/chatbot_settings_model.dart';
 import '../models/conversation_model.dart';
 
-/// Production implementation that calls the backend chatbot API.
-/// Falls back to local dummy data for non-critical operations (suggestions,
-/// history) when the backend is unavailable.
+/// Production implementation that calls the FastAPI → Gemini backend.
+///
+/// Flow:
+///   Flutter  →  POST /api/v1/chatbot/chat  →  FastAPI  →  Gemini  →  FastAPI  →  Flutter
+///
+/// The app NEVER contacts Gemini directly — every AI request goes through the
+/// backend.  Dummy data is only used for static UI elements (suggestions,
+/// quick starters) and as an offline safety-net when the network is
+/// completely unreachable.
 class ChatbotRepositoryImpl implements ChatbotRepository {
-  /// The auth repository is needed to read the access token.
-  /// Passed in via the provider so we don't create a second instance.
   final AuthenticationRepositoryImpl _authRepo;
 
   Conversation _conversation = ChatbotDummyData.initialConversation();
   final List<Conversation> _history = [];
   ChatbotSettings _settings = ChatbotDummyData.settings;
 
-  // Track the current backend conversation id (null = not started yet)
+  /// Backend conversation UUID — persisted across messages in the same session
+  /// so Gemini receives full conversation history.
   String? _backendConversationId;
 
   ChatbotRepositoryImpl(this._authRepo);
@@ -42,56 +47,64 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
 
   @override
   Future<Conversation> loadConversation() async {
-    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 80));
     return _conversation;
   }
 
   @override
   Future<void> selectConversation(Conversation conversation) async {
     _conversation = ConversationModel(
-      id:       conversation.id,
-      title:    conversation.title,
+      id: conversation.id,
+      title: conversation.title,
       messages: conversation.messages,
       updatedAt: conversation.updatedAt,
     );
-    _backendConversationId = null; // reset backend session for the new conversation
+    // Reset so the next message continues from this conversation on the backend.
+    _backendConversationId = conversation.id.startsWith('conv-')
+        ? null   // local-only id — start fresh on backend
+        : conversation.id;
   }
 
-  /// Send a message to the real backend `/api/v1/chatbot/chat` endpoint.
-  /// On any network / auth failure falls back to local dummy response so
-  /// the UI never crashes.
+  // ── Core: send message to FastAPI → Gemini ───────────────────────────────
+
   @override
   Future<ChatMessage> sendDummyMessage(String message) async {
-    // If user is a guest (no token) use local fallback immediately
+    // Guest users: show a prompt to log in
     if (_token == null || _token!.isEmpty) {
-      await Future<void>.delayed(const Duration(milliseconds: 600));
-      return ChatbotDummyData.botMessageFor(message);
+      return ChatMessageModel(
+        id: 'bot-${DateTime.now().millisecondsSinceEpoch}',
+        text: '🔐 **Please log in to use the AI Medical Assistant.**\n\n'
+            'Create a free account or sign in to get AI-powered health guidance.',
+        sender: ChatSender.bot,
+        createdAt: DateTime.now(),
+        isOnlineMode: false,
+      );
+    }
+
+    // Build request body
+    final body = <String, dynamic>{
+      'message': message,
+      'language': _settings.language.code,
+    };
+    if (_backendConversationId != null) {
+      body['conversation_id'] = _backendConversationId;
     }
 
     try {
-      final body = <String, dynamic>{
-        'message': message,
-        'language': _settings.language.code,
-      };
-      if (_backendConversationId != null) {
-        body['conversation_id'] = _backendConversationId;
-      }
-
-      final response = await _authRepo
-          .authenticatedRequest(
-            (headers) => http
-                .post(
-                  Uri.parse('${ApiConfig.baseUrl}${ApiConstants.chatbotChatPath}'),
-                  headers: headers,
-                  body: jsonEncode(body),
-                )
-                .timeout(const Duration(seconds: 30)),
-          );
+      final response = await _authRepo.authenticatedRequest(
+        (headers) => http
+            .post(
+              Uri.parse('${ApiConfig.baseUrl}${ApiConstants.chatbotChatPath}'),
+              headers: headers,
+              body: jsonEncode(body),
+            )
+            .timeout(const Duration(seconds: 40)),
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body) as Map<String, dynamic>;
 
-        // Save the backend conversation ID for follow-up messages
+        // Persist the backend conversation UUID for follow-up messages
         final convId = data['conversation_id']?.toString();
         if (convId != null && convId.isNotEmpty) {
           _backendConversationId = convId;
@@ -100,34 +113,57 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
         return ChatMessageModel.fromBackendResponse(data);
       }
 
-      // 401 after retry means session is fully expired — prompt re-login
+      // Session expired
       if (response.statusCode == 401) {
-        return ChatMessageModel(
-          id: 'bot-${DateTime.now().millisecondsSinceEpoch}',
-          text: 'Your session has expired. Please log in again to continue chatting with the AI assistant.',
-          sender: ChatSender.bot,
-          createdAt: DateTime.now(),
+        return _errorMessage(
+          '🔐 Your session has expired. Please log in again to continue.',
         );
       }
 
-      // Any other error: fall back to local response
-      return ChatbotDummyData.botMessageFor(message);
-    } catch (_) {
-      // Network error: fall back gracefully
-      return ChatbotDummyData.botMessageFor(message);
+      // Server-side AI error (e.g. quota exceeded, bad key)
+      if (response.statusCode == 502 ||
+          response.statusCode == 503 ||
+          response.statusCode == 504) {
+        String detail = 'The AI service is temporarily unavailable.';
+        try {
+          final err = jsonDecode(response.body) as Map<String, dynamic>;
+          detail = err['detail']?.toString() ?? detail;
+        } catch (_) {}
+        return _errorMessage('⚠️ $detail\n\nPlease try again in a moment.');
+      }
+
+      // Any other HTTP error
+      return _errorMessage(
+        '⚠️ Server returned status ${response.statusCode}. '
+        'Please try again.',
+      );
+    } on http.ClientException catch (e) {
+      return _errorMessage(
+        '📵 Could not reach the server.\n\n'
+        'Please check your internet connection.\n\n'
+        '_Error: ${e.message}_',
+      );
+    } catch (e) {
+      // Catch-all — never crash the UI
+      return _errorMessage(
+        '❌ An unexpected error occurred.\n\n'
+        'Please try again. If the problem persists, restart the app.',
+      );
     }
   }
 
+  // ── Suggestions (static) ─────────────────────────────────────────────────
+
   @override
   Future<List<Suggestion>> getSuggestions() async {
-    // Suggestions are static for now; backend endpoint not yet implemented
-    await Future<void>.delayed(const Duration(milliseconds: 100));
+    await Future<void>.delayed(const Duration(milliseconds: 60));
     return ChatbotDummyData.suggestions;
   }
 
+  // ── History (local + Hive persistence) ───────────────────────────────────
+
   @override
   Future<List<Conversation>> loadChatHistory() async {
-    // Try local DB first, fall back to in-memory
     try {
       final persisted = await LocalDbService.instance.loadConversations();
       if (persisted.isNotEmpty) {
@@ -143,22 +179,20 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
   @override
   Future<void> saveChatHistory(Conversation conversation) async {
     final model = ConversationModel(
-      id:        conversation.id,
-      title:     conversation.title,
-      messages:  conversation.messages,
+      id: conversation.id,
+      title: conversation.title,
+      messages: conversation.messages,
       updatedAt: conversation.updatedAt,
     );
     _conversation = model;
 
-    final existingIndex =
-        _history.indexWhere((item) => item.id == conversation.id);
-    if (existingIndex >= 0) {
-      _history[existingIndex] = model;
+    final idx = _history.indexWhere((c) => c.id == conversation.id);
+    if (idx >= 0) {
+      _history[idx] = model;
     } else {
       _history.insert(0, model);
     }
 
-    // Persist to Hive + SQLite
     try {
       await LocalDbService.instance.saveConversation(model);
       await LocalDbService.instance.saveMessages(
@@ -168,15 +202,20 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     } catch (_) {}
   }
 
+  // ── Settings ──────────────────────────────────────────────────────────────
+
   @override
   Future<ChatbotSettings> loadSettings() async {
-    final lang = LocalDbService.instance.getSetting<String>('language', defaultValue: 'en') ?? 'en';
-    final tts  = LocalDbService.instance.getSetting<bool>('tts_enabled', defaultValue: true) ?? true;
-    final save = LocalDbService.instance.getSetting<bool>('save_history', defaultValue: true) ?? true;
+    final lang =
+        LocalDbService.instance.getSetting<String>('language', defaultValue: 'en') ?? 'en';
+    final tts =
+        LocalDbService.instance.getSetting<bool>('tts_enabled', defaultValue: true) ?? true;
+    final save =
+        LocalDbService.instance.getSetting<bool>('save_history', defaultValue: true) ?? true;
     _settings = ChatbotSettingsModel(
-      language:             Language.fromCode(lang),
+      language: Language.fromCode(lang),
       voiceResponsesEnabled: tts,
-      saveHistory:          save,
+      saveHistory: save,
     );
     return _settings;
   }
@@ -184,9 +223,70 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
   @override
   Future<ChatbotSettings> saveSettings(ChatbotSettings settings) async {
     _settings = ChatbotSettingsModel.fromEntity(settings);
-    await LocalDbService.instance.saveSetting('language',    settings.language.code);
+    await LocalDbService.instance.saveSetting('language', settings.language.code);
     await LocalDbService.instance.saveSetting('tts_enabled', settings.voiceResponsesEnabled);
     await LocalDbService.instance.saveSetting('save_history', settings.saveHistory);
     return _settings;
   }
+
+  // ── Conversation management ───────────────────────────────────────────────
+
+  @override
+  Future<void> deleteConversation(String conversationId) async {
+    _history.removeWhere((c) => c.id == conversationId);
+
+    if (_token == null || _token!.isEmpty) return;
+    try {
+      await _authRepo.authenticatedRequest(
+        (headers) => http
+            .delete(
+              Uri.parse(
+                '${ApiConfig.baseUrl}${ApiConstants.chatbotConversationsPath}/$conversationId',
+              ),
+              headers: headers,
+            )
+            .timeout(const Duration(seconds: 15)),
+      );
+    } catch (_) {}
+  }
+
+  @override
+  Future<void> clearAllHistory() async {
+    _history.clear();
+
+    if (_token == null || _token!.isEmpty) return;
+    try {
+      await _authRepo.authenticatedRequest(
+        (headers) => http
+            .delete(
+              Uri.parse(
+                '${ApiConfig.baseUrl}${ApiConstants.chatbotConversationsPath}',
+              ),
+              headers: headers,
+            )
+            .timeout(const Duration(seconds: 15)),
+      );
+    } catch (_) {}
+  }
+
+  @override
+  Future<void> startNewConversation() async {
+    _backendConversationId = null;
+    _conversation = ConversationModel(
+      id: 'conv-${DateTime.now().millisecondsSinceEpoch}',
+      title: 'New Conversation',
+      messages: const [],
+      updatedAt: DateTime.now(),
+    );
+  }
+
+  // ── Helpers ───────────────────────────────────────────────────────────────
+
+  static ChatMessageModel _errorMessage(String text) => ChatMessageModel(
+        id: 'bot-err-${DateTime.now().millisecondsSinceEpoch}',
+        text: text,
+        sender: ChatSender.bot,
+        createdAt: DateTime.now(),
+        isOnlineMode: false,
+      );
 }

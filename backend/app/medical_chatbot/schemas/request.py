@@ -68,9 +68,12 @@ class ChatRequest(BaseModel):
     @classmethod
     def validate_language(cls, v: str) -> str:
         """Validate language code"""
-        valid_languages = ['en', 'hi', 'bn', 'te', 'ta', 'mr', 'gu', 'kn', 'ml', 'pa']
+        valid_languages = [
+            'en', 'hi', 'ne', 'bho', 'bn', 'te', 'ta', 'mr', 'gu', 'kn', 'ml', 'pa'
+        ]
         if v not in valid_languages:
-            raise ValueError(f"Language must be one of: {', '.join(valid_languages)}")
+            # Be lenient — default to English rather than rejecting
+            return 'en'
         return v
 
     class Config:

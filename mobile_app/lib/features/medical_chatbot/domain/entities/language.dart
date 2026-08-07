@@ -22,7 +22,7 @@ class Language {
   static const telugu   = Language(code: 'te',  name: 'Telugu',    nativeName: 'తెలుగు',   flag: '🇮🇳');
   static const marathi  = Language(code: 'mr',  name: 'Marathi',   nativeName: 'मराठी',    flag: '🇮🇳');
 
-  static const all = [english, hindi, nepali, bhojpuri, bengali, tamil, telugu, marathi];
+  static const all = [english, hindi, nepali, bhojpuri];
 
   // ── Factory from code ─────────────────────────────────────────────────────
 

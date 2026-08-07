@@ -14,11 +14,15 @@ import 'message_time.dart';
 class MessageBubble extends StatelessWidget {
   final ChatMessage message;
   final VoidCallback? onSpeak;
+  final VoidCallback? onRetry;
+  final double fontSize;
 
   const MessageBubble({
     super.key,
     required this.message,
     this.onSpeak,
+    this.onRetry,
+    this.fontSize = 14.0,
   });
 
   bool get _isUser => message.sender == ChatSender.user;
@@ -48,9 +52,16 @@ class MessageBubble extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    if (_isUser) return _UserBubble(message: message);
-    if (_isEmergency) return _EmergencyBubble(message: message, onSpeak: onSpeak);
-    return _BotBubble(message: message, intent: _intent, isOnline: _isOnline, onSpeak: onSpeak);
+    if (_isUser) return _UserBubble(message: message, fontSize: fontSize);
+    if (_isEmergency) return _EmergencyBubble(message: message, onSpeak: onSpeak, fontSize: fontSize);
+    return _BotBubble(
+      message:  message,
+      intent:   _intent,
+      isOnline: _isOnline,
+      onSpeak:  onSpeak,
+      onRetry:  onRetry,
+      fontSize: fontSize,
+    );
   }
 }
 
@@ -60,7 +71,8 @@ class MessageBubble extends StatelessWidget {
 
 class _UserBubble extends StatelessWidget {
   final ChatMessage message;
-  const _UserBubble({required this.message});
+  final double fontSize;
+  const _UserBubble({required this.message, this.fontSize = 14.0});
 
   @override
   Widget build(BuildContext context) {
@@ -129,7 +141,7 @@ class _UserBubble extends StatelessWidget {
                         ),
                       Text(
                         message.text,
-                        style: const TextStyle(color: Colors.white, fontSize: 14, height: 1.45),
+                        style: TextStyle(color: Colors.white, fontSize: fontSize, height: 1.45),
                       ),
                       const SizedBox(height: 4),
                       MessageTime(time: message.createdAt, light: true),
@@ -156,12 +168,16 @@ class _BotBubble extends StatelessWidget {
   final String? intent;
   final bool isOnline;
   final VoidCallback? onSpeak;
+  final VoidCallback? onRetry;
+  final double fontSize;
 
   const _BotBubble({
     required this.message,
     this.intent,
     required this.isOnline,
     this.onSpeak,
+    this.onRetry,
+    this.fontSize = 14.0,
   });
 
   static const _intentMeta = {
@@ -273,29 +289,31 @@ class _BotBubble extends StatelessWidget {
                             data: message.text,
                             shrinkWrap: true,
                             styleSheet: MarkdownStyleSheet(
-                              p: const TextStyle(
+                              p: TextStyle(
                                 color: DesignTokens.textStrong,
-                                fontSize: 13.5, height: 1.5,
+                                fontSize: fontSize, height: 1.5,
                               ),
-                              strong: const TextStyle(
+                              strong: TextStyle(
                                 fontWeight: FontWeight.w700,
                                 color: DesignTokens.textStrong,
+                                fontSize: fontSize,
                               ),
-                              em: const TextStyle(
+                              em: TextStyle(
                                 fontStyle: FontStyle.italic,
                                 color: DesignTokens.textMuted,
+                                fontSize: fontSize,
                               ),
-                              listBullet: TextStyle(color: accent),
+                              listBullet: TextStyle(color: accent, fontSize: fontSize),
                               h3: TextStyle(
-                                fontSize: 14, fontWeight: FontWeight.w800, color: accent,
+                                fontSize: fontSize + 1, fontWeight: FontWeight.w800, color: accent,
                               ),
                               blockquote: TextStyle(
-                                color: DesignTokens.textMuted, fontSize: 13,
+                                color: DesignTokens.textMuted, fontSize: fontSize - 1,
                                 fontStyle: FontStyle.italic,
                                 backgroundColor: accent.withValues(alpha: 0.05),
                               ),
                               code: TextStyle(
-                                fontSize: 12,
+                                fontSize: fontSize - 2,
                                 backgroundColor: accent.withValues(alpha: 0.08),
                                 color: accent,
                               ),
@@ -303,7 +321,7 @@ class _BotBubble extends StatelessWidget {
                           ),
                         ),
 
-                        // ── Footer row: time + speak btn ──────────────────
+                        // ── Footer row: time + speak + retry ─────────────
                         Padding(
                           padding: const EdgeInsets.fromLTRB(12, 2, 12, 10),
                           child: Row(
@@ -315,6 +333,10 @@ class _BotBubble extends StatelessWidget {
                               ],
                               MessageTime(time: message.createdAt, light: false),
                               const Spacer(),
+                              if (onRetry != null) ...[
+                                _RetryButton(accent: accent, onTap: onRetry!),
+                                const SizedBox(width: 6),
+                              ],
                               if (onSpeak != null)
                                 _SpeakButton(accent: accent, onTap: onSpeak!),
                             ],
@@ -340,7 +362,8 @@ class _BotBubble extends StatelessWidget {
 class _EmergencyBubble extends StatelessWidget {
   final ChatMessage message;
   final VoidCallback? onSpeak;
-  const _EmergencyBubble({required this.message, this.onSpeak});
+  final double fontSize;
+  const _EmergencyBubble({required this.message, this.onSpeak, this.fontSize = 14.0});
 
   @override
   Widget build(BuildContext context) {
@@ -395,7 +418,7 @@ class _EmergencyBubble extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.all(14),
                 child: Text(message.text,
-                    style: const TextStyle(color: Colors.white, fontSize: 13, height: 1.5)),
+                    style: TextStyle(color: Colors.white, fontSize: fontSize, height: 1.5)),
               ),
               const Padding(
                 padding: EdgeInsets.fromLTRB(14, 0, 14, 10),
@@ -441,6 +464,41 @@ class _CallBtn extends StatelessWidget {
                   textAlign: TextAlign.center,
                   style: const TextStyle(
                       color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800, height: 1.2)),
+            ],
+          ),
+        ),
+      );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Retry button
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _RetryButton extends StatelessWidget {
+  final Color accent;
+  final VoidCallback onTap;
+  const _RetryButton({required this.accent, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) => GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+          decoration: BoxDecoration(
+            color: DesignTokens.danger.withValues(alpha: 0.09),
+            borderRadius: BorderRadius.circular(10),
+            border: Border.all(color: DesignTokens.danger.withValues(alpha: 0.25)),
+          ),
+          child: const Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.refresh_rounded, size: 12, color: DesignTokens.danger),
+              SizedBox(width: 4),
+              Text('Retry',
+                  style: TextStyle(
+                      fontSize: 10,
+                      color: DesignTokens.danger,
+                      fontWeight: FontWeight.w700)),
             ],
           ),
         ),

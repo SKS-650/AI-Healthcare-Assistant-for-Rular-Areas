@@ -12,10 +12,6 @@ class ChatbotDummyData {
     LanguageModel(code: 'hi',  name: 'Hindi',    nativeName: 'हिंदी',    flag: '🇮🇳'),
     LanguageModel(code: 'ne',  name: 'Nepali',   nativeName: 'नेपाली',   flag: '🇳🇵'),
     LanguageModel(code: 'bho', name: 'Bhojpuri', nativeName: 'भोजपुरी',  flag: '🗣️'),
-    LanguageModel(code: 'bn',  name: 'Bengali',  nativeName: 'বাংলা',    flag: '🇧🇩'),
-    LanguageModel(code: 'ta',  name: 'Tamil',    nativeName: 'தமிழ்',    flag: '🇮🇳'),
-    LanguageModel(code: 'te',  name: 'Telugu',   nativeName: 'తెలుగు',   flag: '🇮🇳'),
-    LanguageModel(code: 'mr',  name: 'Marathi',  nativeName: 'मराठी',    flag: '🇮🇳'),
   ];
 
   static const settings = ChatbotSettingsModel(

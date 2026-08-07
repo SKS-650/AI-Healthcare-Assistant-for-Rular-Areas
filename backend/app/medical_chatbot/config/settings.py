@@ -24,9 +24,9 @@ class ChatbotSettings:
     MAX_TOKENS_PER_REQUEST: int = 4000
 
     # Rate Limiting
-    RATE_LIMIT_MESSAGES_PER_MINUTE: int = 10
-    RATE_LIMIT_REQUESTS_PER_HOUR: int = 100
-    RATE_LIMIT_CONVERSATIONS_PER_DAY: int = 20
+    RATE_LIMIT_MESSAGES_PER_MINUTE: int = 30
+    RATE_LIMIT_REQUESTS_PER_HOUR: int = 200
+    RATE_LIMIT_CONVERSATIONS_PER_DAY: int = 50
 
     # Timeouts (seconds)
     @property

@@ -71,94 +71,138 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
             ),
 
             SafeArea(
-              child: Column(
-                children: [
-                  const SizedBox(height: 4),
+              child: LayoutBuilder(
+                builder: (context, constraints) {
+                  // Use scrollable layout when screen height is too compact
+                  // (e.g. landscape, small phones, web browser resize)
+                  final availableHeight = constraints.maxHeight;
+                  final needsScroll    = availableHeight < 620;
 
-                  // ── Status pill ───────────────────────────────────────
-                  _StatusPill(isListening: isListening, isSpeaking: isSpeaking),
+                  final content = Column(
+                    mainAxisSize: needsScroll
+                        ? MainAxisSize.min   // shrink-wrap when scrollable
+                        : MainAxisSize.max,  // fill screen on normal phones
+                    children: [
+                      SizedBox(height: needsScroll ? 8 : 4),
 
-                  const Spacer(flex: 2),
+                      // ── Status pill ─────────────────────────────────
+                      _StatusPill(
+                          isListening: isListening, isSpeaking: isSpeaking),
 
-                  // ── Animated orb ──────────────────────────────────────
-                  OrbAnimation(
-                    isListening: isListening,
-                    isSpeaking: isSpeaking,
-                    size: 175,
-                  ),
+                      if (!needsScroll) const Spacer(flex: 2),
+                      SizedBox(height: needsScroll ? 16 : 0),
 
-                  const SizedBox(height: 20),
+                      // ── Animated orb ────────────────────────────────
+                      OrbAnimation(
+                        isListening: isListening,
+                        isSpeaking:  isSpeaking,
+                        // Slightly smaller orb on compact screens
+                        size: needsScroll ? 130 : 175,
+                      ),
 
-                  // ── Waveform ──────────────────────────────────────────
-                  WaveformBars(
-                    active: isListening || isSpeaking,
-                    color: isListening ? DesignTokens.danger : DesignTokens.primary,
-                    barCount: 17,
-                    height: 56,
-                  ),
+                      SizedBox(height: needsScroll ? 12 : 20),
 
-                  const Spacer(flex: 1),
+                      // ── Waveform ─────────────────────────────────────
+                      WaveformBars(
+                        active:   isListening || isSpeaking,
+                        color:    isListening
+                            ? DesignTokens.danger
+                            : DesignTokens.primary,
+                        barCount: needsScroll ? 13 : 17,
+                        height:   needsScroll ? 40 : 56,
+                      ),
 
-                  // ── Transcript / response / hint card ─────────────────
-                  AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 350),
-                    child: (transcript.isNotEmpty || isSpeaking)
-                        ? Padding(
-                            key: const ValueKey('content'),
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: _ContentCard(
-                              label: transcript.isNotEmpty ? '📝 You said' : '🔊 Response',
-                              text: transcript.isNotEmpty ? transcript : lastBotMsg,
-                              color: transcript.isNotEmpty
-                                  ? DesignTokens.primary
-                                  : DesignTokens.success,
-                              isResponse: transcript.isEmpty && isSpeaking,
-                            ),
-                          )
-                        : Padding(
-                            key: const ValueKey('hint'),
-                            padding: const EdgeInsets.symmetric(horizontal: 20),
-                            child: _HintCard(language: state.selectedLanguage),
-                          ),
-                  ),
+                      if (!needsScroll) const Spacer(flex: 1),
+                      SizedBox(height: needsScroll ? 14 : 0),
 
-                  const Spacer(flex: 2),
+                      // ── Transcript / response / hint card ────────────
+                      AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 350),
+                        child: (transcript.isNotEmpty || isSpeaking)
+                            ? Padding(
+                                key: const ValueKey('content'),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20),
+                                child: _ContentCard(
+                                  label: transcript.isNotEmpty
+                                      ? '📝 You said'
+                                      : '🔊 Response',
+                                  text: transcript.isNotEmpty
+                                      ? transcript
+                                      : lastBotMsg,
+                                  color: transcript.isNotEmpty
+                                      ? DesignTokens.primary
+                                      : DesignTokens.success,
+                                  isResponse:
+                                      transcript.isEmpty && isSpeaking,
+                                ),
+                              )
+                            : Padding(
+                                key: const ValueKey('hint'),
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 20),
+                                child: _HintCard(
+                                    language: state.selectedLanguage),
+                              ),
+                      ),
 
-                  // ── Language selector ─────────────────────────────────
-                  _LangRow(
-                    selected: state.selectedLanguage,
-                    onSelect: controller.updateLanguageCode,
-                  ),
+                      if (!needsScroll) const Spacer(flex: 2),
+                      SizedBox(height: needsScroll ? 16 : 0),
 
-                  const SizedBox(height: 24),
+                      // ── Language selector ─────────────────────────────
+                      _LangRow(
+                        selected: state.selectedLanguage,
+                        onSelect: controller.updateLanguageCode,
+                      ),
 
-                  // ── Mic button ────────────────────────────────────────
-                  _MicButton(
-                    isListening: isListening,
-                    isBusy: state.isBusy,
-                    onTap: () => controller.toggleListening(continuous: true),
-                  ),
+                      SizedBox(height: needsScroll ? 16 : 24),
 
-                  const SizedBox(height: 14),
+                      // ── Mic button ─────────────────────────────────────
+                      _MicButton(
+                        isListening: isListening,
+                        isBusy: state.isBusy,
+                        onTap: () =>
+                            controller.toggleListening(continuous: true),
+                      ),
 
-                  // ── Action row ────────────────────────────────────────
-                  _ActionRow(
-                    transcript: transcript,
-                    isSpeaking: isSpeaking,
-                    onClear: controller.clearTranscript,
-                    onSend: () {
-                      controller.sendMessage(transcript, isVoiceMessage: true);
-                      controller.clearTranscript();
-                      Navigator.of(context).pop();
-                    },
-                    onStop: () => controller.stopContinuousConversation(),
-                    onViewChat: () => Navigator.of(context).pushReplacement(
-                      MaterialPageRoute(builder: (_) => const ChatPage()),
-                    ),
-                  ),
+                      SizedBox(height: needsScroll ? 10 : 14),
 
-                  const SizedBox(height: 32),
-                ],
+                      // ── Action row ─────────────────────────────────────
+                      _ActionRow(
+                        transcript: transcript,
+                        isSpeaking: isSpeaking,
+                        onClear: controller.clearTranscript,
+                        onSend: () {
+                          controller.sendMessage(transcript,
+                              isVoiceMessage: true);
+                          controller.clearTranscript();
+                          Navigator.of(context).pop();
+                        },
+                        onStop: () =>
+                            controller.stopContinuousConversation(),
+                        onViewChat: () =>
+                            Navigator.of(context).pushReplacement(
+                          MaterialPageRoute(
+                              builder: (_) => const ChatPage()),
+                        ),
+                      ),
+
+                      SizedBox(height: needsScroll ? 20 : 32),
+                    ],
+                  );
+
+                  if (needsScroll) {
+                    return SingleChildScrollView(
+                      physics: const ClampingScrollPhysics(),
+                      child: ConstrainedBox(
+                        constraints: BoxConstraints(
+                            minHeight: availableHeight),
+                        child: content,
+                      ),
+                    );
+                  }
+                  return content;
+                },
               ),
             ),
           ],

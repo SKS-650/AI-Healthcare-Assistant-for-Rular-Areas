@@ -284,19 +284,25 @@ class ChatbotController extends StateNotifier<ChatbotState> {
   // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> speakText(String text, {String? language}) async {
-    final lang = language ?? state.selectedLanguage;
+    final lang     = language ?? state.selectedLanguage;
+    // Read voiceSpeed from settings (slider range 0.6–1.6, default 1.0)
+    // flutter_tts setSpeechRate expects 0.0–1.0, so we scale:
+    //   slider 0.6 → tts 0.36,  slider 1.0 → tts 0.50,  slider 1.6 → tts 0.72
+    final sliderSpeed = state.settings?.voiceSpeed ?? 1.0;
+    // Base rate per language (non-English slightly slower for clarity)
+    final baseRate = lang == 'en' ? 0.50 : 0.44;
+    // Scale: slider 1.0 = base rate, proportionally faster/slower
+    final ttsRate  = (baseRate * sliderSpeed).clamp(0.2, 0.9);
+
     try {
-      // Configure TTS for the selected language
       await _tts.setLanguage(_ttsLocale(lang));
-      // Natural speaking rate: slightly slower for non-English (more natural)
-      await _tts.setSpeechRate(lang == 'en' ? 0.52 : 0.46);
+      await _tts.setSpeechRate(ttsRate);
       await _tts.setVolume(1.0);
       await _tts.setPitch(lang == 'hi' || lang == 'bho' ? 1.05 : 1.0);
 
       final clean   = _stripMarkdown(text);
-      // Siri clips at ~250 words for natural feel
-      final clipped =
-          clean.length > 800 ? '${clean.substring(0, 797)}…' : clean;
+      // _stripMarkdown already clips to 900 chars
+      final clipped = clean;
 
       state = state.copyWith(
           voiceState: state.voiceState.copyWith(isSpeaking: true));
@@ -431,9 +437,73 @@ class ChatbotController extends StateNotifier<ChatbotState> {
     state = state.copyWith(history: history);
   }
 
+  /// Delete a single conversation from local history (and backend if online).
   Future<void> deleteConversation(String id) async {
     final newHistory = state.history.where((c) => c.id != id).toList();
     state = state.copyWith(history: newHistory);
+
+    // Best-effort backend delete (non-blocking)
+    try {
+      await _repository.deleteConversation(id);
+    } catch (_) {
+      // Silently ignore — local removal is enough for UX
+    }
+  }
+
+  /// Clear ALL conversation history (local + backend).
+  Future<void> clearAllHistory() async {
+    state = state.copyWith(history: const []);
+
+    // Best-effort backend clear (non-blocking)
+    try {
+      await _repository.clearAllHistory();
+    } catch (_) {}
+  }
+
+  /// Start a completely fresh conversation (resets active chat + backend session).
+  Future<void> startNewConversation() async {
+    await _repository.startNewConversation();
+    final freshConv = await _repository.loadConversation();
+    if (!mounted) return;
+    state = state.copyWith(
+      conversation:             freshConv,
+      status:                   ChatbotStatus.ready,
+      followUpQuestions:        const [],
+      lastResponseWasEmergency: false,
+      clearError:               true,
+    );
+  }
+
+  /// Retry the last user message if the previous request failed.
+  Future<void> retryLastMessage() async {
+    final msgs = state.conversation?.messages ?? [];
+
+    // Find the last user message
+    final lastUserMsg = msgs
+        .where((m) => m.sender == ChatSender.user)
+        .fold<ChatMessage?>(null, (_, m) => m);
+
+    if (lastUserMsg == null) return;
+
+    // Remove the last bot message if it's an error/empty response
+    final withoutLastBot = msgs.last.sender == ChatSender.bot
+        ? msgs.sublist(0, msgs.length - 1)
+        : msgs;
+
+    final conv = state.conversation!;
+    final trimmedConv = ConversationModel(
+      id:        conv.id,
+      title:     conv.title,
+      messages:  withoutLastBot,
+      updatedAt: conv.updatedAt,
+    );
+
+    state = state.copyWith(
+      conversation: trimmedConv,
+      clearError:   true,
+    );
+
+    await sendMessage(lastUserMsg.text);
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -487,19 +557,82 @@ class ChatbotController extends StateNotifier<ChatbotState> {
     return map[code] ?? 'en-IN';
   }
 
-  /// Strip markdown syntax so TTS reads clean prose.
+  /// Strip markdown syntax so TTS reads clean natural prose.
+  ///
+  /// Fixes:
+  ///   - r'$1' was outputting literal "$1" — now uses replaceAllMapped
+  ///   - Consecutive sentences now have proper pauses between them
+  ///   - Bullet points become natural spoken sentences
   static String _stripMarkdown(String text) {
-    return text
-        .replaceAll(RegExp(r'\*\*(.+?)\*\*', dotAll: true), r'$1')
-        .replaceAll(RegExp(r'\*(.+?)\*',     dotAll: true), r'$1')
-        .replaceAll(RegExp(r'#{1,6}\s?'),     '')
-        .replaceAll(RegExp(r'`(.+?)`',        dotAll: true), r'$1')
-        .replaceAll(RegExp(r'\[(.+?)\]\(.+?\)', dotAll: true), r'$1')
-        .replaceAll(RegExp(r'^\s*[-*+]\s+', multiLine: true), '')
-        .replaceAll(RegExp(r'\n{2,}'), '. ')
-        .replaceAll(RegExp(r'⚠️|🚨|💊|🤒|🩺|🌡️|😷|🥗|🏃|🤰|👶|💙|💚'), '')
-        .replaceAll(RegExp(r'\s{2,}'), ' ')
-        .trim();
+    String s = text;
+
+    // 1. Bold **text** → just the text (using replaceAllMapped, NOT r'$1')
+    s = s.replaceAllMapped(
+      RegExp(r'\*\*(.+?)\*\*', dotAll: true),
+      (m) => m.group(1) ?? '',
+    );
+
+    // 2. Italic *text* → just the text
+    s = s.replaceAllMapped(
+      RegExp(r'\*(.+?)\*', dotAll: true),
+      (m) => m.group(1) ?? '',
+    );
+
+    // 3. Inline code `text` → just the text
+    s = s.replaceAllMapped(
+      RegExp(r'`(.+?)`', dotAll: true),
+      (m) => m.group(1) ?? '',
+    );
+
+    // 4. Links [label](url) → just the label
+    s = s.replaceAllMapped(
+      RegExp(r'\[(.+?)\]\(.+?\)', dotAll: true),
+      (m) => m.group(1) ?? '',
+    );
+
+    // 5. Headings ### → remove the # symbols
+    s = s.replaceAll(RegExp(r'#{1,6}\s*'), '');
+
+    // 6. Bullet / list items (- or * or + or numbered) →
+    //    replace with ". " so TTS reads a natural pause between items
+    s = s.replaceAll(RegExp(r'^\s*[-*+]\s+', multiLine: true), '. ');
+    s = s.replaceAll(RegExp(r'^\s*\d+\.\s+', multiLine: true), '. ');
+
+    // 7. Horizontal rules --- or *** → pause
+    s = s.replaceAll(RegExp(r'^[-*_]{3,}\s*$', multiLine: true), '. ');
+
+    // 8. Multiple newlines → ". " so sentences are spoken separately
+    //    Single newlines → " " (space, not period — avoids double periods)
+    s = s.replaceAll(RegExp(r'\n{2,}'), '. ');
+    s = s.replaceAll('\n', ' ');
+
+    // 9. Remove all emojis (they break TTS or get read as "emoji" / symbol names)
+    s = s.replaceAll(
+      RegExp(
+        r'[\u{1F000}-\u{1FFFF}]|'
+        r'[\u{2600}-\u{27BF}]|'
+        r'[\u{FE00}-\u{FE0F}]|'
+        r'[\u{1F900}-\u{1F9FF}]|'
+        r'⚠️|🚨|💊|🤒|🩺|🌡️|😷|🥗|🏃|🤰|👶|💙|💚|✅|❌|📞|🔴|🟢|🟡',
+        unicode: true,
+      ),
+      '',
+    );
+
+    // 10. Remove leftover markdown symbols
+    s = s.replaceAll(RegExp(r'[_~>|]'), '');
+
+    // 11. Fix multiple consecutive periods or spaces
+    s = s.replaceAll(RegExp(r'\.\s*\.+'), '.');
+    s = s.replaceAll(RegExp(r'\s{2,}'), ' ');
+
+    // 12. Clip to 900 chars for natural TTS length
+    s = s.trim();
+    if (s.length > 900) {
+      s = '${s.substring(0, 897)}...';
+    }
+
+    return s;
   }
 
   @override

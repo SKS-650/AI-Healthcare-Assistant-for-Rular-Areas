@@ -99,6 +99,9 @@ async def on_startup() -> None:
     # ── Validate symptom checker model on every startup ──────────────────
     _validate_symptom_model()
 
+    # ── Initialize AI chatbot service at startup (not lazily on first request) ─
+    _init_ai_service()
+
     logger.info("Startup complete.")
 
 
@@ -151,3 +154,33 @@ async def on_shutdown() -> None:
     logger.info("Shutting down...")
     await close_db()
     logger.info("Shutdown complete.")
+
+
+def _init_ai_service() -> None:
+    """
+    Eagerly initialize the AI singleton at server startup.
+
+    This guarantees the API key is read from os.environ AFTER dotenv
+    has populated it, and that every subsequent request gets the already-
+    initialized singleton without any lazy-init race conditions.
+    """
+    try:
+        from app.medical_chatbot.services.gemini_service import (
+            get_gemini_service,
+            reset_gemini_service,
+        )
+        # Reset any stale instance that might have been created before dotenv loaded
+        reset_gemini_service()
+        svc = get_gemini_service()
+        logger.info(
+            "✅ AI chatbot service initialized at startup: "
+            "provider=%s model=%s",
+            svc._provider,
+            svc.model,
+        )
+    except Exception as exc:
+        logger.error(
+            "❌ AI chatbot service failed to initialize at startup: %s\n"
+            "   → Make sure CHATBOT_OPENROUTER_API_KEY is set in backend/.env",
+            exc,
+        )

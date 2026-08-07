@@ -63,6 +63,7 @@ class _ChatPageState extends ConsumerState<ChatPage> {
           MaterialPageRoute(builder: (_) => const VoiceChatPage()),
         ),
         onLanguageTap: () => _showLanguagePicker(context, state.selectedLanguage, controller),
+        onActionSelected: (action) => _handleAppBarAction(context, action, controller),
       ),
       body: switch (state.status) {
         ChatbotStatus.initial || ChatbotStatus.loading => const ChatbotLoadingWidget(),
@@ -73,6 +74,48 @@ class _ChatPageState extends ConsumerState<ChatPage> {
         _ => _ChatBody(state: state, controller: controller, scroll: _scroll),
       },
     );
+  }
+
+  void _handleAppBarAction(
+      BuildContext ctx, _ChatAction action, dynamic ctrl) async {
+    switch (action) {
+      case _ChatAction.newChat:
+        await ctrl.startNewConversation();
+        break;
+      case _ChatAction.clearChat:
+        final confirmed = await showDialog<bool>(
+          context: ctx,
+          builder: (_) => AlertDialog(
+            backgroundColor: DesignTokens.surface,
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+            title: const Row(children: [
+              Text('🗑️', style: TextStyle(fontSize: 20)),
+              SizedBox(width: 8),
+              Text('Clear Chat?',
+                  style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+            ]),
+            content: const Text(
+              'This will delete all messages in this conversation. This cannot be undone.',
+              style: TextStyle(color: DesignTokens.textMuted, fontSize: 14, height: 1.5),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () => Navigator.pop(ctx, false),
+                child: const Text('Cancel'),
+              ),
+              FilledButton(
+                onPressed: () => Navigator.pop(ctx, true),
+                style: FilledButton.styleFrom(backgroundColor: DesignTokens.danger),
+                child: const Text('Clear'),
+              ),
+            ],
+          ),
+        );
+        if (confirmed == true) {
+          await ctrl.startNewConversation();
+        }
+        break;
+    }
   }
 
   void _showLanguagePicker(
@@ -131,6 +174,12 @@ class _ChatPageState extends ConsumerState<ChatPage> {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// AppBar action enum
+// ─────────────────────────────────────────────────────────────────────────────
+
+enum _ChatAction { newChat, clearChat }
+
+// ─────────────────────────────────────────────────────────────────────────────
 // AppBar — matches screenshot: bot avatar, Online●, language badge, mic icon
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -139,12 +188,14 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String language;
   final VoidCallback onVoiceTap;
   final VoidCallback onLanguageTap;
+  final ValueChanged<_ChatAction> onActionSelected;
 
   const _ChatAppBar({
     required this.isOnline,
     required this.language,
     required this.onVoiceTap,
     required this.onLanguageTap,
+    required this.onActionSelected,
   });
 
   static const _langLabels = {
@@ -231,7 +282,7 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
       actions: [
         // Voice button
         Container(
-          margin: const EdgeInsets.only(right: 12),
+          margin: const EdgeInsets.only(right: 4),
           child: IconButton(
             icon: Container(
               width: 36, height: 36,
@@ -248,6 +299,37 @@ class _ChatAppBar extends StatelessWidget implements PreferredSizeWidget {
             onPressed: onVoiceTap,
           ),
         ),
+        // Overflow menu — New chat / Clear chat
+        PopupMenuButton<_ChatAction>(
+          icon: const Icon(Icons.more_vert_rounded,
+              color: DesignTokens.textStrong, size: 22),
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+          color: DesignTokens.surface,
+          onSelected: onActionSelected,
+          itemBuilder: (_) => const [
+            PopupMenuItem(
+              value: _ChatAction.newChat,
+              child: Row(children: [
+                Text('✏️', style: TextStyle(fontSize: 16)),
+                SizedBox(width: 10),
+                Text('New conversation',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600)),
+              ]),
+            ),
+            PopupMenuItem(
+              value: _ChatAction.clearChat,
+              child: Row(children: [
+                Text('🗑️', style: TextStyle(fontSize: 16)),
+                SizedBox(width: 10),
+                Text('Clear chat',
+                    style: TextStyle(
+                        fontSize: 14, fontWeight: FontWeight.w600,
+                        color: DesignTokens.danger)),
+              ]),
+            ),
+          ],
+        ),
+        const SizedBox(width: 4),
       ],
       bottom: PreferredSize(
         preferredSize: const Size.fromHeight(1),
@@ -289,40 +371,50 @@ class _ChatBody extends StatelessWidget {
         Expanded(
           child: messages.isEmpty
               ? _WelcomeView(onSend: controller.sendMessage)
-              : ListView.builder(
-                  controller: scroll,
-                  padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
-                  itemCount: messages.length + (isSending ? 1 : 0) + extras,
-                  itemBuilder: (ctx, i) {
-                    // After last message: emergency card
-                    if (isEmerg && i == messages.length) {
-                      return const EmergencyCard();
-                    }
-                    // Adjust index after emergency card
-                    int adj = (isEmerg && i > messages.length) ? i - 1 : i;
-
-                    // After messages (+emergency): typing or follow-up chips
-                    if (adj == messages.length) {
-                      if (isSending) return const TypingIndicator();
-                      if (followUps.isNotEmpty) {
-                        return FollowUpChips(
-                          questions: followUps,
-                          onTap: controller.sendMessage,
-                        );
+              : RefreshIndicator(
+                  color: DesignTokens.primary,
+                  onRefresh: () => controller.refreshHistory(),
+                  child: ListView.builder(
+                    controller: scroll,
+                    padding: const EdgeInsets.fromLTRB(0, 12, 0, 8),
+                    itemCount: messages.length + (isSending ? 1 : 0) + extras,
+                    itemBuilder: (ctx, i) {
+                      // After last message: emergency card
+                      if (isEmerg && i == messages.length) {
+                        return const EmergencyCard();
                       }
-                    }
+                      // Adjust index after emergency card
+                      int adj = (isEmerg && i > messages.length) ? i - 1 : i;
 
-                    if (adj >= messages.length) return const SizedBox.shrink();
+                      // After messages (+emergency): typing or follow-up chips
+                      if (adj == messages.length) {
+                        if (isSending) return const TypingIndicator();
+                        if (followUps.isNotEmpty) {
+                          return FollowUpChips(
+                            questions: followUps,
+                            onTap: controller.sendMessage,
+                          );
+                        }
+                      }
 
-                    final msg = messages[adj];
-                    return MessageBubble(
-                      key: ValueKey(msg.id),
-                      message: msg,
-                      onSpeak: msg.sender == ChatSender.bot
-                          ? () => controller.speakText(msg.text)
-                          : null,
-                    );
-                  },
+                      if (adj >= messages.length) return const SizedBox.shrink();
+
+                      final msg = messages[adj];
+                      return MessageBubble(
+                        key: ValueKey(msg.id),
+                        message: msg,
+                        fontSize: (state.settings?.fontSize ?? 14.0),
+                        onSpeak: msg.sender == ChatSender.bot
+                            ? () => controller.speakText(msg.text)
+                            : null,
+                        onRetry: (msg.sender == ChatSender.bot &&
+                                adj == messages.length - 1 &&
+                                state.status == ChatbotStatus.error)
+                            ? controller.retryLastMessage
+                            : null,
+                      );
+                    },
+                  ),
                 ),
         ),
 
@@ -491,19 +583,24 @@ class _ErrorView extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const Text('⚠️', style: TextStyle(fontSize: 48)),
+              const Text('⚠️', style: TextStyle(fontSize: 52)),
               const SizedBox(height: 16),
               Text(message ?? 'Something went wrong.',
                   textAlign: TextAlign.center,
                   style: const TextStyle(fontSize: 15,
                       color: DesignTokens.textMuted, height: 1.5)),
               const SizedBox(height: 20),
-              FilledButton.icon(
-                onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded, size: 18),
-                label: const Text('Try Again'),
-                style: FilledButton.styleFrom(
-                    backgroundColor: DesignTokens.primary),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  FilledButton.icon(
+                    onPressed: onRetry,
+                    icon: const Icon(Icons.refresh_rounded, size: 18),
+                    label: const Text('Retry'),
+                    style: FilledButton.styleFrom(
+                        backgroundColor: DesignTokens.primary),
+                  ),
+                ],
               ),
             ],
           ),

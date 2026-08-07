@@ -89,7 +89,16 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
               opacity: _fade,
               child: SlideTransition(
                 position: _slide,
-                child: Padding(
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: MediaQuery.of(context).size.height -
+                          MediaQuery.of(context).padding.top -
+                          MediaQuery.of(context).padding.bottom,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 28),
                   child: Form(
                     key: _formKey,
@@ -161,6 +170,9 @@ class _ForgotPasswordPageState extends ConsumerState<ForgotPasswordPage>
                         ),
                         const SizedBox(height: 24),
                       ],
+                    ),
+                  ),
+                ),
                     ),
                   ),
                 ),

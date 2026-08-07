@@ -62,13 +62,42 @@ class _ChatHistoryPageState extends ConsumerState<ChatHistoryPage> {
             icon: const Icon(Icons.add_comment_rounded,
                 color: DesignTokens.primary, size: 22),
             tooltip: 'New chat',
-            onPressed: () {
-              Navigator.pushReplacement(
-                context,
-                MaterialPageRoute(builder: (_) => const ChatPage()),
-              );
+            onPressed: () async {
+              await controller.startNewConversation();
+              if (context.mounted) {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (_) => const ChatPage()),
+                );
+              }
             },
           ),
+          PopupMenuButton<String>(
+            icon: const Icon(Icons.more_vert_rounded,
+                color: DesignTokens.textStrong, size: 22),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            color: DesignTokens.surface,
+            onSelected: (v) {
+              if (v == 'clear_all') {
+                _confirmClearAll(context, controller);
+              }
+            },
+            itemBuilder: (_) => const [
+              PopupMenuItem(
+                value: 'clear_all',
+                child: Row(children: [
+                  Text('🗑️', style: TextStyle(fontSize: 16)),
+                  SizedBox(width: 10),
+                  Text('Clear all history',
+                      style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: DesignTokens.danger)),
+                ]),
+              ),
+            ],
+          ),
+          const SizedBox(width: 4),
         ],
         bottom: PreferredSize(
           preferredSize: const Size.fromHeight(56),
@@ -80,35 +109,39 @@ class _ChatHistoryPageState extends ConsumerState<ChatHistoryPage> {
       ),
       body: history.isEmpty
           ? _EmptyHistory(query: _query)
-          : ListView.builder(
-              padding: const EdgeInsets.only(bottom: 24),
-              itemCount: grouped.keys.length,
-              itemBuilder: (context, sectionIndex) {
-                final label = grouped.keys.elementAt(sectionIndex);
-                final conversations = grouped[label]!;
-                return Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    _DateHeader(label: label),
-                    ...conversations.map(
-                      (conv) => _ConversationTile(
-                        conversation: conv,
-                        onTap: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ChatPage(),
-                            ),
-                          );
-                        },
-                        onDelete: () => _confirmDelete(
-                          context, conv, controller,
+          : RefreshIndicator(
+              color: DesignTokens.primary,
+              onRefresh: () => controller.refreshHistory(),
+              child: ListView.builder(
+                padding: const EdgeInsets.only(bottom: 24),
+                itemCount: grouped.keys.length,
+                itemBuilder: (context, sectionIndex) {
+                  final label = grouped.keys.elementAt(sectionIndex);
+                  final conversations = grouped[label]!;
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      _DateHeader(label: label),
+                      ...conversations.map(
+                        (conv) => _ConversationTile(
+                          conversation: conv,
+                          onTap: () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (_) => const ChatPage(),
+                              ),
+                            );
+                          },
+                          onDelete: () => _confirmDelete(
+                            context, conv, controller,
+                          ),
                         ),
                       ),
-                    ),
-                  ],
-                );
-              },
+                    ],
+                  );
+                },
+              ),
             ),
     );
   }
@@ -135,6 +168,43 @@ class _ChatHistoryPageState extends ConsumerState<ChatHistoryPage> {
       result.putIfAbsent(label, () => []).add(c);
     }
     return result;
+  }
+
+  Future<void> _confirmClearAll(
+    BuildContext context,
+    dynamic controller,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (_) => AlertDialog(
+        backgroundColor: DesignTokens.surface,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: const Row(children: [
+          Text('🗑️', style: TextStyle(fontSize: 20)),
+          SizedBox(width: 8),
+          Text('Clear all history?',
+              style: TextStyle(fontWeight: FontWeight.w700, fontSize: 16)),
+        ]),
+        content: const Text(
+          'This will permanently delete ALL your conversations. This cannot be undone.',
+          style: TextStyle(color: DesignTokens.textMuted, fontSize: 14, height: 1.5),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: FilledButton.styleFrom(backgroundColor: DesignTokens.danger),
+            child: const Text('Delete All'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      controller.clearAllHistory();
+    }
   }
 
   Future<void> _confirmDelete(

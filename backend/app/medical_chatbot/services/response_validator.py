@@ -207,43 +207,69 @@ class ResponseValidator:
 class EmergencyDetector:
     """Detects emergency situations in user messages"""
     
-    # Emergency keywords by category
+    # Emergency keywords by category — comprehensive spec-compliant list
     CARDIAC_EMERGENCY = [
-        "chest pain", "heart attack", "heart racing", "crushing chest",
-        "pressure in chest", "pain radiating"
+        "chest pain", "heart attack", "heart attack", "crushing chest",
+        "pressure in chest", "pain radiating", "heart racing", "palpitations",
+        "cardiac arrest", "my heart", "दिल में दर्द", "सीने में दर्द",
     ]
     
     BREATHING_EMERGENCY = [
         "can't breathe", "cannot breathe", "difficulty breathing",
-        "shortness of breath", "gasping", "choking"
+        "shortness of breath", "gasping", "choking", "not breathing",
+        "stopped breathing", "सांस नहीं", "saans nahi",
     ]
     
     BLEEDING_EMERGENCY = [
         "severe bleeding", "heavy bleeding", "bleeding won't stop",
-        "blood gushing", "arterial bleeding"
+        "blood gushing", "arterial bleeding", "hemorrhage",
+        "खून बह रहा", "रक्तस्राव",
     ]
     
     NEUROLOGICAL_EMERGENCY = [
         "stroke", "sudden numbness", "slurred speech", "face drooping",
         "severe headache", "loss of consciousness", "unconscious",
-        "seizure", "convulsion", "fit"
+        "unconsciousness", "seizure", "convulsion", "fit",
+        "fainted", "not responding", "paralysis", "brain stroke",
+        "बेहोश", "दौरा",
     ]
     
     TRAUMA_EMERGENCY = [
         "severe injury", "broken bone", "compound fracture",
-        "head injury", "fell from height", "car accident"
+        "head injury", "fell from height", "car accident",
+        "road accident", "electric shock", "electrocution",
+        "burned badly", "severe burn", "burns all over",
+        "बिजली का झटका", "जल गया",
     ]
     
     POISONING_EMERGENCY = [
         "poisoning", "overdose", "swallowed poison",
-        "chemical burn", "toxic"
+        "chemical burn", "toxic", "poison", "rat poison",
+        "pesticide", "snake bite", "snakebite", "dog bite", "animal bite",
+        "insect sting", "scorpion sting", "साँप ने काटा", "सर्पदंश",
     ]
     
     ALLERGIC_EMERGENCY = [
         "allergic reaction", "anaphylaxis", "swelling throat",
-        "severe swelling", "hives all over"
+        "severe swelling", "hives all over", "throat closing",
+        "severe allergic", "can't swallow", "face swelling",
+        "एलर्जी", "गला बंद",
     ]
     
+    MENTAL_HEALTH_EMERGENCY = [
+        "suicide", "kill myself", "want to die", "end my life",
+        "self harm", "self-harm", "cutting myself", "hurting myself",
+        "jump off", "hang myself", "खुदकुशी", "आत्महत्या",
+    ]
+    
+    INFANT_EMERGENCY = [
+        "high fever infant", "baby not breathing", "newborn fever",
+        "infant convulsion", "baby seizure", "baby unconscious",
+        "baby choking", "infant emergency", "बच्चे को तेज बुखार",
+        "शिशु को बुखार", "baby high fever", "very high fever baby",
+        "104 fever child", "105 fever child",
+    ]
+
     def __init__(self):
         """Initialize emergency detector"""
         # Combine all emergency keywords
@@ -254,7 +280,9 @@ class EmergencyDetector:
             self.NEUROLOGICAL_EMERGENCY +
             self.TRAUMA_EMERGENCY +
             self.POISONING_EMERGENCY +
-            self.ALLERGIC_EMERGENCY
+            self.ALLERGIC_EMERGENCY +
+            self.MENTAL_HEALTH_EMERGENCY +
+            self.INFANT_EMERGENCY
         )
     
     def detect_emergency(self, message: str) -> Tuple[bool, Optional[str], Optional[str]]:
@@ -268,6 +296,12 @@ class EmergencyDetector:
             Tuple of (is_emergency, emergency_type, matched_keyword)
         """
         message_lower = message.lower()
+        
+        # Check mental health / suicide emergencies FIRST (highest priority)
+        for keyword in self.MENTAL_HEALTH_EMERGENCY:
+            if keyword in message_lower:
+                logger.warning(f"Mental health emergency detected: {keyword}")
+                return True, "mental_health", keyword
         
         # Check cardiac emergencies
         for keyword in self.CARDIAC_EMERGENCY:
@@ -293,16 +327,16 @@ class EmergencyDetector:
                 logger.warning(f"Neurological emergency detected: {keyword}")
                 return True, "neurological", keyword
         
-        # Check trauma emergencies
+        # Check trauma emergencies (includes electric shock, burns)
         for keyword in self.TRAUMA_EMERGENCY:
             if keyword in message_lower:
                 logger.warning(f"Trauma emergency detected: {keyword}")
                 return True, "trauma", keyword
         
-        # Check poisoning emergencies
+        # Check poisoning/snake bite emergencies
         for keyword in self.POISONING_EMERGENCY:
             if keyword in message_lower:
-                logger.warning(f"Poisoning emergency detected: {keyword}")
+                logger.warning(f"Poisoning/snake bite emergency detected: {keyword}")
                 return True, "poisoning", keyword
         
         # Check allergic emergencies
@@ -311,6 +345,12 @@ class EmergencyDetector:
                 logger.warning(f"Allergic emergency detected: {keyword}")
                 return True, "allergic", keyword
         
+        # Check infant/child emergencies
+        for keyword in self.INFANT_EMERGENCY:
+            if keyword in message_lower:
+                logger.warning(f"Infant emergency detected: {keyword}")
+                return True, "infant", keyword
+        
         return False, None, None
     
     def get_emergency_response(self, emergency_type: str) -> str:
@@ -318,76 +358,115 @@ class EmergencyDetector:
         responses = {
             "cardiac": (
                 "🚨 **CARDIAC EMERGENCY DETECTED**\n\n"
-                "**IMMEDIATE ACTION REQUIRED:**\n"
-                "1. Call emergency services NOW (108 in India, 911 in US)\n"
-                "2. If someone is with you, ask them to call while you rest\n"
-                "3. Sit down and try to stay calm\n"
-                "4. If you have aspirin and are not allergic, chew one tablet\n"
-                "5. Do NOT drive yourself to the hospital\n\n"
-                "⚠️ This could be life-threatening. Get medical help immediately!"
+                "**CALL EMERGENCY SERVICES NOW:**\n"
+                "🚑 **108** (India) | **102** (Nepal) | **112** (Global)\n\n"
+                "**While waiting for help:**\n"
+                "1. Sit down and stay as calm as possible\n"
+                "2. Loosen tight clothing (belt, collar, tie)\n"
+                "3. If not allergic to aspirin and it's available, chew 1 tablet\n"
+                "4. Do NOT drive yourself — wait for emergency services\n"
+                "5. Unlock your front door so paramedics can enter\n\n"
+                "⚠️ **This could be life-threatening. Get medical help immediately!**"
             ),
             "breathing": (
                 "🚨 **BREATHING EMERGENCY DETECTED**\n\n"
-                "**IMMEDIATE ACTION REQUIRED:**\n"
-                "1. Call emergency services NOW (108 in India, 911 in US)\n"
-                "2. Sit upright, do not lie down\n"
-                "3. Loosen tight clothing\n"
-                "4. Try to stay calm and breathe slowly\n"
-                "5. If you have an inhaler, use it\n\n"
-                "⚠️ Breathing difficulties can be life-threatening. Get help NOW!"
+                "**CALL EMERGENCY SERVICES NOW:**\n"
+                "🚑 **108** (India) | **102** (Nepal) | **112** (Global)\n\n"
+                "**While waiting for help:**\n"
+                "1. Sit upright — do NOT lie flat\n"
+                "2. Loosen any tight clothing around neck and chest\n"
+                "3. Try to breathe slowly and calmly\n"
+                "4. Use your inhaler if you have one\n"
+                "5. Open a window for fresh air\n\n"
+                "⚠️ **Breathing difficulty is life-threatening. Get help NOW!**"
             ),
             "bleeding": (
                 "🚨 **SEVERE BLEEDING EMERGENCY**\n\n"
-                "**IMMEDIATE ACTION REQUIRED:**\n"
-                "1. Call emergency services NOW (108 in India, 911 in US)\n"
-                "2. Apply firm pressure directly on the wound\n"
-                "3. Keep pressure constant - do not remove cloth even if soaked\n"
-                "4. Lie down if possible, elevate the bleeding part if safe\n"
-                "5. Do not remove any embedded objects\n\n"
-                "⚠️ Severe bleeding requires immediate medical attention!"
+                "**CALL EMERGENCY SERVICES NOW:**\n"
+                "🚑 **108** (India) | **102** (Nepal) | **112** (Global)\n\n"
+                "**While waiting for help:**\n"
+                "1. Apply FIRM, constant pressure directly on the wound\n"
+                "2. Use a clean cloth — do NOT remove it even if soaked; add more on top\n"
+                "3. Elevate the bleeding part above heart level if possible\n"
+                "4. Do NOT remove any embedded objects\n"
+                "5. Keep the person lying down and warm\n\n"
+                "⚠️ **Severe bleeding requires immediate medical attention!**"
             ),
             "neurological": (
                 "🚨 **NEUROLOGICAL EMERGENCY DETECTED**\n\n"
-                "**IMMEDIATE ACTION REQUIRED:**\n"
-                "1. Call emergency services NOW (108 in India, 911 in US)\n"
-                "2. Note the time symptoms started\n"
-                "3. Lie down safely or help the person lie down\n"
-                "4. Do NOT give anything to eat or drink\n"
-                "5. Turn head to side if vomiting\n\n"
-                "⚠️ Stroke and neurological emergencies are time-critical. Every minute counts!"
+                "**CALL EMERGENCY SERVICES NOW:**\n"
+                "🚑 **108** (India) | **102** (Nepal) | **112** (Global)\n\n"
+                "**While waiting for help:**\n"
+                "1. Note the exact time symptoms started — tell the doctors\n"
+                "2. Lay the person down safely; support their head\n"
+                "3. Do NOT give food, water, or medication by mouth\n"
+                "4. Turn their head to the side if vomiting occurs\n"
+                "5. Do NOT restrain them during a seizure — move objects away\n\n"
+                "⚠️ **Stroke/seizure is time-critical — every minute matters!**"
             ),
             "trauma": (
-                "🚨 **TRAUMA EMERGENCY DETECTED**\n\n"
-                "**IMMEDIATE ACTION REQUIRED:**\n"
-                "1. Call emergency services NOW (108 in India, 911 in US)\n"
-                "2. Do NOT move unless absolutely necessary\n"
-                "3. Keep still, especially the neck and back\n"
-                "4. Control any bleeding with direct pressure\n"
-                "5. Keep warm with blankets\n\n"
-                "⚠️ Serious injuries require professional emergency care!"
+                "🚨 **TRAUMA / BURN / ELECTRIC SHOCK EMERGENCY**\n\n"
+                "**CALL EMERGENCY SERVICES NOW:**\n"
+                "🚑 **108** (India) | **102** (Nepal) | **112** (Global)\n\n"
+                "**While waiting for help:**\n"
+                "1. Do NOT move the person unless they are in immediate danger\n"
+                "2. For burns: cool with running water for 10–20 minutes; do NOT use ice\n"
+                "3. For electric shock: do NOT touch the person until power is OFF\n"
+                "4. Keep them warm and still\n"
+                "5. Control any visible bleeding with gentle pressure\n\n"
+                "⚠️ **Serious trauma requires professional emergency care immediately!**"
             ),
             "poisoning": (
-                "🚨 **POISONING EMERGENCY DETECTED**\n\n"
-                "**IMMEDIATE ACTION REQUIRED:**\n"
-                "1. Call emergency services NOW (108 in India, 911 in US)\n"
-                "2. Call Poison Control if available\n"
-                "3. Do NOT induce vomiting unless instructed\n"
-                "4. If substance known, have container ready for emergency responders\n"
-                "5. Stay calm and follow emergency dispatcher's instructions\n\n"
-                "⚠️ Poisoning requires immediate professional treatment!"
+                "🚨 **POISONING / SNAKE BITE EMERGENCY**\n\n"
+                "**CALL EMERGENCY SERVICES NOW:**\n"
+                "🚑 **108** (India) | **102** (Nepal) | **112** (Global)\n\n"
+                "**While waiting for help:**\n"
+                "1. Do NOT induce vomiting unless emergency services instruct you\n"
+                "2. For snake bite: keep the limb still and below heart level\n"
+                "3. Remove watches, rings, or tight items near the bite\n"
+                "4. Keep container/substance info ready for doctors\n"
+                "5. Note the time of exposure/bite for medical staff\n\n"
+                "⚠️ **Poisoning/snake bite requires immediate professional treatment!**"
             ),
             "allergic": (
-                "🚨 **SEVERE ALLERGIC REACTION DETECTED**\n\n"
-                "**IMMEDIATE ACTION REQUIRED:**\n"
-                "1. Call emergency services NOW (108 in India, 911 in US)\n"
-                "2. If you have an EpiPen, use it immediately\n"
-                "3. Lie down with legs elevated\n"
-                "4. Do not stand up suddenly\n"
-                "5. Remove any allergen source if possible\n\n"
-                "⚠️ Anaphylaxis can be life-threatening. Get emergency help NOW!"
-            )
+                "🚨 **SEVERE ALLERGIC REACTION (ANAPHYLAXIS)**\n\n"
+                "**CALL EMERGENCY SERVICES NOW:**\n"
+                "🚑 **108** (India) | **102** (Nepal) | **112** (Global)\n\n"
+                "**While waiting for help:**\n"
+                "1. Use EpiPen / adrenaline injector immediately if available\n"
+                "2. Lay the person flat with legs elevated (unless breathing is difficult)\n"
+                "3. If unconscious and not breathing, start CPR\n"
+                "4. Remove the allergen source if safely possible\n"
+                "5. Do NOT give antihistamines alone — this is not enough for anaphylaxis\n\n"
+                "⚠️ **Anaphylaxis can be fatal within minutes. Get emergency help NOW!**"
+            ),
+            "mental_health": (
+                "🚨 **MENTAL HEALTH CRISIS DETECTED — YOU ARE NOT ALONE**\n\n"
+                "**Please reach out right now:**\n"
+                "📞 **iCall (India):** 9152987821\n"
+                "📞 **Vandrevala Foundation:** 1860-2662-345 (24/7)\n"
+                "📞 **Emergency:** 108 (India) | 112 (Global)\n\n"
+                "**Please know:**\n"
+                "1. You matter and your life has value 💙\n"
+                "2. This feeling will pass — please reach out to someone you trust\n"
+                "3. Call a crisis helpline — trained counsellors are available 24/7\n"
+                "4. Go to the nearest hospital emergency room if you feel unsafe\n"
+                "5. Tell someone near you how you are feeling right now\n\n"
+                "⚠️ **Please seek help immediately. You do not have to face this alone.**"
+            ),
+            "infant": (
+                "🚨 **INFANT / CHILD EMERGENCY DETECTED**\n\n"
+                "**CALL EMERGENCY SERVICES NOW:**\n"
+                "🚑 **108** (India) | **102** (Nepal) | **112** (Global)\n\n"
+                "**While waiting for help:**\n"
+                "1. For high fever (above 38.5°C/101.3°F): remove extra clothing, apply cool (not cold) damp cloth on forehead\n"
+                "2. Do NOT give aspirin to children — only paracetamol as directed by a doctor\n"
+                "3. Keep the baby/child lying on their side if vomiting\n"
+                "4. Keep them calm and do not leave them alone\n"
+                "5. Note the temperature reading to tell the doctor\n\n"
+                "⚠️ **Infant emergencies can escalate rapidly. Seek medical care immediately!**"
+            ),
         }
-        
         return responses.get(emergency_type, responses["cardiac"])
 
 
