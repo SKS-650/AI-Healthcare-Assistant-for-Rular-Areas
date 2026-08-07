@@ -81,6 +81,7 @@ def create_app() -> FastAPI:
     from app.offline_sync.routes import router as offline_sync_router
     from app.admin.routes import router as admin_router
     from app.notifications.routes import router as notifications_router
+    from app.feedback.routes import router as feedback_router
 
     app.include_router(auth_router, prefix=settings.api_prefix)
     app.include_router(users_router, prefix=settings.api_prefix)
@@ -93,6 +94,7 @@ def create_app() -> FastAPI:
     app.include_router(offline_sync_router, prefix=settings.api_prefix)
     app.include_router(admin_router, prefix=settings.api_prefix)
     app.include_router(notifications_router, prefix=settings.api_prefix)
+    app.include_router(feedback_router, prefix=settings.api_prefix)
 
     # ── Health check ──────────────────────────────────────────────────────────
     @app.get("/health", tags=["Health"])

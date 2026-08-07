@@ -1,77 +1,90 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api.dart';
 
-// ── State ─────────────────────────────────────────────────────────────────────
+// ── Models ────────────────────────────────────────────────────────────────────
+
+class SymptomFreqItem {
+  final String symptom;
+  final int count;
+  const SymptomFreqItem({required this.symptom, required this.count});
+  factory SymptomFreqItem.fromJson(Map<String, dynamic> j) =>
+      SymptomFreqItem(
+          symptom: j['symptom'] as String? ?? '',
+          count: j['count'] as int? ?? 0);
+}
 
 class AnalyticsState {
-  final bool isLoading;
+  final bool isLoadingReports;
+  final bool isLoadingSymptoms;
   final String? error;
-  final int days;
-
-  // Stats
-  final int totalAssessments;
-  final int todayAssessments;
-  final int weekAssessments;
-  final int emergencyCases;
-  final double avgRiskScore;
-
-  // Chart / list data
-  final List<Map<String, dynamic>> symptomFrequency;
-  final List<Map<String, dynamic>> trend;
+  // Reports data
+  final List<Map<String, dynamic>> userRegistrationTrend;
+  final List<Map<String, dynamic>> chatbotDailyUsage;
+  final List<Map<String, dynamic>> emergencyWeekly;
+  final List<Map<String, dynamic>> educationEngagement;
+  // Symptom analytics
+  final Map<String, dynamic>? symptomStats;
+  final List<SymptomFreqItem> symptomFrequency;
   final List<Map<String, dynamic>> riskDistribution;
   final List<Map<String, dynamic>> genderDistribution;
   final List<Map<String, dynamic>> ageDistribution;
   final List<Map<String, dynamic>> emergencyTypes;
+  final List<Map<String, dynamic>> assessmentTrend;
+  final int reportsDays;
 
   const AnalyticsState({
-    this.isLoading = false,
+    this.isLoadingReports = false,
+    this.isLoadingSymptoms = false,
     this.error,
-    this.days = 30,
-    this.totalAssessments = 0,
-    this.todayAssessments = 0,
-    this.weekAssessments = 0,
-    this.emergencyCases = 0,
-    this.avgRiskScore = 0.0,
+    this.userRegistrationTrend = const [],
+    this.chatbotDailyUsage = const [],
+    this.emergencyWeekly = const [],
+    this.educationEngagement = const [],
+    this.symptomStats,
     this.symptomFrequency = const [],
-    this.trend = const [],
     this.riskDistribution = const [],
     this.genderDistribution = const [],
     this.ageDistribution = const [],
     this.emergencyTypes = const [],
+    this.assessmentTrend = const [],
+    this.reportsDays = 30,
   });
 
   AnalyticsState copyWith({
-    bool? isLoading,
+    bool? isLoadingReports,
+    bool? isLoadingSymptoms,
     String? error,
     bool clearError = false,
-    int? days,
-    int? totalAssessments,
-    int? todayAssessments,
-    int? weekAssessments,
-    int? emergencyCases,
-    double? avgRiskScore,
-    List<Map<String, dynamic>>? symptomFrequency,
-    List<Map<String, dynamic>>? trend,
+    List<Map<String, dynamic>>? userRegistrationTrend,
+    List<Map<String, dynamic>>? chatbotDailyUsage,
+    List<Map<String, dynamic>>? emergencyWeekly,
+    List<Map<String, dynamic>>? educationEngagement,
+    Map<String, dynamic>? symptomStats,
+    List<SymptomFreqItem>? symptomFrequency,
     List<Map<String, dynamic>>? riskDistribution,
     List<Map<String, dynamic>>? genderDistribution,
     List<Map<String, dynamic>>? ageDistribution,
     List<Map<String, dynamic>>? emergencyTypes,
+    List<Map<String, dynamic>>? assessmentTrend,
+    int? reportsDays,
   }) =>
       AnalyticsState(
-        isLoading: isLoading ?? this.isLoading,
+        isLoadingReports: isLoadingReports ?? this.isLoadingReports,
+        isLoadingSymptoms: isLoadingSymptoms ?? this.isLoadingSymptoms,
         error: clearError ? null : (error ?? this.error),
-        days: days ?? this.days,
-        totalAssessments: totalAssessments ?? this.totalAssessments,
-        todayAssessments: todayAssessments ?? this.todayAssessments,
-        weekAssessments: weekAssessments ?? this.weekAssessments,
-        emergencyCases: emergencyCases ?? this.emergencyCases,
-        avgRiskScore: avgRiskScore ?? this.avgRiskScore,
+        userRegistrationTrend:
+            userRegistrationTrend ?? this.userRegistrationTrend,
+        chatbotDailyUsage: chatbotDailyUsage ?? this.chatbotDailyUsage,
+        emergencyWeekly: emergencyWeekly ?? this.emergencyWeekly,
+        educationEngagement: educationEngagement ?? this.educationEngagement,
+        symptomStats: symptomStats ?? this.symptomStats,
         symptomFrequency: symptomFrequency ?? this.symptomFrequency,
-        trend: trend ?? this.trend,
         riskDistribution: riskDistribution ?? this.riskDistribution,
         genderDistribution: genderDistribution ?? this.genderDistribution,
         ageDistribution: ageDistribution ?? this.ageDistribution,
         emergencyTypes: emergencyTypes ?? this.emergencyTypes,
+        assessmentTrend: assessmentTrend ?? this.assessmentTrend,
+        reportsDays: reportsDays ?? this.reportsDays,
       );
 }
 
@@ -79,60 +92,72 @@ class AnalyticsState {
 
 class AnalyticsNotifier extends StateNotifier<AnalyticsState> {
   AnalyticsNotifier() : super(const AnalyticsState()) {
-    load();
+    loadReports();
+    loadSymptomAnalytics();
   }
 
-  Future<void> load({int? days}) async {
-    final d = days ?? state.days;
-    state = state.copyWith(isLoading: true, clearError: true, days: d);
+  static List<Map<String, dynamic>> _asList(dynamic data) {
+    if (data == null) return [];
+    return (data as List).cast<Map<String, dynamic>>();
+  }
+
+  Future<void> loadReports({int days = 30}) async {
+    state = state.copyWith(
+        isLoadingReports: true, clearError: true, reportsDays: days);
+    try {
+      final resp = await ApiClient.instance
+          .get('/admin/reports', queryParameters: {'days': days});
+      final data = resp.data as Map<String, dynamic>;
+      state = state.copyWith(
+        isLoadingReports: false,
+        userRegistrationTrend:
+            _asList(data['user_registration_trend']),
+        chatbotDailyUsage: _asList(data['chatbot_daily_usage']),
+        emergencyWeekly: _asList(data['emergency_weekly']),
+        educationEngagement: _asList(data['education_engagement']),
+      );
+    } catch (e) {
+      state = state.copyWith(
+          isLoadingReports: false, error: errorMessage(e));
+    }
+  }
+
+  Future<void> loadSymptomAnalytics() async {
+    state = state.copyWith(isLoadingSymptoms: true);
     try {
       final results = await Future.wait([
         ApiClient.instance.get('/admin/analytics/stats'),
-        ApiClient.instance.get('/admin/analytics/symptom-frequency', queryParameters: {'limit': 20}),
-        ApiClient.instance.get('/admin/analytics/trend', queryParameters: {'days': d}),
+        ApiClient.instance.get('/admin/analytics/symptom-frequency',
+            queryParameters: {'limit': 20}),
         ApiClient.instance.get('/admin/analytics/risk-distribution'),
         ApiClient.instance.get('/admin/analytics/gender-distribution'),
         ApiClient.instance.get('/admin/analytics/age-distribution'),
         ApiClient.instance.get('/admin/analytics/emergency-types'),
+        ApiClient.instance.get('/admin/analytics/trend',
+            queryParameters: {'days': 30}),
       ]);
 
-      final stats = results[0].data as Map<String, dynamic>;
-      _castList(results[1].data);
-      _castList(results[2].data);
-      _castList(results[3].data);
-      _castList(results[4].data);
-      _castList(results[5].data);
-      _castList(results[6].data);
-
       state = state.copyWith(
-        isLoading: false,
-        clearError: true,
-        totalAssessments: stats['total_assessments'] as int? ?? 0,
-        todayAssessments: stats['today_assessments'] as int? ?? 0,
-        weekAssessments: stats['week_assessments'] as int? ?? 0,
-        emergencyCases: stats['emergency_cases'] as int? ?? 0,
-        avgRiskScore: (stats['avg_risk_score'] as num?)?.toDouble() ?? 0.0,
-        symptomFrequency: _castList(results[1].data),
-        trend: _castList(results[2].data),
-        riskDistribution: _castList(results[3].data),
-        genderDistribution: _castList(results[4].data),
-        ageDistribution: _castList(results[5].data),
-        emergencyTypes: _castList(results[6].data),
+        isLoadingSymptoms: false,
+        symptomStats: results[0].data as Map<String, dynamic>?,
+        symptomFrequency: _asList(results[1].data)
+            .map(SymptomFreqItem.fromJson)
+            .toList(),
+        riskDistribution: _asList(results[2].data),
+        genderDistribution: _asList(results[3].data),
+        ageDistribution: _asList(results[4].data),
+        emergencyTypes: _asList(results[5].data),
+        assessmentTrend: _asList(results[6].data),
       );
     } catch (e) {
-      state = state.copyWith(isLoading: false, error: errorMessage(e));
+      state =
+          state.copyWith(isLoadingSymptoms: false, error: errorMessage(e));
     }
   }
 
-  void setDays(int d) => load(days: d);
-
-  static List<Map<String, dynamic>> _castList(dynamic raw) =>
-      (raw as List? ?? []).cast<Map<String, dynamic>>();
+  void changeReportDays(int days) => loadReports(days: days);
 }
-
-// ── Provider ──────────────────────────────────────────────────────────────────
 
 final analyticsProvider =
     StateNotifierProvider<AnalyticsNotifier, AnalyticsState>(
-  (ref) => AnalyticsNotifier(),
-);
+        (ref) => AnalyticsNotifier());

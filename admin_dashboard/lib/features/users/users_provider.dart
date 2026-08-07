@@ -141,6 +141,50 @@ class UsersNotifier extends StateNotifier<UsersState> {
       return false;
     }
   }
+
+  /// Create a new user via POST /admin/users.
+  /// Returns (data, null) on success, (null, errorMessage) on failure.
+  Future<(Map<String, dynamic>?, String?)> createUser({
+    required String fullName,
+    required String email,
+    required String password,
+    String? phone,
+    String role = 'patient',
+  }) async {
+    try {
+      final resp = await ApiClient.instance.post('/admin/users', data: {
+        'full_name': fullName,
+        'email': email,
+        'password': password,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
+        'role': role,
+      });
+      load();
+      return (resp.data as Map<String, dynamic>, null);
+    } catch (e) {
+      final msg = errorMessage(e);
+      state = state.copyWith(error: msg);
+      return (null, msg);
+    }
+  }
+
+  /// Bulk activate / deactivate / delete selected users.
+  Future<Map<String, dynamic>?> bulkAction({
+    required List<String> userIds,
+    required String action, // activate | deactivate | delete
+  }) async {
+    try {
+      final resp = await ApiClient.instance.post(
+        '/admin/users/bulk-action',
+        data: {'user_ids': userIds, 'action': action},
+      );
+      load();
+      return resp.data as Map<String, dynamic>;
+    } catch (e) {
+      state = state.copyWith(error: errorMessage(e));
+      return null;
+    }
+  }
 }
 
 final usersProvider =

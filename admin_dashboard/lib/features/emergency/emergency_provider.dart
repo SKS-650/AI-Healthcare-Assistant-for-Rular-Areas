@@ -72,6 +72,34 @@ class EmergencyNotifier extends StateNotifier<EmergencyState> {
     }
   }
 
+  /// Load risk thresholds from the backend config endpoint.
+  Future<Map<String, dynamic>> loadConfig() async {
+    try {
+      final resp = await ApiClient.instance.get('/admin/emergency/config');
+      return resp.data as Map<String, dynamic>;
+    } catch (_) {
+      return {
+        'critical_threshold': 90,
+        'high_threshold': 75,
+        'medium_threshold': 50,
+        'auto_sos_threshold': 95,
+        'auto_sos_enabled': true,
+        'notify_admin_on_sos': true,
+      };
+    }
+  }
+
+  /// Persist risk threshold changes via PUT /admin/emergency/config.
+  Future<bool> updateConfig(Map<String, dynamic> payload) async {
+    try {
+      await ApiClient.instance.put('/admin/emergency/config', data: payload);
+      return true;
+    } catch (e) {
+      state = state.copyWith(error: errorMessage(e));
+      return false;
+    }
+  }
+
   void setRiskFilter(String? v) {
     state = v == null ? state.copyWith(clearRisk: true, page: 1) : state.copyWith(riskFilter: v, page: 1);
     load();

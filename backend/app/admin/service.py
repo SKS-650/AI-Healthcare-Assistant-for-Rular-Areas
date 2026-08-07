@@ -163,6 +163,7 @@ class AdminUserService:
         is_active: Optional[bool] = None,
         page: int = 1,
         page_size: int = 20,
+        email_verified: Optional[bool] = None,
     ) -> schemas.AdminUserListResponse:
         q = select(UserModel)
         if search:
@@ -172,6 +173,8 @@ class AdminUserService:
             q = q.where(UserModel.role == role)
         if is_active is not None:
             q = q.where(UserModel.is_active == is_active)
+        if email_verified is not None:
+            q = q.where(UserModel.email_verified == email_verified)
 
         total = (await db.execute(select(func.count()).select_from(q.subquery()))).scalar_one()
         offset = (page - 1) * page_size
@@ -308,6 +311,20 @@ class AdminChatbotService:
         if language:
             q = q.where(Conversation.language == language)
 
+        # Apply has_emergency filter at DB level using a subquery for correct pagination
+        if has_emergency is not None:
+            from sqlalchemy import exists as sql_exists
+            emergency_sub = (
+                select(Message.conversation_id)
+                .where(Message.emergency_detected == True)
+                .distinct()
+                .subquery()
+            )
+            if has_emergency:
+                q = q.where(Conversation.id.in_(select(emergency_sub.c.conversation_id)))
+            else:
+                q = q.where(Conversation.id.not_in(select(emergency_sub.c.conversation_id)))
+
         total  = (await db.execute(select(func.count()).select_from(q.subquery()))).scalar_one()
         offset = (page - 1) * page_size
         result = await db.execute(q.order_by(desc(Conversation.updated_at)).offset(offset).limit(page_size))
@@ -320,8 +337,6 @@ class AdminChatbotService:
             if u: user_name = u.full_name
             msg_count = (await db.execute(select(func.count(Message.id)).where(Message.conversation_id == conv.id))).scalar_one()
             emg_count = (await db.execute(select(func.count(Message.id)).where(and_(Message.conversation_id == conv.id, Message.emergency_detected == True)))).scalar_one()
-            if has_emergency is not None and bool(emg_count) != has_emergency:
-                continue
             items.append(schemas.AdminConversationItem(
                 id=conv.id, user_id=conv.user_id, user_name=user_name,
                 title=conv.title, language=conv.language,
@@ -628,12 +643,19 @@ class SymptomAnalyticsService:
             select(func.avg(EmergencyAssessment.risk_score))
         )).scalar_one() or 0.0
 
+        # Count unique users who have made assessments
+        unique_users_result = (await db.execute(
+            select(func.count(func.distinct(EmergencyAssessment.user_id)))
+            .where(EmergencyAssessment.user_id.isnot(None))
+        )).scalar_one()
+
         return {
             "total_assessments": total,
             "today_assessments": today_c,
             "week_assessments": week_c,
             "emergency_cases": emergency_c,
             "avg_risk_score": round(float(avg_risk), 1),
+            "unique_users": unique_users_result,
         }
 
     @staticmethod

@@ -78,6 +78,8 @@ async def on_startup() -> None:
             import app.health_education.models  # noqa: F401
             # Admin tables
             import app.admin.models  # noqa: F401
+            # Feedback tables
+            import app.feedback.models  # noqa: F401
             from app.auth.models import Base
             engine = _get_engine()
             async with engine.begin() as conn:

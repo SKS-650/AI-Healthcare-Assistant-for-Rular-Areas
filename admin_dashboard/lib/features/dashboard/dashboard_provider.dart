@@ -2,56 +2,92 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api.dart';
 import '../../core/models.dart';
 
-// ── State ─────────────────────────────────────────────────────────────────────
 class DashboardState {
   final bool isLoading;
   final String? error;
   final DashboardStats stats;
+  final List<Map<String, dynamic>> recentUsers;
+  final List<Map<String, dynamic>> recentEmergencies;
   final List<Map<String, dynamic>> userGrowth;
   final List<Map<String, dynamic>> emergencyTrend;
   final List<Map<String, dynamic>> chatbotTrend;
-  final List<Map<String, dynamic>> recentUsers;
-  final List<Map<String, dynamic>> recentEmergencies;
+  final Map<String, dynamic>? systemHealth;
 
   DashboardState({
     this.isLoading = false,
     this.error,
     DashboardStats? stats,
+    this.recentUsers = const [],
+    this.recentEmergencies = const [],
     this.userGrowth = const [],
     this.emergencyTrend = const [],
     this.chatbotTrend = const [],
-    this.recentUsers = const [],
-    this.recentEmergencies = const [],
+    this.systemHealth,
   }) : stats = stats ?? DashboardStats.empty;
+
+  DashboardState copyWith({
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+    DashboardStats? stats,
+    List<Map<String, dynamic>>? recentUsers,
+    List<Map<String, dynamic>>? recentEmergencies,
+    List<Map<String, dynamic>>? userGrowth,
+    List<Map<String, dynamic>>? emergencyTrend,
+    List<Map<String, dynamic>>? chatbotTrend,
+    Map<String, dynamic>? systemHealth,
+  }) =>
+      DashboardState(
+        isLoading: isLoading ?? this.isLoading,
+        error: clearError ? null : (error ?? this.error),
+        stats: stats ?? this.stats,
+        recentUsers: recentUsers ?? this.recentUsers,
+        recentEmergencies: recentEmergencies ?? this.recentEmergencies,
+        userGrowth: userGrowth ?? this.userGrowth,
+        emergencyTrend: emergencyTrend ?? this.emergencyTrend,
+        chatbotTrend: chatbotTrend ?? this.chatbotTrend,
+        systemHealth: systemHealth ?? this.systemHealth,
+      );
 }
 
-// ── Notifier ──────────────────────────────────────────────────────────────────
 class DashboardNotifier extends StateNotifier<DashboardState> {
-  DashboardNotifier() : super(DashboardState(isLoading: true)) {
+  DashboardNotifier() : super(DashboardState()) {
     load();
   }
 
-  Future<void> load() async {
-    state = DashboardState(isLoading: true);
-    try {
-      final resp = await ApiClient.instance.get('/admin/dashboard');
-      final d    = resp.data as Map<String, dynamic>;
+  static List<Map<String, dynamic>> _list(dynamic d) =>
+      d == null ? [] : (d as List).cast<Map<String, dynamic>>();
 
-      state = DashboardState(
-        stats: DashboardStats.fromJson(d['stats'] as Map<String, dynamic>),
-        userGrowth: _castList(d['user_growth']),
-        emergencyTrend: _castList(d['emergency_trend']),
-        chatbotTrend: _castList(d['chatbot_trend']),
-        recentUsers: _castList(d['recent_users']),
-        recentEmergencies: _castList(d['recent_emergencies']),
+  Future<void> load() async {
+    state = state.copyWith(isLoading: true, clearError: true);
+    try {
+      final dashResp = await ApiClient.instance.get('/admin/dashboard');
+      final data = dashResp.data as Map<String, dynamic>;
+      final statsData = data['stats'] as Map<String, dynamic>;
+
+      // System health — non-critical, ignore errors
+      Map<String, dynamic>? healthData;
+      try {
+        final healthResp =
+            await ApiClient.instance.get('/admin/system/health');
+        healthData = healthResp.data as Map<String, dynamic>?;
+      } catch (_) {}
+
+      state = state.copyWith(
+        isLoading: false,
+        clearError: true,
+        stats: DashboardStats.fromJson(statsData),
+        recentUsers: _list(data['recent_users']),
+        recentEmergencies: _list(data['recent_emergencies']),
+        userGrowth: _list(data['user_growth']),
+        emergencyTrend: _list(data['emergency_trend']),
+        chatbotTrend: _list(data['chatbot_trend']),
+        systemHealth: healthData,
       );
     } catch (e) {
-      state = DashboardState(error: errorMessage(e));
+      state = state.copyWith(isLoading: false, error: errorMessage(e));
     }
   }
-
-  static List<Map<String, dynamic>> _castList(dynamic raw) =>
-      (raw as List<dynamic>?)?.cast<Map<String, dynamic>>() ?? [];
 }
 
 final dashboardProvider =

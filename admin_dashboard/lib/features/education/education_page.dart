@@ -347,20 +347,25 @@ class _ArticleTitleCell extends StatelessWidget {
   const _ArticleTitleCell({required this.article});
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-        Text(article.emoji ?? '📄',
-            style: const TextStyle(fontSize: 20)),
-        const SizedBox(width: 10),
-        SizedBox(
-          width: 200,
-          child: Text(article.title,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(fontWeight: FontWeight.w500),
-              overflow: TextOverflow.ellipsis),
+  Widget build(BuildContext context) => Row(
+    mainAxisSize: MainAxisSize.min,
+    children: [
+      Text(article.emoji ?? '📄', style: const TextStyle(fontSize: 18)),
+      const SizedBox(width: 8),
+      ConstrainedBox(
+        constraints: const BoxConstraints(maxWidth: 220),
+        child: Text(
+          article.title,
+          style: Theme.of(context)
+              .textTheme
+              .bodyMedium
+              ?.copyWith(fontWeight: FontWeight.w500),
+          overflow: TextOverflow.ellipsis,
+          maxLines: 1,
         ),
-      ]);
+      ),
+    ],
+  );
 }
 
 class _LangChip extends StatelessWidget {

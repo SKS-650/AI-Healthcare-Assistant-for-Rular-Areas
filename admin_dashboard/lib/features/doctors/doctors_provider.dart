@@ -1,7 +1,9 @@
-import 'package:flutter/foundation.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api.dart';
 
-class Doctor {
+// ── Model ─────────────────────────────────────────────────────────────────────
+
+class DoctorItem {
   final String id;
   final String fullName;
   final String email;
@@ -13,7 +15,7 @@ class Doctor {
   final DateTime createdAt;
   final DateTime? lastLogin;
 
-  Doctor({
+  const DoctorItem({
     required this.id,
     required this.fullName,
     required this.email,
@@ -26,77 +28,129 @@ class Doctor {
     this.lastLogin,
   });
 
-  factory Doctor.fromJson(Map<String, dynamic> json) {
-    return Doctor(
-      id: json['id'] ?? '',
-      fullName: json['full_name'] ?? '',
-      email: json['email'] ?? '',
-      phone: json['phone'],
-      isActive: json['is_active'] ?? true,
-      emailVerified: json['email_verified'] ?? false,
-      phoneVerified: json['phone_verified'] ?? false,
-      profileImage: json['profile_image'],
-      createdAt: DateTime.parse(json['created_at']),
-      lastLogin: json['last_login'] != null ? DateTime.parse(json['last_login']) : null,
-    );
-  }
+  factory DoctorItem.fromJson(Map<String, dynamic> j) => DoctorItem(
+        id: j['id'] as String,
+        fullName: j['full_name'] as String,
+        email: j['email'] as String,
+        phone: j['phone'] as String?,
+        isActive: j['is_active'] as bool? ?? true,
+        emailVerified: j['email_verified'] as bool? ?? false,
+        phoneVerified: j['phone_verified'] as bool? ?? false,
+        profileImage: j['profile_image'] as String?,
+        createdAt: DateTime.parse(j['created_at'] as String),
+        lastLogin: j['last_login'] != null
+            ? DateTime.parse(j['last_login'] as String)
+            : null,
+      );
 }
 
-class DoctorsProvider with ChangeNotifier {
-  final ApiClient _api;
+// ── State ─────────────────────────────────────────────────────────────────────
 
-  DoctorsProvider(this._api);
+class DoctorsState {
+  final bool isLoading;
+  final String? error;
+  final List<DoctorItem> doctors;
+  final int total;
+  final int page;
+  final int pageSize;
+  final String search;
+  final bool? activeFilter;
 
-  List<Doctor> _doctors = [];
-  bool _isLoading = false;
-  String? _error;
-  int _currentPage = 1;
-  int _totalPages = 1;
-  int _total = 0;
-  String? _searchQuery;
-  bool? _isActiveFilter;
+  const DoctorsState({
+    this.isLoading = false,
+    this.error,
+    this.doctors = const [],
+    this.total = 0,
+    this.page = 1,
+    this.pageSize = 20,
+    this.search = '',
+    this.activeFilter,
+  });
 
-  List<Doctor> get doctors => _doctors;
-  bool get isLoading => _isLoading;
-  String? get error => _error;
-  int get currentPage => _currentPage;
-  int get totalPages => _totalPages;
-  int get total => _total;
+  int get totalPages => (total / pageSize).ceil().clamp(1, 9999);
 
-  Future<void> loadDoctors({
-    int page = 1,
+  DoctorsState copyWith({
+    bool? isLoading,
+    String? error,
+    bool clearError = false,
+    List<DoctorItem>? doctors,
+    int? total,
+    int? page,
     String? search,
-    bool? isActive,
-  }) async {
-    _isLoading = true;
-    _error = null;
-    _searchQuery = search;
-    _isActiveFilter = isActive;
-    notifyListeners();
+    bool? activeFilter,
+    bool clearActive = false,
+  }) =>
+      DoctorsState(
+        isLoading: isLoading ?? this.isLoading,
+        error: clearError ? null : (error ?? this.error),
+        doctors: doctors ?? this.doctors,
+        total: total ?? this.total,
+        page: page ?? this.page,
+        pageSize: pageSize,
+        search: search ?? this.search,
+        activeFilter: clearActive ? null : (activeFilter ?? this.activeFilter),
+      );
+}
 
+// ── Notifier ──────────────────────────────────────────────────────────────────
+
+class DoctorsNotifier extends StateNotifier<DoctorsState> {
+  DoctorsNotifier() : super(const DoctorsState()) {
+    load();
+  }
+
+  Future<void> load({int? page}) async {
+    state = state.copyWith(
+        isLoading: true, clearError: true, page: page ?? state.page);
     try {
-      final params = {
-        'page': page.toString(),
-        'page_size': '20',
-        if (search != null && search.isNotEmpty) 'search': search,
-        if (isActive != null) 'is_active': isActive.toString(),
+      final params = <String, dynamic>{
+        'page': state.page,
+        'page_size': state.pageSize,
       };
+      if (state.search.isNotEmpty) params['search'] = state.search;
+      if (state.activeFilter != null) params['is_active'] = state.activeFilter;
 
-      final response = await _api.get('/admin/doctors', queryParams: params);
-      
-      _doctors = (response['doctors'] as List)
-          .map((json) => Doctor.fromJson(json))
-          .toList();
-      _currentPage = response['page'] ?? 1;
-      _totalPages = response['total_pages'] ?? 1;
-      _total = response['total'] ?? 0;
-      _error = null;
+      final resp = await ApiClient.instance
+          .get('/admin/doctors', queryParameters: params);
+      final data = resp.data as Map<String, dynamic>;
+
+      state = state.copyWith(
+        isLoading: false,
+        clearError: true,
+        doctors: (data['doctors'] as List)
+            .cast<Map<String, dynamic>>()
+            .map(DoctorItem.fromJson)
+            .toList(),
+        total: data['total'] as int? ?? 0,
+      );
     } catch (e) {
-      _error = e.toString();
-      _doctors = [];
-    } finally {
-      _isLoading = false;
-      notifyListeners();
+      state = state.copyWith(isLoading: false, error: errorMessage(e));
+    }
+  }
+
+  void setSearch(String v) {
+    state = state.copyWith(search: v, page: 1);
+    load();
+  }
+
+  void setActiveFilter(bool? v) {
+    state = v == null
+        ? state.copyWith(clearActive: true, page: 1)
+        : state.copyWith(activeFilter: v, page: 1);
+    load();
+  }
+
+  void goToPage(int p) => load(page: p);
+
+  Future<void> updateStatus(String doctorId, bool isActive) async {
+    try {
+      await ApiClient.instance.patch(
+        '/admin/doctors/$doctorId/status',
+        data: {'is_active': isActive},
+      );
+      load();
+    } catch (e) {
+      state = state.copyWith(error: errorMessage(e));
     }
   }
 
@@ -107,37 +161,21 @@ class DoctorsProvider with ChangeNotifier {
     String? phone,
   }) async {
     try {
-      await _api.post('/admin/doctors', data: {
+      await ApiClient.instance.post('/admin/doctors', data: {
         'full_name': fullName,
         'email': email,
         'password': password,
-        if (phone != null) 'phone': phone,
+        if (phone != null && phone.isNotEmpty) 'phone': phone,
       });
-      await loadDoctors(page: _currentPage, search: _searchQuery, isActive: _isActiveFilter);
+      load();
       return true;
     } catch (e) {
-      _error = e.toString();
-      notifyListeners();
+      state = state.copyWith(error: errorMessage(e));
       return false;
     }
-  }
-
-  Future<bool> updateDoctorStatus(String doctorId, bool isActive) async {
-    try {
-      await _api.patch('/admin/doctors/$doctorId/status', data: {
-        'is_active': isActive,
-      });
-      await loadDoctors(page: _currentPage, search: _searchQuery, isActive: _isActiveFilter);
-      return true;
-    } catch (e) {
-      _error = e.toString();
-      notifyListeners();
-      return false;
-    }
-  }
-
-  void clearError() {
-    _error = null;
-    notifyListeners();
   }
 }
+
+final doctorsProvider =
+    StateNotifierProvider<DoctorsNotifier, DoctorsState>(
+        (ref) => DoctorsNotifier());

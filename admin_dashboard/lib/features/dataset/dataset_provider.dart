@@ -1,9 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../core/api.dart';
 
-// ── Dataset item model ────────────────────────────────────────────────────────
+// ── Models ────────────────────────────────────────────────────────────────────
 
-class DatasetItem {
+class DatasetVersionItem {
   final String id;
   final String name;
   final String datasetType;
@@ -13,10 +13,9 @@ class DatasetItem {
   final String? description;
   final bool isActive;
   final String? uploadedBy;
-  final String? uploaderName;
   final DateTime createdAt;
 
-  const DatasetItem({
+  const DatasetVersionItem({
     required this.id,
     required this.name,
     required this.datasetType,
@@ -26,44 +25,21 @@ class DatasetItem {
     this.description,
     required this.isActive,
     this.uploadedBy,
-    this.uploaderName,
     required this.createdAt,
   });
 
-  factory DatasetItem.fromJson(Map<String, dynamic> j) => DatasetItem(
+  factory DatasetVersionItem.fromJson(Map<String, dynamic> j) =>
+      DatasetVersionItem(
         id: j['id'] as String,
         name: j['name'] as String,
         datasetType: j['dataset_type'] as String,
-        version: j['version'] as String,
+        version: j['version'] as String? ?? '1.0.0',
         fileSizeKb: j['file_size_kb'] as int?,
         recordCount: j['record_count'] as int?,
         description: j['description'] as String?,
         isActive: j['is_active'] as bool? ?? false,
         uploadedBy: j['uploaded_by'] as String?,
-        uploaderName: j['uploader_name'] as String?,
         createdAt: DateTime.parse(j['created_at'] as String),
-      );
-}
-
-// ── Dataset stats model ───────────────────────────────────────────────────────
-
-class DatasetStats {
-  final int total;
-  final int active;
-  final int inactive;
-  final Map<String, int> typeCounts;
-  const DatasetStats({
-    this.total = 0,
-    this.active = 0,
-    this.inactive = 0,
-    this.typeCounts = const {},
-  });
-  factory DatasetStats.fromJson(Map<String, dynamic> j) => DatasetStats(
-        total: j['total_datasets'] as int? ?? 0,
-        active: j['active_datasets'] as int? ?? 0,
-        inactive: j['inactive_datasets'] as int? ?? 0,
-        typeCounts: (j['type_counts'] as Map<String, dynamic>? ?? {})
-            .map((k, v) => MapEntry(k, v as int)),
       );
 }
 
@@ -72,22 +48,22 @@ class DatasetStats {
 class DatasetState {
   final bool isLoading;
   final String? error;
-  final List<DatasetItem> items;
+  final List<DatasetVersionItem> datasets;
+  final Map<String, dynamic>? stats;
   final int total;
   final int page;
   final int pageSize;
   final String? typeFilter;
-  final DatasetStats stats;
 
   const DatasetState({
     this.isLoading = false,
     this.error,
-    this.items = const [],
+    this.datasets = const [],
+    this.stats,
     this.total = 0,
     this.page = 1,
     this.pageSize = 20,
     this.typeFilter,
-    this.stats = const DatasetStats(),
   });
 
   int get totalPages => (total / pageSize).ceil().clamp(1, 9999);
@@ -96,22 +72,22 @@ class DatasetState {
     bool? isLoading,
     String? error,
     bool clearError = false,
-    List<DatasetItem>? items,
+    List<DatasetVersionItem>? datasets,
+    Map<String, dynamic>? stats,
     int? total,
     int? page,
     String? typeFilter,
     bool clearType = false,
-    DatasetStats? stats,
   }) =>
       DatasetState(
         isLoading: isLoading ?? this.isLoading,
         error: clearError ? null : (error ?? this.error),
-        items: items ?? this.items,
+        datasets: datasets ?? this.datasets,
+        stats: stats ?? this.stats,
         total: total ?? this.total,
         page: page ?? this.page,
         pageSize: pageSize,
         typeFilter: clearType ? null : (typeFilter ?? this.typeFilter),
-        stats: stats ?? this.stats,
       );
 }
 
@@ -119,12 +95,16 @@ class DatasetState {
 
 class DatasetNotifier extends StateNotifier<DatasetState> {
   DatasetNotifier() : super(const DatasetState()) {
-    load();
+    loadDatasets();
+    loadStats();
   }
 
-  Future<void> load({int? page}) async {
+  Future<void> loadDatasets({int? page, String? typeFilter}) async {
     state = state.copyWith(
         isLoading: true, clearError: true, page: page ?? state.page);
+    if (typeFilter != null) {
+      state = state.copyWith(typeFilter: typeFilter);
+    }
     try {
       final params = <String, dynamic>{
         'page': state.page,
@@ -132,42 +112,38 @@ class DatasetNotifier extends StateNotifier<DatasetState> {
       };
       if (state.typeFilter != null) params['dataset_type'] = state.typeFilter;
 
-      final results = await Future.wait([
-        ApiClient.instance.get('/admin/datasets', queryParameters: params),
-        ApiClient.instance.get('/admin/datasets/stats'),
-      ]);
-
-      final data  = results[0].data as Map<String, dynamic>;
-      final sData = results[1].data as Map<String, dynamic>;
+      final resp = await ApiClient.instance
+          .get('/admin/datasets', queryParameters: params);
+      final data = resp.data as Map<String, dynamic>;
 
       state = state.copyWith(
         isLoading: false,
         clearError: true,
-        items: (data['datasets'] as List)
+        datasets: (data['datasets'] as List? ?? [])
             .cast<Map<String, dynamic>>()
-            .map(DatasetItem.fromJson)
+            .map(DatasetVersionItem.fromJson)
             .toList(),
         total: data['total'] as int? ?? 0,
-        stats: DatasetStats.fromJson(sData),
       );
     } catch (e) {
       state = state.copyWith(isLoading: false, error: errorMessage(e));
     }
   }
 
-  void setTypeFilter(String? v) {
-    state = v == null
-        ? state.copyWith(clearType: true, page: 1)
-        : state.copyWith(typeFilter: v, page: 1);
-    load();
+  Future<void> loadStats() async {
+    try {
+      final resp = await ApiClient.instance.get('/admin/datasets/stats');
+      state =
+          state.copyWith(stats: resp.data as Map<String, dynamic>);
+    } catch (e) {
+      state = state.copyWith(error: errorMessage(e));
+    }
   }
 
-  void goToPage(int p) => load(page: p);
-
-  Future<String?> createDataset({
+  Future<bool> createDataset({
     required String name,
     required String datasetType,
-    required String version,
+    String version = '1.0.0',
     String? description,
   }) async {
     try {
@@ -175,41 +151,52 @@ class DatasetNotifier extends StateNotifier<DatasetState> {
         'name': name,
         'dataset_type': datasetType,
         'version': version,
-        'description': description,
+        if (description != null && description.isNotEmpty)
+          'description': description,
       });
-      load();
-      return null; // success
+      loadDatasets(page: 1);
+      loadStats();
+      return true;
     } catch (e) {
-      return errorMessage(e);
+      state = state.copyWith(error: errorMessage(e));
+      return false;
     }
   }
 
-  Future<String?> activateDataset(String id) async {
+  Future<bool> activateDataset(String datasetId) async {
     try {
-      await ApiClient.instance.patch('/admin/datasets/$id/activate');
-      load();
-      return null;
+      await ApiClient.instance
+          .patch('/admin/datasets/$datasetId/activate', data: {});
+      loadDatasets(page: state.page);
+      return true;
     } catch (e) {
-      return errorMessage(e);
+      state = state.copyWith(error: errorMessage(e));
+      return false;
     }
   }
 
-  Future<String?> deleteDataset(String id) async {
+  Future<bool> deleteDataset(String datasetId) async {
     try {
-      await ApiClient.instance.delete('/admin/datasets/$id');
-      load();
-      return null;
+      await ApiClient.instance.delete('/admin/datasets/$datasetId');
+      loadDatasets(page: state.page);
+      loadStats();
+      return true;
     } catch (e) {
-      return errorMessage(e);
+      state = state.copyWith(error: errorMessage(e));
+      return false;
     }
   }
+
+  void setTypeFilter(String? v) {
+    state = v == null
+        ? state.copyWith(clearType: true, page: 1)
+        : state.copyWith(typeFilter: v, page: 1);
+    loadDatasets();
+  }
+
+  void goToPage(int p) => loadDatasets(page: p);
 }
-
-// ── Provider ──────────────────────────────────────────────────────────────────
 
 final datasetProvider =
     StateNotifierProvider<DatasetNotifier, DatasetState>(
-  (ref) => DatasetNotifier(),
-);
-
-const kDatasetTypes = ['symptom', 'chatbot', 'disease', 'faq'];
+        (ref) => DatasetNotifier());
