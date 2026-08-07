@@ -15,7 +15,12 @@ import '../widgets/suggestions/quick_questions.dart';
 import 'voice_chat_page.dart';
 
 class ChatPage extends ConsumerStatefulWidget {
-  const ChatPage({super.key});
+  /// When provided, this message is sent automatically as the first user
+  /// message once the conversation is loaded — used by the symptom checker
+  /// result page to pre-fill the diagnosis context.
+  final String? initialMessage;
+
+  const ChatPage({super.key, this.initialMessage});
 
   @override
   ConsumerState<ChatPage> createState() => _ChatPageState();
@@ -23,6 +28,31 @@ class ChatPage extends ConsumerStatefulWidget {
 
 class _ChatPageState extends ConsumerState<ChatPage> {
   final ScrollController _scroll = ScrollController();
+  bool _initialMessageSent = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // Send the pre-filled message (from symptom checker) once the
+    // conversation is ready — we listen on the first frame after build.
+    if (widget.initialMessage != null && widget.initialMessage!.isNotEmpty) {
+      WidgetsBinding.instance.addPostFrameCallback((_) => _sendInitialMessage());
+    }
+  }
+
+  void _sendInitialMessage() {
+    if (_initialMessageSent) return;
+    final state = ref.read(chatbotControllerProvider);
+    final ctrl = ref.read(chatbotControllerProvider.notifier);
+    // Wait until the conversation is loaded before sending
+    if (state.status == ChatbotStatus.initial ||
+        state.status == ChatbotStatus.loading) {
+      // Retry once conversation is ready via the listener in build()
+      return;
+    }
+    _initialMessageSent = true;
+    ctrl.sendMessage(widget.initialMessage!);
+  }
 
   @override
   void dispose() {
@@ -50,6 +80,19 @@ class _ChatPageState extends ConsumerState<ChatPage> {
     ref.listen(chatbotControllerProvider, (prev, next) {
       if (next.messages.length != (prev?.messages.length ?? 0)) {
         _scrollToBottom();
+      }
+      // Fire initial message once conversation transitions from loading → ready
+      if (!_initialMessageSent &&
+          widget.initialMessage != null &&
+          widget.initialMessage!.isNotEmpty &&
+          (prev?.status == ChatbotStatus.initial ||
+              prev?.status == ChatbotStatus.loading) &&
+          next.status != ChatbotStatus.initial &&
+          next.status != ChatbotStatus.loading) {
+        _initialMessageSent = true;
+        ref
+            .read(chatbotControllerProvider.notifier)
+            .sendMessage(widget.initialMessage!);
       }
     });
 

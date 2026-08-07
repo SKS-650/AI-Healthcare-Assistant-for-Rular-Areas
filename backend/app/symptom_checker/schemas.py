@@ -72,6 +72,7 @@ class RiskAssessment(BaseModel):
     is_emergency: bool = Field(..., description="Whether this is an emergency")
     critical_symptoms: List[str] = Field(..., description="Critical symptoms found")
     risk_factors: List[str] = Field(..., description="Contributing risk factors")
+    score_breakdown: Optional[Dict] = Field(None, description="Per-factor score breakdown")
 
 
 class Recommendation(BaseModel):

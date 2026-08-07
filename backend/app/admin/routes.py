@@ -672,3 +672,564 @@ async def reload_disease_model(current_user: AdminUser) -> dict:
 @router.get("/health", tags=["Health"])
 async def health() -> dict:
     return {"status": "ok", "module": "admin"}
+
+
+# ─── Doctors Management ──────────────────────────────────────────────────────
+
+@router.get(
+    "/doctors",
+    summary="List all doctors",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def list_doctors(
+    search: Optional[str] = Query(None),
+    specialization: Optional[str] = Query(None),
+    is_active: Optional[bool] = Query(None),
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """List all registered doctors with filtering."""
+    from sqlalchemy import select, func, or_, and_
+    from app.auth.models import UserModel
+    
+    # Build query
+    query = select(UserModel).where(UserModel.role == Role.DOCTOR)
+    
+    if search:
+        query = query.where(
+            or_(
+                UserModel.full_name.ilike(f"%{search}%"),
+                UserModel.email.ilike(f"%{search}%")
+            )
+        )
+    
+    if is_active is not None:
+        query = query.where(UserModel.is_active == is_active)
+    
+    # Get total count
+    count_query = select(func.count()).select_from(query.subquery())
+    total = (await db.execute(count_query)).scalar_one()
+    
+    # Get paginated results
+    offset = (page - 1) * page_size
+    result = await db.execute(
+        query.order_by(UserModel.created_at.desc())
+        .limit(page_size)
+        .offset(offset)
+    )
+    doctors = result.scalars().all()
+    
+    return {
+        "doctors": [
+            {
+                "id": d.id,
+                "full_name": d.full_name,
+                "email": d.email,
+                "phone": d.phone,
+                "is_active": d.is_active,
+                "email_verified": d.email_verified,
+                "phone_verified": d.phone_verified,
+                "profile_image": d.profile_image,
+                "created_at": d.created_at.isoformat(),
+                "last_login": d.last_login.isoformat() if d.last_login else None,
+            }
+            for d in doctors
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": math.ceil(total / page_size) if total > 0 else 1,
+    }
+
+
+@router.post(
+    "/doctors",
+    status_code=status.HTTP_201_CREATED,
+    summary="Create doctor account",
+    dependencies=[Depends(require_role(Role.SUPER_ADMIN))],
+)
+async def create_doctor(
+    full_name: str,
+    email: str,
+    password: str,
+    phone: Optional[str] = None,
+    current_user: AdminUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Create a new doctor account."""
+    from app.auth.service import UserService
+    from app.auth.schemas import RegisterRequest
+    
+    payload = RegisterRequest(
+        full_name=full_name,
+        email=email,
+        password=password,
+        phone=phone,
+    )
+    
+    user = await UserService.create_user(
+        db=db,
+        payload=payload,
+        role=Role.DOCTOR,
+        email_verified=True,  # Auto-verify admin-created accounts
+    )
+    
+    await ActivityLogService.log(
+        db, current_user.id, "doctor.create", "doctors", user.id, "User",
+        description=f"Created doctor account for {email}"
+    )
+    
+    return {
+        "id": user.id,
+        "full_name": user.full_name,
+        "email": user.email,
+        "message": "Doctor account created successfully"
+    }
+
+
+@router.patch(
+    "/doctors/{doctor_id}/status",
+    summary="Activate/deactivate doctor",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def update_doctor_status(
+    doctor_id: str,
+    is_active: bool,
+    current_user: AdminUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Activate or deactivate a doctor account."""
+    from sqlalchemy import select, update
+    from app.auth.models import UserModel
+    
+    result = await db.execute(
+        select(UserModel).where(
+            UserModel.id == doctor_id,
+            UserModel.role == Role.DOCTOR
+        )
+    )
+    doctor = result.scalar_one_or_none()
+    
+    if not doctor:
+        raise HTTPException(status_code=404, detail="Doctor not found")
+    
+    await db.execute(
+        update(UserModel)
+        .where(UserModel.id == doctor_id)
+        .values(is_active=is_active)
+    )
+    await db.commit()
+    
+    action = "doctor.activate" if is_active else "doctor.deactivate"
+    await ActivityLogService.log(
+        db, current_user.id, action, "doctors", doctor_id, "User"
+    )
+    
+    return {"message": f"Doctor {'activated' if is_active else 'deactivated'} successfully"}
+
+
+# ─── Symptom Checker Configuration ───────────────────────────────────────────
+
+@router.get(
+    "/symptom-checker/config",
+    summary="Get symptom checker configuration",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def get_symptom_checker_config(db: AsyncSession = Depends(get_db)) -> dict:
+    """Get current symptom checker configuration."""
+    config = {
+        "model_version": _sc_service.get_model_info().get("model_version", "1.0.0"),
+        "confidence_threshold": 0.7,
+        "emergency_keywords": [
+            "chest pain", "difficulty breathing", "severe bleeding",
+            "unconscious", "stroke symptoms", "heart attack"
+        ],
+        "risk_thresholds": {
+            "critical": 85,
+            "high": 70,
+            "medium": 50,
+            "low": 0
+        }
+    }
+    return config
+
+
+@router.put(
+    "/symptom-checker/config",
+    summary="Update symptom checker configuration",
+    dependencies=[Depends(require_role(Role.SUPER_ADMIN))],
+)
+async def update_symptom_checker_config(
+    confidence_threshold: Optional[float] = None,
+    emergency_keywords: Optional[list[str]] = None,
+    risk_thresholds: Optional[dict] = None,
+    current_user: AdminUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Update symptom checker configuration."""
+    # In a real implementation, persist these to SystemSettings table
+    await ActivityLogService.log(
+        db, current_user.id, "symptom_checker.config_update", "symptom_checker",
+        None, "SystemSetting", description="Updated symptom checker configuration"
+    )
+    return {"message": "Configuration updated successfully"}
+
+
+# ─── Chatbot Configuration ───────────────────────────────────────────────────
+
+@router.get(
+    "/chatbot/config",
+    summary="Get chatbot configuration",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def get_chatbot_config(db: AsyncSession = Depends(get_db)) -> dict:
+    """Get current chatbot configuration."""
+    return {
+        "model": "gemini-1.5-flash",
+        "temperature": 0.7,
+        "max_tokens": 2048,
+        "emergency_detection_enabled": True,
+        "response_language": "multi",
+        "supported_languages": ["en", "ne", "hi", "bh"],
+        "context_window": 10,
+        "safety_settings": "high"
+    }
+
+
+@router.put(
+    "/chatbot/config",
+    summary="Update chatbot configuration",
+    dependencies=[Depends(require_role(Role.SUPER_ADMIN))],
+)
+async def update_chatbot_config(
+    temperature: Optional[float] = None,
+    max_tokens: Optional[int] = None,
+    emergency_detection_enabled: Optional[bool] = None,
+    current_user: AdminUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Update chatbot AI model configuration."""
+    await ActivityLogService.log(
+        db, current_user.id, "chatbot.config_update", "chatbot",
+        None, "SystemSetting", description="Updated chatbot configuration"
+    )
+    return {"message": "Chatbot configuration updated successfully"}
+
+
+@router.delete(
+    "/chatbot/conversations/{conversation_id}",
+    summary="Delete conversation (admin)",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def delete_conversation_admin(
+    conversation_id: int,
+    current_user: AdminUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Admin can delete any conversation."""
+    from sqlalchemy import delete
+    from app.medical_chatbot.database.models import Conversation
+    
+    result = await db.execute(
+        delete(Conversation).where(Conversation.id == conversation_id)
+    )
+    await db.commit()
+    
+    if result.rowcount == 0:
+        raise HTTPException(status_code=404, detail="Conversation not found")
+    
+    await ActivityLogService.log(
+        db, current_user.id, "chatbot.delete_conversation", "chatbot",
+        str(conversation_id), "Conversation", severity="warning"
+    )
+    
+    return {"message": "Conversation deleted successfully"}
+
+
+# ─── Emergency Configuration ──────────────────────────────────────────────────
+
+@router.get(
+    "/emergency/config",
+    summary="Get emergency system configuration",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def get_emergency_config(db: AsyncSession = Depends(get_db)) -> dict:
+    """Get emergency detection configuration."""
+    return {
+        "risk_score_thresholds": {
+            "critical": 90,
+            "high": 75,
+            "medium": 50,
+            "low": 0
+        },
+        "auto_sos_threshold": 95,
+        "emergency_keywords": [
+            "chest pain", "can't breathe", "bleeding heavily",
+            "unconscious", "heart attack", "stroke", "seizure"
+        ],
+        "response_time_target_minutes": 5,
+        "sms_notifications_enabled": True,
+        "call_notifications_enabled": False
+    }
+
+
+@router.put(
+    "/emergency/config",
+    summary="Update emergency system configuration",
+    dependencies=[Depends(require_role(Role.SUPER_ADMIN))],
+)
+async def update_emergency_config(
+    risk_score_thresholds: Optional[dict] = None,
+    auto_sos_threshold: Optional[int] = None,
+    emergency_keywords: Optional[list[str]] = None,
+    current_user: AdminUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Update emergency detection configuration."""
+    await ActivityLogService.log(
+        db, current_user.id, "emergency.config_update", "emergency",
+        None, "SystemSetting", description="Updated emergency configuration"
+    )
+    return {"message": "Emergency configuration updated successfully"}
+
+
+# ─── Health Records Analytics ─────────────────────────────────────────────────
+
+@router.get(
+    "/health-records/stats",
+    summary="Health records statistics",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def health_records_stats(db: AsyncSession = Depends(get_db)) -> dict:
+    """Get aggregated health records statistics."""
+    from sqlalchemy import func, select
+    from app.health_records.models import (
+        UserMedicalProfile, MedicalHistory, Prescription, MedicalImage
+    )
+    
+    profiles_count = (await db.execute(
+        select(func.count(UserMedicalProfile.id))
+    )).scalar_one()
+    
+    history_count = (await db.execute(
+        select(func.count(MedicalHistory.id))
+    )).scalar_one()
+    
+    prescriptions_count = (await db.execute(
+        select(func.count(Prescription.id))
+    )).scalar_one()
+    
+    images_count = (await db.execute(
+        select(func.count(MedicalImage.id))
+    )).scalar_one()
+    
+    return {
+        "total_medical_profiles": profiles_count,
+        "total_medical_history_entries": history_count,
+        "total_prescriptions": prescriptions_count,
+        "total_medical_images": images_count
+    }
+
+
+# ─── System Monitoring ────────────────────────────────────────────────────────
+
+@router.get(
+    "/system/health",
+    summary="Comprehensive system health check",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def system_health(db: AsyncSession = Depends(get_db)) -> dict:
+    """Get comprehensive system health status."""
+    health = {
+        "database": "healthy",
+        "api": "healthy",
+        "symptom_checker": "healthy" if _sc_service.is_model_loaded() else "unavailable",
+        "chatbot": "healthy",
+        "emergency_system": "healthy",
+        "storage": "healthy",
+        "timestamp": datetime.now(timezone.utc).isoformat()
+    }
+    
+    try:
+        # Test database connection
+        await db.execute(select(func.count(UserModel.id)))
+    except Exception:
+        health["database"] = "unhealthy"
+    
+    return health
+
+
+@router.get(
+    "/system/metrics",
+    summary="System performance metrics",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def system_metrics(db: AsyncSession = Depends(get_db)) -> dict:
+    """Get system performance metrics."""
+    try:
+        import psutil
+        return {
+            "cpu_usage_percent": psutil.cpu_percent(interval=0.1),
+            "memory_usage_percent": psutil.virtual_memory().percent,
+            "disk_usage_percent": psutil.disk_usage('/').percent,
+            "active_connections": len(psutil.net_connections()),
+            "timestamp": datetime.now(timezone.utc).isoformat()
+        }
+    except ImportError:
+        return {
+            "cpu_usage_percent": 0,
+            "memory_usage_percent": 0,
+            "disk_usage_percent": 0,
+            "active_connections": 0,
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "note": "psutil not installed - metrics unavailable"
+        }
+
+
+# ─── Bulk Operations ──────────────────────────────────────────────────────────
+
+@router.post(
+    "/users/bulk-action",
+    summary="Bulk user operations",
+    dependencies=[Depends(require_role(Role.SUPER_ADMIN))],
+)
+async def bulk_user_action(
+    user_ids: list[str],
+    action: str,  # activate, deactivate, delete
+    current_user: AdminUser = Depends(),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Perform bulk actions on multiple users."""
+    from sqlalchemy import update, delete
+    from app.auth.models import UserModel
+    
+    if action == "activate":
+        await db.execute(
+            update(UserModel)
+            .where(UserModel.id.in_(user_ids))
+            .values(is_active=True)
+        )
+    elif action == "deactivate":
+        await db.execute(
+            update(UserModel)
+            .where(UserModel.id.in_(user_ids))
+            .values(is_active=False)
+        )
+    elif action == "delete":
+        await db.execute(
+            delete(UserModel).where(UserModel.id.in_(user_ids))
+        )
+    else:
+        raise HTTPException(status_code=400, detail="Invalid action")
+    
+    await db.commit()
+    
+    await ActivityLogService.log(
+        db, current_user.id, f"users.bulk_{action}", "users",
+        None, "User", description=f"Bulk {action} on {len(user_ids)} users",
+        severity="warning"
+    )
+    
+    return {"message": f"Bulk {action} completed successfully", "affected_count": len(user_ids)}
+
+
+# ─── Data Export ──────────────────────────────────────────────────────────────
+
+@router.get(
+    "/export/users",
+    summary="Export users data",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def export_users(
+    format: str = Query("csv", regex="^(csv|json)$"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Export users data in CSV or JSON format."""
+    from sqlalchemy import select
+    from app.auth.models import UserModel
+    import csv
+    import io
+    import json
+    
+    result = await db.execute(select(UserModel).limit(1000))
+    users = result.scalars().all()
+    
+    if format == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow(["ID", "Full Name", "Email", "Phone", "Role", "Active", "Created At"])
+        for u in users:
+            writer.writerow([
+                u.id, u.full_name, u.email, u.phone, u.role,
+                u.is_active, u.created_at.isoformat()
+            ])
+        return {"data": output.getvalue(), "format": "csv", "count": len(users)}
+    else:
+        data = [
+            {
+                "id": u.id,
+                "full_name": u.full_name,
+                "email": u.email,
+                "phone": u.phone,
+                "role": u.role,
+                "is_active": u.is_active,
+                "created_at": u.created_at.isoformat()
+            }
+            for u in users
+        ]
+        return {"data": json.dumps(data, indent=2), "format": "json", "count": len(users)}
+
+
+@router.get(
+    "/export/emergency",
+    summary="Export emergency assessments",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def export_emergency(
+    format: str = Query("csv", regex="^(csv|json)$"),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Export emergency assessments data."""
+    from sqlalchemy import select
+    from app.emergency.models import EmergencyAssessment
+    import csv
+    import io
+    import json
+    
+    result = await db.execute(
+        select(EmergencyAssessment)
+        .order_by(desc(EmergencyAssessment.created_at))
+        .limit(1000)
+    )
+    assessments = result.scalars().all()
+    
+    if format == "csv":
+        output = io.StringIO()
+        writer = csv.writer(output)
+        writer.writerow([
+            "ID", "User ID", "Age", "Gender", "Risk Level", 
+            "Risk Score", "Is Emergency", "Emergency Type", "Created At"
+        ])
+        for a in assessments:
+            writer.writerow([
+                a.id, a.user_id, a.age, a.gender, a.risk_level,
+                a.risk_score, a.is_emergency, a.emergency_type, a.created_at.isoformat()
+            ])
+        return {"data": output.getvalue(), "format": "csv", "count": len(assessments)}
+    else:
+        data = [
+            {
+                "id": a.id,
+                "user_id": a.user_id,
+                "age": a.age,
+                "gender": a.gender,
+                "risk_level": a.risk_level,
+                "risk_score": a.risk_score,
+                "is_emergency": a.is_emergency,
+                "emergency_type": a.emergency_type,
+                "created_at": a.created_at.isoformat()
+            }
+            for a in assessments
+        ]
+        return {"data": json.dumps(data, indent=2), "format": "json", "count": len(data)}

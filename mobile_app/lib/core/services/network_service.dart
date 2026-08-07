@@ -12,7 +12,6 @@
 library;
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -76,15 +75,16 @@ class NetworkService {
   // ── Public API ────────────────────────────────────────────────────────────
 
   /// Returns `true` when the device has any network adapter connected
-  /// AND a real DNS lookup succeeds (filters WiFi-without-internet).
+  /// AND the backend /health endpoint responds with HTTP 200.
+  ///
+  /// Pinging the backend instead of google.com works correctly on LAN-only
+  /// setups (physical device + WiFi hotspot, no internet required).
   Future<bool> isConnected() async {
     try {
       final results = await _connectivity.checkConnectivity();
       if (results.every((r) => r == ConnectivityResult.none)) return false;
 
-      final lookup = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 5));
-      return lookup.isNotEmpty && lookup.first.rawAddress.isNotEmpty;
+      return await isServerAvailable();
     } catch (_) {
       return false;
     }

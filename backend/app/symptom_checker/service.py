@@ -82,7 +82,9 @@ class SymptomCheckerService:
             }
         
         try:
-            # Make prediction
+            # Make prediction — pass ALL patient fields so every parameter
+            # influences both the symptom augmentation (Layer 1) and the
+            # risk assessment (Layer 2).
             result = self.predictor.predict(
                 symptoms=request.symptoms,
                 age=request.age,
@@ -90,11 +92,11 @@ class SymptomCheckerService:
                 weight=request.weight,
                 height=request.height,
                 duration=request.duration,
-                severity=request.severity,
-                existing_diseases=request.existing_diseases,
-                medications=request.medications,
-                allergies=request.allergies,
-                pregnancy_status=request.pregnancy_status
+                severity=request.severity if request.severity else 1,
+                existing_diseases=request.existing_diseases or [],
+                medications=request.medications or [],
+                allergies=request.allergies or [],
+                pregnancy_status=request.pregnancy_status or False,
             )
             
             return result

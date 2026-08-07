@@ -3,13 +3,19 @@
 /// Wraps [connectivity_plus] to provide a reactive stream of [ConnectivityStatus]
 /// and a simple boolean helper. All consumers should use the Riverpod provider
 /// [networkInfoProvider] defined at the bottom of this file.
+///
+/// Connectivity is determined by pinging the backend /health endpoint rather
+/// than doing a DNS lookup for google.com — this correctly handles LAN-only
+/// setups (physical device + WiFi hotspot) where google.com may be blocked.
 library;
 
 import 'dart:async';
-import 'dart:io';
 
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:http/http.dart' as http;
+
+import '../../config/api_config.dart';
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Enums
@@ -58,17 +64,21 @@ class NetworkInfo {
     _sub = null;
   }
 
-  /// Perform an actual DNS lookup to confirm internet access — not just
-  /// adapter connectivity (WiFi without internet, etc.).
+  /// Confirms connectivity by pinging the backend /health endpoint.
+  ///
+  /// Using a backend ping instead of a google.com DNS lookup ensures this
+  /// works correctly on LAN-only setups where external DNS may be blocked.
   Future<bool> get isConnected async {
     try {
       final results = await _connectivity.checkConnectivity();
       if (results.every((r) => r == ConnectivityResult.none)) return false;
 
-      // Validate with a real DNS lookup (no network if this throws)
-      final lookup = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 5));
-      return lookup.isNotEmpty && lookup.first.rawAddress.isNotEmpty;
+      // Hit our own backend health endpoint — no external DNS needed
+      final uri = Uri.parse('${ApiConfig.baseUrl}/health');
+      final response = await http
+          .get(uri)
+          .timeout(const Duration(seconds: 6));
+      return response.statusCode == 200;
     } catch (_) {
       return false;
     }
@@ -84,12 +94,13 @@ class NetworkInfo {
     if (results.every((r) => r == ConnectivityResult.none)) {
       return ConnectivityStatus.offline;
     }
-    // Do not do the full DNS lookup inside the stream callback to avoid
-    // blocking. Return offline optimistically and let the UI reconcile.
+    // Ping the backend health endpoint to confirm real reachability.
     try {
-      final lookup = await InternetAddress.lookup('google.com')
-          .timeout(const Duration(seconds: 4));
-      if (lookup.isNotEmpty && lookup.first.rawAddress.isNotEmpty) {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/health');
+      final response = await http
+          .get(uri)
+          .timeout(const Duration(seconds: 6));
+      if (response.statusCode == 200) {
         return ConnectivityStatus.online;
       }
     } catch (_) {}
@@ -108,16 +119,46 @@ final networkInfoProvider = Provider<NetworkInfo>((ref) {
 
 /// A [StreamProvider] that emits the live [ConnectivityStatus].
 /// Starts as [ConnectivityStatus.checking] until the first event.
+///
+/// Also polls every 15 seconds so the banner clears automatically once the
+/// backend comes back up — without requiring the user to restart the app.
 final connectivityStatusProvider =
-    StreamProvider<ConnectivityStatus>((ref) async* {
+    StreamProvider<ConnectivityStatus>((ref) {
   final info = ref.read(networkInfoProvider);
 
-  // Emit initial status immediately
-  yield ConnectivityStatus.checking;
-  yield await info.currentStatus;
+  late StreamController<ConnectivityStatus> controller;
+  Timer? pollTimer;
 
-  // Then stream live changes
-  yield* info.onStatusChange;
+  Future<void> emitCurrent() async {
+    if (controller.isClosed) return;
+    final status = await info.currentStatus;
+    if (!controller.isClosed) controller.add(status);
+  }
+
+  controller = StreamController<ConnectivityStatus>(
+    onListen: () async {
+      // 1. Immediate checking → real status
+      controller.add(ConnectivityStatus.checking);
+      await emitCurrent();
+
+      // 2. Re-check whenever the network adapter changes
+      info.onStatusChange.listen(
+        (s) { if (!controller.isClosed) controller.add(s); },
+        onError: (_) {},
+        cancelOnError: false,
+      );
+
+      // 3. Poll every 15 s so the banner auto-recovers when backend starts
+      pollTimer = Timer.periodic(const Duration(seconds: 15), (_) {
+        emitCurrent();
+      });
+    },
+    onCancel: () {
+      pollTimer?.cancel();
+    },
+  );
+
+  return controller.stream;
 });
 
 /// Simple boolean convenience provider — true when internet is confirmed.

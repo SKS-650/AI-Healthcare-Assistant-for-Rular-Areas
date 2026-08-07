@@ -162,6 +162,7 @@ class HomeDashboardPage extends ConsumerWidget {
                         title: 'Daily Health Tips',
                         emoji: '💡',
                         delay: 450,
+                        accentColor: Color(0xFF00C9A7),
                       ),
                       _TipsStrip(tips: state.healthTips)
                           .animate(delay: 470.ms)
@@ -174,6 +175,7 @@ class HomeDashboardPage extends ConsumerWidget {
                         title: 'Health Articles',
                         emoji: '📚',
                         delay: 560,
+                        accentColor: const Color(0xFF6B47E8),
                         onSeeAll: () => Navigator.of(context)
                             .pushNamed(RouteNames.healthEducation),
                       ),
@@ -628,60 +630,90 @@ class _SectionLabel extends StatelessWidget {
     required this.emoji,
     required this.delay,
     this.onSeeAll,
+    this.accentColor,
   });
   final String        title;
   final String        emoji;
   final int           delay;
   final VoidCallback? onSeeAll;
+  final Color?        accentColor;
 
   @override
   Widget build(BuildContext context) {
+    final accent = accentColor ?? DesignTokens.primary;
     return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 26, 20, 12),
+      padding: const EdgeInsets.fromLTRB(20, 28, 20, 14),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
           Row(children: [
-            // Emoji bubble
+            // Glowing emoji bubble
             Container(
-              width: 34,
-              height: 34,
+              width: 38, height: 38,
               decoration: BoxDecoration(
                 gradient: LinearGradient(
                   colors: [
-                    DesignTokens.primary.withValues(alpha: 0.18),
-                    DesignTokens.primary.withValues(alpha: 0.08),
+                    accent.withValues(alpha: 0.22),
+                    accent.withValues(alpha: 0.08),
                   ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                borderRadius: BorderRadius.circular(10),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                    color: accent.withValues(alpha: 0.20), width: 1),
+                boxShadow: [
+                  BoxShadow(
+                    color: accent.withValues(alpha: 0.18),
+                    blurRadius: 10,
+                    offset: const Offset(0, 3),
+                  ),
+                ],
               ),
               child: Center(
                   child: Text(emoji,
-                      style: const TextStyle(fontSize: 17))),
+                      style: const TextStyle(fontSize: 18))),
             ),
-            const SizedBox(width: 10),
-            Text(title,
-                style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w800,
-                    letterSpacing: -0.3,
-                    color: DesignTokens.textStrong)),
+            const SizedBox(width: 12),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(title,
+                    style: const TextStyle(
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4,
+                        color: DesignTokens.textStrong)),
+                const SizedBox(height: 2),
+                Container(
+                  height: 2.5, width: 32,
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                        colors: [accent, accent.withValues(alpha: 0.0)]),
+                    borderRadius: BorderRadius.circular(99),
+                  ),
+                ),
+              ],
+            ),
           ]),
           if (onSeeAll != null)
             GestureDetector(
               onTap: onSeeAll,
               child: Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 14, vertical: 7),
+                    horizontal: 14, vertical: 8),
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [Color(0xFF926EFF), Color(0xFF6B47E8)],
+                  gradient: LinearGradient(
+                    colors: [
+                      accent,
+                      Color.lerp(accent, DesignTokens.primaryDark, 0.4)!,
+                    ],
                   ),
                   borderRadius: BorderRadius.circular(20),
                   boxShadow: [
                     BoxShadow(
-                      color: DesignTokens.primary.withValues(alpha: 0.30),
-                      blurRadius: 10,
+                      color: accent.withValues(alpha: 0.35),
+                      blurRadius: 12,
                       offset: const Offset(0, 4),
                     ),
                   ],
@@ -827,7 +859,7 @@ class _PredictionCard extends StatelessWidget {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Health Tips — auto-scrolling page view with dot indicators
+// ✨ Ultra-Premium Health Tips — cinematic full-bleed cards with auto-scroll
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _TipsStrip extends StatefulWidget {
@@ -838,70 +870,117 @@ class _TipsStrip extends StatefulWidget {
   State<_TipsStrip> createState() => _TipsStripState();
 }
 
-class _TipsStripState extends State<_TipsStrip> {
+class _TipsStripState extends State<_TipsStrip>
+    with SingleTickerProviderStateMixin {
   int _current = 0;
   late final PageController _pageCtrl;
+  late final AnimationController _shimmerCtrl;
 
-  static const _tipColors = [
-    [Color(0xFF10B981), Color(0xFF065F46)],
-    [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-    [Color(0xFFF59E0B), Color(0xFFB45309)],
-    [Color(0xFFEC4899), Color(0xFF9D174D)],
-    [Color(0xFF9B5DE5), Color(0xFF6B21A8)],
-    [Color(0xFF06B6D4), Color(0xFF0E7490)],
+  // ── Curated world-class palettes — each pair is distinct, WCAG-contrast-safe
+  // Strategy: warm → cool → vibrant → muted → jewel tones, never two adjacent cards the same hue
+  static const _tipPalettes = [
+    // 1  Deep Teal
+    [Color(0xFF0ABFBC), Color(0xFF048A87), Color(0xFF025655)],
+    // 2  Royal Indigo
+    [Color(0xFF7C5CBF), Color(0xFF5836A6), Color(0xFF33196E)],
+    // 3  Coral Sunset
+    [Color(0xFFFF6B6B), Color(0xFFEE4545), Color(0xFFB51C1C)],
+    // 4  Sapphire Blue
+    [Color(0xFF2B7EF5), Color(0xFF1558C9), Color(0xFF0B3482)],
+    // 5  Fern Green
+    [Color(0xFF27AE60), Color(0xFF1A8248), Color(0xFF0D5430)],
+    // 6  Amber Honey
+    [Color(0xFFF5A623), Color(0xFFD4840C), Color(0xFF8A5300)],
+    // 7  Magenta Rose
+    [Color(0xFFE91E8C), Color(0xFFC1156E), Color(0xFF7D0C47)],
+    // 8  Slate Ocean
+    [Color(0xFF1A6B8A), Color(0xFF125070), Color(0xFF08303D)],
+    // 9  Grape Violet
+    [Color(0xFF9B3DD4), Color(0xFF7721B2), Color(0xFF4B1274)],
+    // 10 Olive Sage
+    [Color(0xFF5D9B3F), Color(0xFF417B28), Color(0xFF254E15)],
+    // 11 Crimson Wine
+    [Color(0xFFB5233A), Color(0xFF8E1528), Color(0xFF5A0A18)],
+    // 12 Sky Cyan
+    [Color(0xFF00B4D8), Color(0xFF008FB5), Color(0xFF005C77)],
+    // 13 Rust Terracotta
+    [Color(0xFFD4623A), Color(0xFFB04020), Color(0xFF6E2610)],
+    // 14 Midnight Navy
+    [Color(0xFF3D5AF1), Color(0xFF2338CC), Color(0xFF0D1C82)],
+    // 15 Jade Emerald
+    [Color(0xFF00897B), Color(0xFF00675C), Color(0xFF003E38)],
+    // 16 Plum Purple
+    [Color(0xFF7B1FA2), Color(0xFF5E1580), Color(0xFF380D4D)],
+    // 17 Sunrise Orange
+    [Color(0xFFFF8C00), Color(0xFFD96B00), Color(0xFF8A4200)],
+    // 18 Steel Blue
+    [Color(0xFF1976D2), Color(0xFF0D55A8), Color(0xFF08336A)],
   ];
 
-  static const _tipEmojis = ['💡', '🥗', '🏃', '😴', '💊', '🧘'];
+  static const _tipEmojis = [
+    '💧', '🧠', '📱', '🥦', '🫁', '🍎',
+    '🧼', '🪑', '😴', '🥛', '🧂', '☀️',
+    '👥', '🍳', '🥜', '👟', '💦', '🍽️',
+  ];
+  static const _tipTags = [
+    'Hydration', 'Mental', 'Sleep', 'Nutrition', 'Breathing', 'Sugar',
+    'Hygiene', 'Fitness', 'Rest', 'Gut Health', 'Diet', 'Vitamin D',
+    'Wellness', 'Breakfast', 'Heart', 'Activity', 'Alertness', 'Digestion',
+  ];
 
   @override
   void initState() {
     super.initState();
-    _pageCtrl = PageController(viewportFraction: 0.88);
+    _pageCtrl   = PageController(viewportFraction: 0.86, initialPage: 0);
+    _shimmerCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 2200),
+    )..repeat();
+
+    // Auto-advance every 4 s
+    Future.doWhile(() async {
+      await Future.delayed(const Duration(seconds: 4));
+      if (!mounted) return false;
+      final next = (_current + 1) % math.max(1, widget.tips.length).toInt();
+      _pageCtrl.animateToPage(
+        next,
+        duration: const Duration(milliseconds: 650),
+        curve: Curves.easeInOutCubic,
+      );
+      return true;
+    });
   }
 
   @override
   void dispose() {
     _pageCtrl.dispose();
+    _shimmerCtrl.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final count = widget.tips.length;
     return Column(children: [
       SizedBox(
-        height: 148,
+        height: 178,
         child: PageView.builder(
           controller: _pageCtrl,
-          itemCount: widget.tips.length,
+          itemCount: count,
           onPageChanged: (i) => setState(() => _current = i),
           itemBuilder: (ctx, i) => _TipCard(
-            tip:      widget.tips[i],
-            gradient: _tipColors[i % _tipColors.length],
-            emoji:    _tipEmojis[i % _tipEmojis.length],
-            index:    i,
+            tip:       widget.tips[i],
+            palette:   _tipPalettes[i % _tipPalettes.length],
+            emoji:     _tipEmojis[i % _tipEmojis.length],
+            tag:       _tipTags[i % _tipTags.length],
+            index:     i,
+            shimmerCtrl: _shimmerCtrl,
           ),
         ),
       ),
-      const SizedBox(height: 12),
-      // Animated indicator dots
-      Row(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: List.generate(
-          math.min(widget.tips.length, 6),
-          (i) => AnimatedContainer(
-            duration: const Duration(milliseconds: 280),
-            margin: const EdgeInsets.symmetric(horizontal: 3),
-            width: i == _current ? 22 : 7,
-            height: 7,
-            decoration: BoxDecoration(
-              color: i == _current
-                  ? DesignTokens.primary
-                  : DesignTokens.border,
-              borderRadius: BorderRadius.circular(4),
-            ),
-          ),
-        ),
-      ),
+      const SizedBox(height: 14),
+      // Smart dot indicator — show max 6 dots centred on current page
+      _TipsDotIndicator(total: count, current: _current, palettes: _tipPalettes),
     ]);
   }
 }
@@ -909,72 +988,227 @@ class _TipsStripState extends State<_TipsStrip> {
 class _TipCard extends StatelessWidget {
   const _TipCard({
     required this.tip,
-    required this.gradient,
+    required this.palette,
     required this.emoji,
+    required this.tag,
     required this.index,
+    required this.shimmerCtrl,
   });
-  final String      tip;
-  final List<Color> gradient;
-  final String      emoji;
-  final int         index;
+  final String             tip;
+  final List<Color>        palette;
+  final String             emoji;
+  final String             tag;
+  final int                index;
+  final AnimationController shimmerCtrl;
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 6),
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 18),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-            colors: gradient,
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight),
-        borderRadius: BorderRadius.circular(26),
-        boxShadow: [
-          BoxShadow(
-              color: gradient[0].withValues(alpha: 0.32),
-              blurRadius: 20,
-              offset: const Offset(0, 7)),
-        ],
-      ),
-      child: Stack(children: [
-        Positioned(
-          right: -10, top: -10,
-          child: Text(emoji, style: const TextStyle(fontSize: 68, height: 1)),
-        ),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          mainAxisAlignment: MainAxisAlignment.end,
-          children: [
-            Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
-              decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.22),
-                  borderRadius: BorderRadius.circular(8)),
-              child: Text('Tip ${index + 1}',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 10,
-                      fontWeight: FontWeight.w700)),
+    return AnimatedBuilder(
+      animation: shimmerCtrl,
+      builder: (_, child) {
+        return Container(
+          margin: const EdgeInsets.symmetric(horizontal: 7, vertical: 2),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(30),
+            gradient: LinearGradient(
+              colors: palette,
+              begin: Alignment(
+                  -1.2 + shimmerCtrl.value * 2.4, -0.6),
+              end:   Alignment(
+                   0.8 + shimmerCtrl.value * 1.2,  0.8),
             ),
-            const SizedBox(height: 8),
-            Text(tip,
-                style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.96),
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                    height: 1.50),
-                maxLines: 3,
-                overflow: TextOverflow.ellipsis),
+            boxShadow: [
+              BoxShadow(
+                color: palette[0].withValues(alpha: 0.42),
+                blurRadius: 28,
+                spreadRadius: 0,
+                offset: const Offset(0, 10),
+              ),
+              BoxShadow(
+                color: palette[1].withValues(alpha: 0.20),
+                blurRadius: 50,
+                offset: const Offset(0, 18),
+              ),
+            ],
+          ),
+          child: child,
+        );
+      },
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: Stack(
+          children: [
+            // Translucent orb — top-right
+            Positioned(
+              right: -28, top: -28,
+              child: Container(
+                width: 130, height: 130,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.09),
+                ),
+              ),
+            ),
+            // Translucent orb — bottom-left
+            Positioned(
+              left: -20, bottom: -20,
+              child: Container(
+                width: 90, height: 90,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: Colors.white.withValues(alpha: 0.07),
+                ),
+              ),
+            ),
+            // Main content
+            Padding(
+              padding: const EdgeInsets.fromLTRB(22, 20, 22, 20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Top row: tag pill + emoji
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      // Tag pill
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 11, vertical: 5),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.22),
+                          borderRadius: BorderRadius.circular(99),
+                          border: Border.all(
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 1,
+                          ),
+                        ),
+                        child: Row(mainAxisSize: MainAxisSize.min, children: [
+                          Container(
+                            width: 6, height: 6,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: Colors.white,
+                            ),
+                          ),
+                          const SizedBox(width: 5),
+                          Text(tag,
+                              style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 10,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.4)),
+                        ]),
+                      ),
+                      const Spacer(),
+                      // Tip number badge
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 10, vertical: 4),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(99),
+                        ),
+                        child: Text('# ${index + 1}',
+                            style: TextStyle(
+                                color: Colors.white.withValues(alpha: 0.80),
+                                fontSize: 10,
+                                fontWeight: FontWeight.w700)),
+                      ),
+                    ],
+                  ),
+                  const Spacer(),
+                  // Big emoji
+                  Text(emoji,
+                      style: const TextStyle(fontSize: 32, height: 1.0))
+                      .animate(delay: Duration(milliseconds: 100 + index * 60))
+                      .scale(begin: const Offset(0.6, 0.6), curve: Curves.elasticOut, duration: 700.ms),
+                  const SizedBox(height: 8),
+                  // Tip text
+                  Text(
+                    tip,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 13.5,
+                      fontWeight: FontWeight.w600,
+                      height: 1.55,
+                      letterSpacing: 0.1,
+                    ),
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ],
+              ),
+            ),
           ],
         ),
-      ]),
+      ),
     );
   }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Articles strip
+// Smart dot indicator (shows 5 dots max, scrolling window around current)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _TipsDotIndicator extends StatelessWidget {
+  const _TipsDotIndicator({
+    required this.total,
+    required this.current,
+    required this.palettes,
+  });
+  final int total;
+  final int current;
+  final List<List<Color>> palettes;
+
+  @override
+  Widget build(BuildContext context) {
+    const visible = 5;
+    // Compute visible window centred on current
+    int start = (current - visible ~/ 2).clamp(0, math.max(0, total - visible));
+    final end = (start + visible).clamp(0, total);
+    start = (end - visible).clamp(0, total);
+
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        if (start > 0) ...[
+          _dot(false, const Color(0xFFD1D5DB), mini: true),
+          const SizedBox(width: 4),
+        ],
+        for (int i = start; i < end; i++) ...[
+          _dot(
+            i == current,
+            palettes[i % palettes.length][0],
+          ),
+          if (i < end - 1) const SizedBox(width: 5),
+        ],
+        if (end < total) ...[
+          const SizedBox(width: 4),
+          _dot(false, const Color(0xFFD1D5DB), mini: true),
+        ],
+      ],
+    );
+  }
+
+  Widget _dot(bool active, Color color, {bool mini = false}) {
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 300),
+      curve: Curves.easeOutCubic,
+      width:  mini ? 5 : (active ? 26 : 8),
+      height: mini ? 5 : 8,
+      decoration: BoxDecoration(
+        color: active ? color : (mini ? color : DesignTokens.border),
+        borderRadius: BorderRadius.circular(99),
+        boxShadow: active
+            ? [BoxShadow(color: color.withValues(alpha: 0.50), blurRadius: 8, offset: const Offset(0, 2))]
+            : [],
+      ),
+    );
+  }
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// ✨ Ultra-Premium Articles Strip — large immersive cards with glassmorphism
 // ─────────────────────────────────────────────────────────────────────────────
 
 class _ArticlesStrip extends StatelessWidget {
@@ -984,7 +1218,7 @@ class _ArticlesStrip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: 190,
+      height: 232,
       child: ListView.builder(
         scrollDirection: Axis.horizontal,
         padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -1001,45 +1235,82 @@ class _ArticleCard extends StatelessWidget {
   final Article article;
   final int     index;
 
-  static const _catGrads = {
-    'nutrition':  [Color(0xFF10B981), Color(0xFF065F46)],
-    'fitness':    [Color(0xFF3B82F6), Color(0xFF1D4ED8)],
-    'mental':     [Color(0xFF9B5DE5), Color(0xFF6B21A8)],
-    'disease':    [Color(0xFFF43F5E), Color(0xFFBE123C)],
-    'lifestyle':  [Color(0xFFF59E0B), Color(0xFFB45309)],
-    'first aid':  [Color(0xFFF97316), Color(0xFFC2410C)],
-    'child':      [Color(0xFFEC4899), Color(0xFF9D174D)],
-    'vaccination':[Color(0xFF06B6D4), Color(0xFF0E7490)],
-    'hygiene':    [Color(0xFF10B981), Color(0xFF065F46)],
-    'maternal':   [Color(0xFFEC4899), Color(0xFF9D174D)],
+  // ── Article palettes — 10 categories, each a distinct hue family
+  // Chosen so adjacent cards in the scroll never share a colour family
+  static const _catPalettes = {
+    // Warm green-teal — Nutrition
+    'nutrition':   [Color(0xFF00BFA5), Color(0xFF008775), Color(0xFF004F45)],
+    // Rich royal blue — Fitness
+    'fitness':     [Color(0xFF1565C0), Color(0xFF0D47A1), Color(0xFF082980)],
+    // Deep violet — Mental Health
+    'mental':      [Color(0xFF6A1B9A), Color(0xFF4A148C), Color(0xFF2D0A5A)],
+    // Vivid crimson — Disease
+    'disease':     [Color(0xFFC62828), Color(0xFFB71C1C), Color(0xFF7F0000)],
+    // Warm amber-gold — Lifestyle
+    'lifestyle':   [Color(0xFFE65100), Color(0xFFBF360C), Color(0xFF7F2400)],
+    // Safety orange-red — First Aid
+    'first aid':   [Color(0xFFD84315), Color(0xFFBF360C), Color(0xFF7F2400)],
+    // Vibrant pink-fuchsia — Child
+    'child':       [Color(0xFFAD1457), Color(0xFF880E4F), Color(0xFF560027)],
+    // Cool sky-cyan — Vaccination
+    'vaccination': [Color(0xFF00838F), Color(0xFF006064), Color(0xFF003F48)],
+    // Forest green — Hygiene
+    'hygiene':     [Color(0xFF2E7D32), Color(0xFF1B5E20), Color(0xFF0A3B0D)],
+    // Warm rose-mauve — Maternal
+    'maternal':    [Color(0xFFC2185B), Color(0xFF880E4F), Color(0xFF560027)],
   };
 
-  List<Color> _grad(String cat) {
-    final key = _catGrads.keys.firstWhere(
+  // ── Category icons — precise, recognisable symbols
+  static const _catIcons = <String, IconData>{
+    'nutrition':   Icons.restaurant_menu_rounded,
+    'fitness':     Icons.directions_run_rounded,
+    'mental':      Icons.self_improvement_rounded,
+    'disease':     Icons.health_and_safety_rounded,
+    'lifestyle':   Icons.wb_sunny_rounded,
+    'first aid':   Icons.local_hospital_rounded,
+    'child':       Icons.child_care_rounded,
+    'vaccination': Icons.vaccines_rounded,
+    'hygiene':     Icons.clean_hands_rounded,
+    'maternal':    Icons.favorite_rounded,
+  };
+
+  List<Color> _palette(String cat) {
+    final key = _catPalettes.keys.firstWhere(
         (k) => cat.toLowerCase().contains(k),
         orElse: () => 'nutrition');
-    return _catGrads[key]!;
+    return _catPalettes[key]!;
+  }
+
+  IconData _icon(String cat) {
+    final key = _catIcons.keys.firstWhere(
+        (k) => cat.toLowerCase().contains(k),
+        orElse: () => 'nutrition');
+    return _catIcons[key]!;
   }
 
   @override
   Widget build(BuildContext context) {
-    final grad = _grad(article.category);
+    final pal  = _palette(article.category);
+    final icon = _icon(article.category);
 
     return GestureDetector(
-      onTap: () =>
-          Navigator.of(context).pushNamed(RouteNames.healthEducation),
+      onTap: () => Navigator.of(context).pushNamed(RouteNames.healthEducation),
       child: Container(
-        width: 200,
-        margin: const EdgeInsets.only(right: 14),
+        width: 218,
+        margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
           color: DesignTokens.surface,
-          borderRadius: BorderRadius.circular(22),
-          border: Border.all(color: DesignTokens.border),
+          borderRadius: BorderRadius.circular(28),
           boxShadow: [
             BoxShadow(
-              color: grad[0].withValues(alpha: 0.12),
-              blurRadius: 14,
-              offset: const Offset(0, 5),
+              color: pal[0].withValues(alpha: 0.18),
+              blurRadius: 22,
+              offset: const Offset(0, 8),
+            ),
+            BoxShadow(
+              color: pal[1].withValues(alpha: 0.10),
+              blurRadius: 40,
+              offset: const Offset(0, 14),
             ),
           ],
         ),
@@ -1047,48 +1318,80 @@ class _ArticleCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Gradient image header
-            Container(
-              height: 100,
-              width: double.infinity,
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                    colors: grad,
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight),
-              ),
-              child: Stack(children: [
-                Positioned(right: -18, bottom: -18,
+            // ── Immersive gradient header (taller, richer) ──────────────
+            SizedBox(
+              height: 138,
+              child: Stack(
+                children: [
+                  // Background gradient
+                  Positioned.fill(
                     child: Container(
-                      width: 80, height: 80,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                          colors: pal,
+                          begin: Alignment.topLeft,
+                          end: Alignment.bottomRight,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Large decorative orb — bottom right
+                  Positioned(
+                    right: -30, bottom: -30,
+                    child: Container(
+                      width: 110, height: 110,
                       decoration: BoxDecoration(
                         shape: BoxShape.circle,
-                        color: Colors.white.withValues(alpha: 0.12),
+                        color: Colors.white.withValues(alpha: 0.10),
                       ),
-                    )),
-                // Category badge
-                Positioned(top: 10, left: 10,
+                    ),
+                  ),
+                  // Small orb — top left
+                  Positioned(
+                    left: -14, top: -14,
+                    child: Container(
+                      width: 60, height: 60,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: Colors.white.withValues(alpha: 0.08),
+                      ),
+                    ),
+                  ),
+                  // Category pill — top left
+                  Positioned(
+                    top: 12, left: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 9, vertical: 4),
+                          horizontal: 10, vertical: 5),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.22),
-                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.white.withValues(alpha: 0.20),
+                        borderRadius: BorderRadius.circular(99),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.30),
+                          width: 1,
+                        ),
                       ),
-                      child: Text(article.category,
-                          style: const TextStyle(
-                              color: Colors.white,
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700)),
-                    )),
-                // Read-time badge
-                Positioned(bottom: 10, right: 10,
+                      child: Text(
+                        article.category,
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.3,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Read time — top right
+                  Positioned(
+                    top: 12, right: 12,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 8, vertical: 4),
+                          horizontal: 8, vertical: 5),
                       decoration: BoxDecoration(
-                          color: Colors.black.withValues(alpha: 0.28),
-                          borderRadius: BorderRadius.circular(10)),
+                        color: Colors.black.withValues(alpha: 0.22),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
                       child: Row(mainAxisSize: MainAxisSize.min, children: [
                         const Icon(Icons.schedule_rounded,
                             color: Colors.white, size: 10),
@@ -1099,28 +1402,96 @@ class _ArticleCard extends StatelessWidget {
                                 fontSize: 10,
                                 fontWeight: FontWeight.w600)),
                       ]),
-                    )),
-              ]),
-            ),
-            // Title
-            Padding(
-              padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
-              child: Text(article.title,
-                  style: const TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w700,
-                    color: DesignTokens.textStrong,
-                    height: 1.35,
+                    ),
                   ),
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis),
+                  // Large decorative icon — centre bottom
+                  Positioned(
+                    bottom: 10, right: 14,
+                    child: Container(
+                      width: 48, height: 48,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.16),
+                        borderRadius: BorderRadius.circular(16),
+                        border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25),
+                          width: 1,
+                        ),
+                      ),
+                      child: Icon(icon, color: Colors.white, size: 24),
+                    ),
+                  ),
+                  // "Read →" chip — bottom left
+                  Positioned(
+                    bottom: 12, left: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 5),
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        borderRadius: BorderRadius.circular(99),
+                        boxShadow: [
+                          BoxShadow(
+                            color: pal[0].withValues(alpha: 0.30),
+                            blurRadius: 8,
+                            offset: const Offset(0, 3),
+                          ),
+                        ],
+                      ),
+                      child: Row(mainAxisSize: MainAxisSize.min, children: [
+                        Text('Read',
+                            style: TextStyle(
+                                color: pal[1],
+                                fontSize: 10,
+                                fontWeight: FontWeight.w800)),
+                        const SizedBox(width: 3),
+                        Icon(Icons.arrow_forward_rounded,
+                            size: 10, color: pal[1]),
+                      ]),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            // ── Title area ───────────────────────────────────────────────
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(14, 12, 14, 12),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      article.title,
+                      style: const TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                        color: DesignTokens.textStrong,
+                        height: 1.4,
+                        letterSpacing: -0.1,
+                      ),
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const Spacer(),
+                    // Accent bar matching card colour
+                    Container(
+                      height: 3,
+                      width: 36,
+                      decoration: BoxDecoration(
+                        gradient: LinearGradient(
+                            colors: [pal[0], pal[1]]),
+                        borderRadius: BorderRadius.circular(99),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
           ],
         ),
       )
-          .animate(delay: Duration(milliseconds: 580 + index * 70))
-          .fadeIn(duration: 320.ms)
-          .slideX(begin: 0.08, end: 0),
+          .animate(delay: Duration(milliseconds: 580 + index * 80))
+          .fadeIn(duration: 380.ms)
+          .slideX(begin: 0.10, end: 0, curve: Curves.easeOutCubic),
     );
   }
 }

@@ -11,6 +11,21 @@ class PredictionResultModel extends PredictionResult {
     required super.probabilities,
     required super.recommendation,
     required super.createdAt,
+    super.riskScore = 0.0,
+    super.riskFactors = const [],
+    super.criticalSymptoms = const [],
+    super.isEmergency = false,
+    super.emergencyAlert,
+    super.topDiseases = const [],
+    super.bmi,
+    super.bmiCategory,
+    super.durationCategory,
+    super.severityLabel,
+    super.existingConditions = const [],
+    super.medications = const [],
+    super.allergies = const [],
+    super.augmentationLog = const [],
+    super.augmentedSymptomCount,
   });
 
   factory PredictionResultModel.fromJson(Map<String, dynamic> json) {
@@ -21,13 +36,20 @@ class PredictionResultModel extends PredictionResult {
       riskLevel: json['riskLevel'] as String,
       probabilities: Map<String, double>.from(
         (json['probabilities'] as Map).map(
-          (key, value) => MapEntry(key as String, (value as num).toDouble()),
+          (key, value) =>
+              MapEntry(key as String, (value as num).toDouble()),
         ),
       ),
       recommendation: RecommendationModel.fromJson(
         json['recommendation'] as Map<String, dynamic>,
       ),
       createdAt: DateTime.parse(json['createdAt'] as String),
+      riskScore: (json['riskScore'] as num?)?.toDouble() ?? 0.0,
+      riskFactors: List<String>.from(json['riskFactors'] as List? ?? []),
+      criticalSymptoms:
+          List<String>.from(json['criticalSymptoms'] as List? ?? []),
+      isEmergency: json['isEmergency'] as bool? ?? false,
+      emergencyAlert: json['emergencyAlert'] as String?,
     );
   }
 
@@ -40,6 +62,11 @@ class PredictionResultModel extends PredictionResult {
       'probabilities': probabilities,
       'recommendation': (recommendation as RecommendationModel).toJson(),
       'createdAt': createdAt.toIso8601String(),
+      'riskScore': riskScore,
+      'riskFactors': riskFactors,
+      'criticalSymptoms': criticalSymptoms,
+      'isEmergency': isEmergency,
+      if (emergencyAlert != null) 'emergencyAlert': emergencyAlert,
     };
   }
 }
