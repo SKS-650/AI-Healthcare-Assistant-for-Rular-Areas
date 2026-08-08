@@ -2,16 +2,7 @@ services:
   - type: web
     name: ai-healthcare-backend
     env: python
-    buildCommand: pip install -r requirements-deploy.txt
+    pythonVersion: "3.11.9"
+    buildCommand: pip install --upgrade pip && pip install -r requirements-deploy.txt
     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: ENVIRONMENT
-        value: production
-      - key: JWT_SECRET_KEY
-        sync: false        # set manually in Render dashboard
-      - key: CHATBOT_LLM_API_KEY
-        sync: false        # set manually in Render dashboard
-      - key: CORS_ORIGINS
-        value: "*"
-      - key: APP_BASE_URL
-        sync: false        # set after deploy — paste your Render URL here
+    rootDir: backend
