@@ -16,7 +16,7 @@ class ApiConfig {
   //
   // For local WiFi dev, temporarily replace with http://<LAN_IP>:8000
   // ─────────────────────────────────────────────────────────────────────────
-  static const String _wifiBackendUrl = 'https://ai-healthcare-backend.onrender.com';
+  static const String _wifiBackendUrl = 'https://ai-healthcare-backend-6h3p.onrender.com';
 
   // ─────────────────────────────────────────────────────────────────────────
   // Override via dart-define (optional — for CI / team members with different IPs):
