@@ -1,7 +1,6 @@
 # ============================================================================
-# AI Healthcare Assistant — Cloud Deployment Requirements (Render / Railway)
-# Stripped of heavy ML packages that exceed free-tier RAM/disk limits.
-# FAISS, Whisper, sentence-transformers run locally only.
+# Cloud Deployment Requirements — Render free tier compatible
+# Uses pre-built wheels only, no Rust/C compilation needed
 # ============================================================================
 
 # ─── Web Framework ───────────────────────────────────────────────────────────
@@ -9,8 +8,10 @@ fastapi==0.111.0
 uvicorn[standard]==0.30.1
 python-multipart==0.0.9
 
-# ─── Validation & Settings ───────────────────────────────────────────────────
-pydantic[email]==2.7.1
+# ─── Validation (pre-built wheel, no Rust compilation) ───────────────────────
+pydantic==2.7.1
+pydantic-core==2.18.4
+email-validator==2.1.1
 python-dotenv==1.0.1
 
 # ─── Database ────────────────────────────────────────────────────────────────
@@ -18,36 +19,32 @@ sqlalchemy[asyncio]==2.0.30
 aiosqlite==0.20.0
 alembic==1.13.1
 
-# ─── Auth / Security ─────────────────────────────────────────────────────────
+# ─── Auth ────────────────────────────────────────────────────────────────────
 passlib[bcrypt]==1.7.4
 python-jose[cryptography]==3.3.0
 
-# ─── Data Science (lightweight) ──────────────────────────────────────────────
-numpy>=1.24.0
-pandas>=2.0.0
-scikit-learn>=1.4.0
-joblib>=1.3.0
-scipy>=1.11.0
+# ─── Data Science ────────────────────────────────────────────────────────────
+numpy==1.26.4
+pandas==2.2.2
+scikit-learn==1.4.2
+joblib==1.4.2
+scipy==1.13.0
 
-# ─── NLP (lightweight only) ──────────────────────────────────────────────────
+# ─── NLP (lightweight) ───────────────────────────────────────────────────────
 langdetect==1.0.9
 deep-translator==1.11.4
 
 # ─── LLM APIs ────────────────────────────────────────────────────────────────
-openai>=1.30.0
-google-generativeai>=0.5.0
-tiktoken>=0.7.0
-
-# ─── Text-to-Speech (lightweight) ────────────────────────────────────────────
-gTTS==2.5.1
-edge-tts==6.1.10
-
-# ─── HTTP ────────────────────────────────────────────────────────────────────
+openai==1.30.5
 httpx==0.27.0
 aiohttp==3.9.5
 
+# ─── TTS (lightweight) ───────────────────────────────────────────────────────
+gTTS==2.5.1
+edge-tts==6.1.10
+
 # ─── Utilities ───────────────────────────────────────────────────────────────
-python-dateutil>=2.9.0
-pyyaml>=6.0.1
-ujson>=5.9.0
+python-dateutil==2.9.0
+pyyaml==6.0.1
+ujson==5.9.0
 SpeechRecognition==3.10.4
