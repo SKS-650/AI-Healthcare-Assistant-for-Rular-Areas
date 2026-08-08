@@ -436,7 +436,8 @@ class _ChatbotConfigDialogState extends State<_ChatbotConfigDialog> {
                 subtitle: const Text('Flag messages with emergency keywords',
                     style: TextStyle(fontSize: 12)),
                 value: _emergencyDetection,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
+                activeTrackColor: AppColors.primaryLight,
                 onChanged: (v) => setState(() => _emergencyDetection = v),
               ),
 

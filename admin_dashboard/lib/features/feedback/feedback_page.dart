@@ -675,7 +675,7 @@ class _QuickEditDialogState extends State<_QuickEditDialog> {
               ],
               const SizedBox(height: 20),
               DropdownButtonFormField<String>(
-                value: _status,
+                initialValue: _status,
                 decoration: const InputDecoration(labelText: 'Status', isDense: true),
                 items: ['pending', 'reviewed', 'in_progress', 'resolved', 'dismissed']
                     .map((s) => DropdownMenuItem(value: s,
@@ -686,7 +686,7 @@ class _QuickEditDialogState extends State<_QuickEditDialog> {
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _priority,
+                initialValue: _priority,
                 decoration: const InputDecoration(labelText: 'Priority', isDense: true),
                 items: ['low', 'normal', 'high', 'critical']
                     .map((p) => DropdownMenuItem(value: p,

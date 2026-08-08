@@ -458,7 +458,7 @@ class _UserActions extends StatelessWidget {
         builder: (ctx, setState) => AlertDialog(
           title: Text('Change Role — ${user.fullName}'),
           content: DropdownButtonFormField<String>(
-            value: selectedRole,
+            initialValue: selectedRole,
             items: ['patient', 'doctor', 'admin', 'super_admin']
                 .map((r) => DropdownMenuItem(
                     value: r,
@@ -696,7 +696,7 @@ class _AddUserDialogState extends State<_AddUserDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _role,
+                  initialValue: _role,
                   decoration: const InputDecoration(labelText: 'Role'),
                   items: ['patient', 'doctor', 'admin']
                       .map((r) => DropdownMenuItem(

@@ -339,7 +339,7 @@ class _CreateDatasetDialogState extends State<_CreateDatasetDialog> {
                 ),
                 const SizedBox(height: 12),
                 DropdownButtonFormField<String>(
-                  value: _type,
+                  initialValue: _type,
                   decoration: const InputDecoration(labelText: 'Type'),
                   items: ['symptom', 'chatbot', 'disease', 'faq']
                       .map((t) => DropdownMenuItem(value: t,

@@ -292,7 +292,7 @@ class _ArticleDialogState extends State<_ArticleDialog> {
                   decoration: const InputDecoration(labelText: 'Author')),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
-                value: _language,
+                initialValue: _language,
                 decoration: const InputDecoration(labelText: 'Language'),
                 items: const [
                   DropdownMenuItem(value: 'en', child: Text('English')),
@@ -307,14 +307,16 @@ class _ArticleDialogState extends State<_ArticleDialog> {
                 value: _isPublished,
                 onChanged: (v) => setState(() => _isPublished = v),
                 contentPadding: EdgeInsets.zero,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
+                activeTrackColor: AppColors.primaryLight,
               ),
               SwitchListTile(
                 title: const Text('Featured'),
                 value: _isFeatured,
                 onChanged: (v) => setState(() => _isFeatured = v),
                 contentPadding: EdgeInsets.zero,
-                activeColor: AppColors.primary,
+                activeThumbColor: AppColors.primary,
+                activeTrackColor: AppColors.primaryLight,
               ),
             ],
           ),
