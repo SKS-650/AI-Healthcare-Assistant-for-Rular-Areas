@@ -2,7 +2,7 @@ import 'package:equatable/equatable.dart';
 
 import '../../domain/entities/user.dart';
 
-enum AuthFlow { idle, loading, success, error }
+enum AuthFlow { idle, loading, success, error, restored }
 
 // Sentinel to distinguish "not passed" from explicit null in copyWith
 class _Absent {
@@ -32,9 +32,10 @@ class AuthenticationState extends Equatable {
     this.devOtp,
   });
 
-  bool get isLoading => flow == AuthFlow.loading;
-  bool get hasError => flow == AuthFlow.error;
-  bool get isSuccess => flow == AuthFlow.success;
+  bool get isLoading  => flow == AuthFlow.loading;
+  bool get hasError   => flow == AuthFlow.error;
+  bool get isSuccess  => flow == AuthFlow.success;
+  bool get isRestored => flow == AuthFlow.restored;
 
   AuthenticationState copyWith({
     AuthFlow? flow,

@@ -59,5 +59,6 @@ final authControllerProvider =
     verifyOtp: ref.watch(_verifyOtpUseCaseProvider),
     resetPassword: ref.watch(_resetPasswordUseCaseProvider),
     completeProfile: ref.watch(_completeProfileUseCaseProvider),
+    repository: ref.watch(authRepositoryProvider),
   );
 });

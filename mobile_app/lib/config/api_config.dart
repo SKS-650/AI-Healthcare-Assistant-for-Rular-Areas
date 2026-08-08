@@ -9,14 +9,14 @@ class ApiConfig {
   static const int receiveTimeout = 30;
 
   // ─────────────────────────────────────────────────────────────────────────
-  // CLOUD BACKEND URL — set this to your Render (or other cloud) deployment URL.
-  // Once set you never need to update it again regardless of WiFi network.
+  // WIFI BACKEND URL — update this one constant if your laptop IP changes.
   //
-  // Example: 'https://ai-healthcare-backend.onrender.com'
+  // How to find your IP:  run `ipconfig` on Windows → look for "IPv4 Address"
+  //                       on the WiFi adapter.
   //
-  // For local WiFi dev, temporarily replace with http://<LAN_IP>:8000
+  // Format MUST be:  http://<IP>:<PORT>   ← colon between IP and port, no slash at end
   // ─────────────────────────────────────────────────────────────────────────
-  static const String _wifiBackendUrl = 'https://ai-healthcare-backend-6h3p.onrender.com';
+  static const String _wifiBackendUrl = 'http://192.168.254.11:8000';
 
   // ─────────────────────────────────────────────────────────────────────────
   // Override via dart-define (optional — for CI / team members with different IPs):

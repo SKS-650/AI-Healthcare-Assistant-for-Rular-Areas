@@ -23,7 +23,11 @@ class AuthenticationRepositoryImpl implements AuthenticationRepository {
   bool _initialized = false;
 
   /// Ensure tokens and user are loaded from persistent storage.
-  Future<void> _ensureInitialized() async {
+  /// Public alias [ensureInitialized] is used by the auth controller
+  /// on startup to restore the saved session.
+  Future<void> _ensureInitialized() => ensureInitialized();
+
+  Future<void> ensureInitialized() async {
     if (_initialized) return;
     _initialized = true;
     try {

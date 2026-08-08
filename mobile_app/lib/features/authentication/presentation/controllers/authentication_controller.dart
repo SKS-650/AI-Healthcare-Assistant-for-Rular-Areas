@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../data/repositories/authentication_repository_impl.dart';
+import '../../domain/entities/user.dart';
 import '../../domain/exceptions/auth_exception.dart';
+import '../../domain/repositories/authentication_repository.dart';
 import '../../domain/usecases/complete_profile.dart';
 import '../../domain/usecases/forgot_password.dart';
 import '../../domain/usecases/guest_login.dart';
@@ -20,6 +23,7 @@ class AuthenticationController extends StateNotifier<AuthenticationState> {
   final VerifyOtpUseCase _verifyOtp;
   final ResetPasswordUseCase _resetPassword;
   final CompleteProfileUseCase _completeProfile;
+  final AuthenticationRepository _repository;
 
   AuthenticationController({
     required LoginUseCase login,
@@ -30,6 +34,7 @@ class AuthenticationController extends StateNotifier<AuthenticationState> {
     required VerifyOtpUseCase verifyOtp,
     required ResetPasswordUseCase resetPassword,
     required CompleteProfileUseCase completeProfile,
+    required AuthenticationRepository repository,
   })  : _login = login,
         _register = register,
         _logout = logout,
@@ -38,7 +43,34 @@ class AuthenticationController extends StateNotifier<AuthenticationState> {
         _verifyOtp = verifyOtp,
         _resetPassword = resetPassword,
         _completeProfile = completeProfile,
-        super(const AuthenticationState());
+        _repository = repository,
+        super(const AuthenticationState()) {
+    // Automatically restore session when the controller is created (app start).
+    restoreSession();
+  }
+
+  // ── Restore session from persistent storage ───────────────────────────────
+
+  /// Called once at startup. If a valid token + cached user exist in
+  /// SharedPreferences, the controller transitions to [AuthFlow.restored]
+  /// so the splash page can route directly to home without re-login.
+  Future<void> restoreSession() async {
+    try {
+      final repo = _repository as AuthenticationRepositoryImpl;
+      // _ensureInitialized() loads tokens + cached user from SharedPreferences.
+      await repo.ensureInitialized();
+
+      final token = repo.accessToken;
+      if (token == null || token.isEmpty) return; // no saved session
+
+      final user = await _repository.getCurrentUser();
+      if (user == UserEntity.empty) return;
+
+      state = state.copyWith(flow: AuthFlow.restored, user: user);
+    } catch (_) {
+      // If anything fails just leave state as idle — user sees login screen.
+    }
+  }
 
   // ── Login ─────────────────────────────────────────────────────────────────
 

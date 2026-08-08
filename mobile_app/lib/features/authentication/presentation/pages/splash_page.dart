@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../routing/route_names.dart';
+import '../../data/repositories/authentication_repository_impl.dart';
 import '../providers/authentication_provider.dart';
 import '../widgets/onboarding/floating_particles.dart';
 
@@ -129,28 +130,16 @@ class _AuthSplashPageState extends ConsumerState<AuthSplashPage>
 
   Future<void> _navigate() async {
     if (!mounted) return;
-    final repo = ref.read(authRepositoryProvider);
 
-    // Always show onboarding on a fresh install.
-    // A "fresh install" means no access token is stored.
-    // If no token → force onboarding regardless of the seen flag.
-    final hasToken = repo.accessToken != null && repo.accessToken!.isNotEmpty;
-    final seenOnboarding = await repo.hasSeenOnboarding();
+    // Load tokens from SharedPreferences into memory before any check.
+    final repo = ref.read(authRepositoryProvider) as AuthenticationRepositoryImpl;
+    await repo.ensureInitialized();
 
     if (!mounted) return;
 
-    if (!hasToken && !seenOnboarding) {
-      // Brand new user — show onboarding
-      Navigator.of(context).pushReplacementNamed(RouteNames.onboarding);
-    } else if (!hasToken && seenOnboarding) {
-      // Reinstalled or logged out — show onboarding again for fresh experience
-      await repo.resetOnboarding();
-      if (!mounted) return;
-      Navigator.of(context).pushReplacementNamed(RouteNames.onboarding);
-    } else {
-      // Logged-in returning user — go straight to welcome/home
-      Navigator.of(context).pushReplacementNamed(RouteNames.welcome);
-    }
+    // Always show onboarding on every app open (splash → onboarding → home/login).
+    // The onboarding _finish() decides where to go based on login state.
+    Navigator.of(context).pushReplacementNamed(RouteNames.onboarding);
   }
 
   @override

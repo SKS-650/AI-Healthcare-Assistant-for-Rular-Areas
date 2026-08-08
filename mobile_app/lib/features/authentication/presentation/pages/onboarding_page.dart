@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../routing/route_names.dart';
+import '../../data/repositories/authentication_repository_impl.dart';
 import '../providers/authentication_provider.dart';
 import '../widgets/onboarding/floating_particles.dart';
 import '../widgets/onboarding/onboarding_indicator.dart';
@@ -228,9 +229,16 @@ class _OnboardingPageState extends ConsumerState<OnboardingPage>
   }
 
   Future<void> _finish() async {
-    final repo = ref.read(authRepositoryProvider);
+    final repo = ref.read(authRepositoryProvider) as AuthenticationRepositoryImpl;
     await repo.markOnboardingSeen();
-    if (mounted) Navigator.of(context).pushReplacementNamed(RouteNames.welcome);
+    if (!mounted) return;
+
+    // If already logged in, go straight to home.
+    // Otherwise go to welcome (login/register screen).
+    final hasToken = repo.accessToken != null && repo.accessToken!.isNotEmpty;
+    Navigator.of(context).pushReplacementNamed(
+      hasToken ? RouteNames.home : RouteNames.welcome,
+    );
   }
 
   @override

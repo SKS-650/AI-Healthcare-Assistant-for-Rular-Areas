@@ -1,6 +1,0 @@
-services:
-  - type: web
-    name: ai-healthcare-backend
-    env: docker
-    dockerfilePath: ./backend/Dockerfile
-    dockerContext: ./backend
