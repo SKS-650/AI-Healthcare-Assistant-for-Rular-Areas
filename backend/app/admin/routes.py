@@ -656,11 +656,14 @@ async def disease_prediction_history(
     summary="Hot-reload symptom checker model",
     dependencies=[Depends(require_role(Role.SUPER_ADMIN))],
 )
-async def reload_disease_model(current_user: AdminUser) -> dict:
+async def reload_disease_model(
+    current_user: AdminUser,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
     try:
         info = _sc_service.reload_model()
         await ActivityLogService.log(
-            None, current_user.id, "model.reload", "disease_prediction",
+            db, current_user.id, "model.reload", "disease_prediction",
             severity="warning",
         )
         return {"status": "reloaded", "model_info": info}

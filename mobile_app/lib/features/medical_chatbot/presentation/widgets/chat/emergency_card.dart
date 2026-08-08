@@ -53,11 +53,11 @@ class EmergencyCard extends StatelessWidget {
           const SizedBox(height: 14),
 
           // ── Dial buttons ──────────────────────────────────────────────
-          Row(children: [
+          const Row(children: [
             _CallBtn(emoji: '🚑', label: '102\nAmbulance', number: '102'),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             _CallBtn(emoji: '🆘', label: '108\nDisaster',  number: '108'),
-            const SizedBox(width: 8),
+            SizedBox(width: 8),
             _CallBtn(emoji: '☎️', label: '112\nEmergency', number: '112'),
           ]),
           const SizedBox(height: 10),

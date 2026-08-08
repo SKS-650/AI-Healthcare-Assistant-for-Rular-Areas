@@ -307,35 +307,35 @@ class _EmptyHistory extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Center(
+    return const Center(
       child: Padding(
-        padding: const EdgeInsets.all(32),
+        padding: EdgeInsets.all(32),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            const Text('📋', style: TextStyle(fontSize: 52)),
-            const SizedBox(height: 16),
-            const Text('No emergency history',
+            Text('📋', style: TextStyle(fontSize: 52)),
+            SizedBox(height: 16),
+            Text('No emergency history',
                 style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 18,
                     color: DesignTokens.textStrong)),
-            const SizedBox(height: 8),
-            const Text(
+            SizedBox(height: 8),
+            Text(
               'SOS alerts and emergency detections\nwill appear here.',
               textAlign: TextAlign.center,
               style: TextStyle(
                   color: DesignTokens.textMuted, fontSize: 14, height: 1.5),
             ),
-            const SizedBox(height: 28),
+            SizedBox(height: 28),
             // Emergency call strip even on empty state
-            const Text('Need help right now?',
+            Text('Need help right now?',
                 style: TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
                     color: DesignTokens.textStrong)),
-            const SizedBox(height: 12),
-            Row(mainAxisAlignment: MainAxisAlignment.center, children: const [
+            SizedBox(height: 12),
+            Row(mainAxisAlignment: MainAxisAlignment.center, children: [
               _EmergencyPill(
                 emoji: '🚑', number: '102', label: 'Ambulance',
                 color: DesignTokens.danger,

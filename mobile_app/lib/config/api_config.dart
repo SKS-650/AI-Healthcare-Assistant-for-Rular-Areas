@@ -40,7 +40,7 @@ class ApiConfig {
     return switch (defaultTargetPlatform) {
       // Android emulator uses a special alias to reach the host machine
       TargetPlatform.android =>
-        bool.fromEnvironment('IS_EMULATOR', defaultValue: false)
+        const bool.fromEnvironment('IS_EMULATOR', defaultValue: false)
             ? 'http://10.0.2.2:8000'
             : _wifiBackendUrl,
       // iOS / Desktop
@@ -49,10 +49,10 @@ class ApiConfig {
     };
   }
 
-  /// Full URL for symptoms endpoint
+  /// Full URL for symptoms endpoint (GET /api/v1/symptom-checker/symptoms)
   static String get symptomsUrl => '$baseUrl${ApiConstants.symptomsPath}';
 
-  /// Full URL for prediction endpoint
+  /// Full URL for prediction endpoint (POST /api/v1/symptom-checker/predict)
   static String get predictionUrl => '$baseUrl${ApiConstants.predictionPath}';
 
   /// API version prefix
@@ -73,7 +73,7 @@ class ApiConfig {
 
     return switch (defaultTargetPlatform) {
       TargetPlatform.android =>
-        bool.fromEnvironment('IS_EMULATOR', defaultValue: false)
+        const bool.fromEnvironment('IS_EMULATOR', defaultValue: false)
             ? 'Android emulator (10.0.2.2:8000)'
             : 'Android physical device (WiFi: $_wifiBackendUrl)',
       TargetPlatform.iOS => 'iOS Simulator (localhost:8000)',

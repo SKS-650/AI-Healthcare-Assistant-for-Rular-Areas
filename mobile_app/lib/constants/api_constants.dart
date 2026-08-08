@@ -5,9 +5,13 @@ class ApiConstants {
   static const apiPrefix = '/api/v1';
   
   // Base paths
-  static const basePath = '/api';
-  static const symptomsPath = '$basePath/symptoms';
-  static const predictionPath = '$basePath/predict';
+  static const basePath = '/api/v1';
+
+  // ── Corrected paths (match backend routes) ────────────────────────────────
+  // Previously these were '/api/symptoms' and '/api/predict' (wrong prefix).
+  // Kept for backward-compat but now point to the real backend endpoints.
+  static const symptomsPath   = '$apiPrefix/symptom-checker/symptoms';
+  static const predictionPath = '$apiPrefix/symptom-checker/predict';
   
   // Authentication endpoints
   static const authPath = '$apiPrefix/auth';
@@ -17,6 +21,8 @@ class ApiConstants {
   static const refreshTokenPath = '$authPath/refresh';
   static const verifyEmailPath = '$authPath/verify-email';
   static const forgotPasswordPath = '$authPath/forgot-password';
+  static const forgotPasswordOtpPath = '$authPath/forgot-password-otp';
+  static const verifyResetOtpPath = '$authPath/verify-reset-otp';
   static const resetPasswordPath = '$authPath/reset-password';
   
   // User endpoints

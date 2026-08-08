@@ -37,6 +37,10 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
   /// so Gemini receives full conversation history.
   String? _backendConversationId;
 
+  /// Tracks whether the most recent response was offline, so suggestions
+  /// can switch to the full 50-topic offline list automatically.
+  bool _lastKnownOffline = false;
+
   ChatbotRepositoryImpl(this._authRepo);
 
   // ── Auth helpers ─────────────────────────────────────────────────────────
@@ -110,6 +114,7 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
           _backendConversationId = convId;
         }
 
+        _lastKnownOffline = false; // back online
         return ChatMessageModel.fromBackendResponse(data);
       }
 
@@ -137,13 +142,19 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
         '⚠️ Server returned status ${response.statusCode}. '
         'Please try again.',
       );
-    } on http.ClientException catch (e) {
-      return _errorMessage(
-        '📵 Could not reach the server.\n\n'
-        'Please check your internet connection.\n\n'
-        '_Error: ${e.message}_',
-      );
+    } on http.ClientException catch (_) {
+      // No network — serve an offline keyword-matched response
+      return _offlineMessage(message);
     } catch (e) {
+      final err = e.toString().toLowerCase();
+      // Timeout or socket errors also mean we're offline / unreachable
+      if (err.contains('timeout') ||
+          err.contains('socket') ||
+          err.contains('connection') ||
+          err.contains('network') ||
+          err.contains('host lookup')) {
+        return _offlineMessage(message);
+      }
       // Catch-all — never crash the UI
       return _errorMessage(
         '❌ An unexpected error occurred.\n\n'
@@ -157,7 +168,11 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
   @override
   Future<List<Suggestion>> getSuggestions() async {
     await Future<void>.delayed(const Duration(milliseconds: 60));
-    return ChatbotDummyData.suggestions;
+    // When the last known mode was offline, surface all 50 offline topic chips
+    // so the user can see what the offline engine can answer.
+    return _lastKnownOffline
+        ? ChatbotDummyData.offlineSuggestions
+        : ChatbotDummyData.suggestions;
   }
 
   // ── History (local + Hive persistence) ───────────────────────────────────
@@ -289,4 +304,19 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
         createdAt: DateTime.now(),
         isOnlineMode: false,
       );
+
+  /// Serve a keyword-matched offline response when the network is unreachable.
+  /// Prepends a small banner so the user knows they are in offline mode.
+  ChatMessageModel _offlineMessage(String message) {
+    _lastKnownOffline = true;
+    final reply = ChatbotDummyData.responseFor(message);
+    return ChatMessageModel(
+      id: 'bot-offline-${DateTime.now().millisecondsSinceEpoch}',
+      text: '📵 _Offline mode — showing limited response_\n\n$reply',
+      sender: ChatSender.bot,
+      createdAt: DateTime.now(),
+      isOnlineMode: false,
+      confidence: 0.5,
+    );
+  }
 }

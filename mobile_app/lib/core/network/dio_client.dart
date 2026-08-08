@@ -158,7 +158,7 @@ class SimpleApiClient {
   ) async {
     try {
       var response = await fn(await _authHeaders()).timeout(
-        Duration(seconds: ApiConfig.receiveTimeout),
+        const Duration(seconds: ApiConfig.receiveTimeout),
         onTimeout: () => throw const SocketException('timeout'),
       );
 
@@ -166,7 +166,7 @@ class SimpleApiClient {
         final refreshed = await _tryRefresh();
         if (refreshed) {
           response = await fn(await _authHeaders()).timeout(
-            Duration(seconds: ApiConfig.receiveTimeout),
+            const Duration(seconds: ApiConfig.receiveTimeout),
           );
         }
       }

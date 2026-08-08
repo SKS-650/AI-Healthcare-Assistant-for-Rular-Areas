@@ -117,7 +117,7 @@ def create_app() -> FastAPI:
         # Best-effort database connectivity check
         db_status = "unavailable"
         try:
-            from app.core.database import get_async_session  # noqa: F401
+            from app.database.connection import get_async_session  # noqa: F401
             db_status = "connected"
         except Exception:
             pass

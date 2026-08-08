@@ -357,12 +357,12 @@ class _ResultCard extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         // Quick-call strip
-        Row(children: [
-          const _QuickCall(emoji: '🚑', num: '102', label: 'Ambulance'),
-          const SizedBox(width: 8),
-          const _QuickCall(emoji: '🚓', num: '100', label: 'Police'),
-          const SizedBox(width: 8),
-          const _QuickCall(emoji: '🔥', num: '101', label: 'Fire'),
+        const Row(children: [
+          _QuickCall(emoji: '🚑', num: '102', label: 'Ambulance'),
+          SizedBox(width: 8),
+          _QuickCall(emoji: '🚓', num: '100', label: 'Police'),
+          SizedBox(width: 8),
+          _QuickCall(emoji: '🔥', num: '101', label: 'Fire'),
         ]),
       ]),
     );
