@@ -1669,63 +1669,66 @@ emergency_contacts
 
 ### Overview
 
-The Personal Health Records module is a secure digital health vault that allows users to store, organise, and retrieve their complete medical history in one place. It covers five distinct record types — medical profile, medical history entries, prescriptions, medical images, and a unified chronological timeline — all linked to the authenticated user and optionally shared with their care team.
+The Personal Health Records (PHR) module is a fully working, end-to-end live data module — not a static prototype. It is a secure digital health vault that stores, organises, and retrieves a user's complete medical history across five record types, all backed by the FastAPI backend with a SQLite (dev) / PostgreSQL (prod) database, local Hive cache for offline access, and a real-time refresh flow on the mobile app.
 
-**Module path:** `backend/app/health_records/`
+**Module path:** `backend/app/health_records/`  
+**Mobile path:** `mobile_app/lib/features/health_records/`  
+**Admin path:** `admin_dashboard/lib/features/health_records/`
+
+### Architecture — Data Flow
+
+```
+Mobile App (Flutter / Riverpod)
+  └── HealthRecordsController (StateNotifier)
+        ├── loadAll() — concurrent fetch of all 6 endpoints
+        ├── createPrescription() / addHistoryEntry() / addMedicalImage()
+        └── HealthRecordsRepositoryImpl
+              ├── Remote: HealthRecordsRemoteDataSource → SimpleApiClient
+              │     → http://[device-ip]:8000/api/v1/health-records/*
+              └── Local cache: LocalDbService (Hive) — offline fallback
+
+Backend (FastAPI)
+  └── /api/v1/health-records/*
+        ├── MedicalProfileService   → user_medical_profiles table
+        ├── MedicalHistoryService   → medical_history table
+        ├── PrescriptionService     → prescriptions table + /uploads/
+        ├── MedicalImageService     → medical_images table + /uploads/
+        ├── TimelineService         → timeline_events table (auto-populated)
+        └── HealthRecordsSummaryService → aggregate counts
+```
+
+> **URL note:** `SimpleApiClient.get(path)` prepends `ApiConfig.apiBaseUrl` which is
+> `http://[ip]:8000/api/v1`. All datasource paths start with `/health-records/` (no repeated prefix).
 
 ### Record Types
 
 | Record Type | What It Stores |
 |---|---|
-| **Medical Profile** | Blood group, height, weight, BMI, allergies, chronic conditions, current medications, smoking/alcohol status, activity level, family history |
-| **Medical History** | Past and current conditions (diagnoses, surgeries, chronic illnesses, family history) with status tracking (active / resolved / managed) |
-| **Prescriptions** | Doctor name, hospital, diagnosis, medicines list, dosage instructions, prescription date, validity, optional PDF upload |
-| **Medical Images** | X-rays, MRI/CT scans, ultrasound reports, lab reports — with body part tagging, scan date, and doctor annotation |
-| **Medical Timeline** | Auto-aggregated chronological feed of all record types plus events pushed from other modules (symptom checks, emergency assessments) |
-
-### Module Architecture
-
-```mermaid
-flowchart TD
-    A([User opens Health Records]) --> B[GET /health-records/summary\nCounts + last activity dates]
-    B --> C{User selects section}
-
-    C --> D[Medical Profile\nGET/PUT /health-records/profile]
-    C --> E[Medical History\nGET/POST/PUT/DELETE /health-records/history]
-    C --> F[Prescriptions\nGET/POST/DELETE /health-records/prescriptions]
-    C --> G[Medical Images\nGET/POST/DELETE /health-records/images]
-    C --> H[Unified Timeline\nGET /health-records/timeline]
-
-    D --> D1[Edit blood group,\nallergies, chronic conditions,\ncurrent meds, vitals]
-    E --> E1[Add condition with\ncategory: current/past/surgery/chronic/family\nstatus: active/resolved/managed]
-    F --> F1[Upload prescription\nmultipart/form-data\nPDF or image]
-    F1 --> F2[File saved to\n/uploads/prescriptions/]
-    F2 --> F3[URL stored in DB\nserved as static asset]
-    G --> G1[Upload medical image\nmultipart/form-data]
-    G1 --> G2[File saved to\n/uploads/images/]
-    H --> H1[Merges all record types\nby event_date descending]
-    H --> H2[Also receives external events via\nPOST /health-records/timeline/external\nfrom emergency + symptom modules]
-```
+| **Medical Profile** | Blood group, height, weight, auto-calculated BMI, allergies, chronic conditions, current medications, smoking/alcohol status, activity level, family history, vaccination history |
+| **Medical History** | Past and current conditions (diagnoses, surgeries, chronic illnesses, allergies, family history) with category and status tracking |
+| **Prescriptions** | Doctor name, hospital, diagnosis, dynamic medicines list (name / dose / frequency / duration), instructions, prescription date, validity date, optional PDF/image file |
+| **Medical Images** | X-rays, MRI, CT scans, blood reports, ECG, skin images — with type, body part, doctor, scan date, tags, optional file upload |
+| **Medical Timeline** | Auto-aggregated chronological feed of all record types plus events pushed from the Emergency and Symptom Checker modules |
 
 ### Complete API Endpoints
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
-| `GET` | `/health-records/summary` | JWT | Dashboard counts and last activity per record type |
-| `GET` | `/health-records/profile` | JWT | Get medical profile |
-| `PUT` | `/health-records/profile` | JWT | Create or update medical profile (upsert) |
-| `GET` | `/health-records/history` | JWT | List medical history entries (filterable by category/status) |
-| `POST` | `/health-records/history` | JWT | Add a new history entry |
+| `GET` | `/health-records/summary` | JWT | Dashboard counts — profile flag, history count, prescription count, image count, recent timeline |
+| `GET` | `/health-records/profile` | JWT | Get medical profile; creates an empty one on first access |
+| `PUT` | `/health-records/profile` | JWT | Upsert medical profile; BMI auto-calculated server-side |
+| `GET` | `/health-records/history` | JWT | List history entries (filter: `category`, `limit`, `offset`) |
+| `POST` | `/health-records/history` | JWT | Add new history entry |
 | `PUT` | `/health-records/history/{id}` | JWT | Update history entry |
 | `DELETE` | `/health-records/history/{id}` | JWT | Delete history entry |
 | `GET` | `/health-records/prescriptions` | JWT | List prescriptions (paginated) |
-| `POST` | `/health-records/prescriptions` | JWT | Upload prescription with optional file attachment |
-| `DELETE` | `/health-records/prescriptions/{id}` | JWT | Delete prescription and associated file |
-| `GET` | `/health-records/images` | JWT | List medical images |
-| `POST` | `/health-records/images` | JWT | Upload medical image |
+| `POST` | `/health-records/prescriptions` | JWT | Create prescription — accepts `application/json` OR `multipart/form-data` (with file) |
+| `DELETE` | `/health-records/prescriptions/{id}` | JWT | Delete prescription |
+| `GET` | `/health-records/images` | JWT | List medical images (filter: `image_type`) |
+| `POST` | `/health-records/images` | JWT | Upload medical image — same dual content-type handler as prescriptions |
 | `DELETE` | `/health-records/images/{id}` | JWT | Delete image |
-| `GET` | `/health-records/timeline` | JWT | Unified chronological medical timeline |
-| `POST` | `/health-records/timeline/external` | JWT | Push event from another module (emergency, symptom) |
+| `GET` | `/health-records/timeline` | JWT | Unified timeline `{total, events:[]}` sorted newest-first |
+| `POST` | `/health-records/timeline/external` | JWT | Push cross-module event (emergency, symptom check, chat) |
 
 ### Database Schema
 
@@ -1743,7 +1746,7 @@ erDiagram
         string blood_group
         float height_cm
         float weight_kg
-        float bmi
+        float bmi "auto-calculated"
         string smoking_status
         string alcohol_status
         string activity_level
@@ -1751,6 +1754,8 @@ erDiagram
         json chronic_diseases
         json current_medications
         json family_history
+        json vaccination_history
+        datetime created_at
         datetime updated_at
     }
 
@@ -1758,12 +1763,14 @@ erDiagram
         string id PK
         string user_id FK
         string disease_name
-        string category "current|past|surgery|chronic|family"
+        string category "current|past|surgery|allergy|chronic|family"
         string status "active|resolved|managed"
-        date diagnosis_date
+        datetime diagnosis_date
         string doctor_name
         string hospital_name
         text notes
+        datetime created_at
+        datetime updated_at
     }
 
     prescriptions {
@@ -1772,92 +1779,165 @@ erDiagram
         string doctor_name
         string hospital_name
         string diagnosis
-        date prescription_date
-        date valid_until
-        json medicines
+        datetime prescription_date
+        datetime valid_until
+        json medicines "name|dose|frequency|duration"
         text instructions
+        text notes
         string file_url
+        string file_original_name
+        datetime created_at
     }
 
     medical_images {
         string id PK
         string user_id FK
         string title
-        string image_type "xray|mri|ct|ultrasound|lab|other"
+        string image_type "xray|mri|ct_scan|blood_report|ecg|skin|other"
+        string description
         string body_part
         string doctor_name
-        date scan_date
+        string hospital_name
+        datetime scan_date
+        json tags
         string file_url
+        string file_original_name
+        int file_size_bytes
+        datetime created_at
     }
 
     timeline_events {
         string id PK
         string user_id FK
-        string event_type
+        string event_type "medical_history|prescription|medical_image|symptom_assessment|chat_conversation|emergency_assessment"
         string title
         text description
+        string reference_id "FK to source record"
         string icon_emoji
         datetime event_date
-        string source_module
+        datetime created_at
     }
 ```
 
-### File Upload Flow
+### File Upload — Dual Content-Type Handler
+
+Both the prescription and image endpoints accept two request formats, which lets the mobile app send JSON-only (no file) or multipart (with file) using the same endpoint:
 
 ```mermaid
 sequenceDiagram
     participant APP as Mobile App
     participant API as Health Records API
-    participant FS as File System (/uploads/)
+    participant FS as /uploads/
     participant DB as Database
 
-    APP->>API: POST /health-records/prescriptions\nContent-Type: multipart/form-data\n{doctor_name, diagnosis, medicines[], file}
-    API->>API: Validate file type\n(PDF, JPG, PNG only)\nMax size: 10MB
-    API->>FS: Save file to\n/uploads/prescriptions/<uuid>.<ext>
-    FS-->>API: File path confirmed
-    API->>DB: INSERT prescriptions\n{...metadata, file_url="/uploads/prescriptions/<uuid>.<ext>"}
-    DB-->>API: Record created
-    API-->>APP: 201 {prescription_id, file_url}
-    APP->>APP: Display prescription card\nwith download link
+    alt JSON-only (no file)
+        APP->>API: POST /health-records/prescriptions\nContent-Type: application/json\n{doctor_name, diagnosis, medicines[]}
+    else Multipart with file
+        APP->>API: POST /health-records/prescriptions\nContent-Type: multipart/form-data\n{metadata: JSON string, file: binary}
+    end
+
+    API->>API: Auto-detect content-type\n→ parse accordingly
+    opt File present
+        API->>FS: Save to /uploads/prescriptions/<uuid>.<ext>
+        FS-->>API: file_url confirmed
+    end
+    API->>DB: INSERT prescription record
+    DB-->>API: Created record
+    API-->>APP: 201 PrescriptionResponse {id, file_url, ...}
 ```
 
-Files are served directly by FastAPI's `StaticFiles` mount at `/uploads/`. In production, this mount should be replaced with a CDN or object storage (S3 / GCS) for scalability.
+### Timeline Auto-Population
 
-### Timeline Aggregation
-
-The unified timeline endpoint (`GET /health-records/timeline`) merges records from all five tables into a single chronologically sorted feed:
+Every write operation (create history, upload prescription, upload image) automatically inserts a `timeline_events` row via the service layer. Other modules push events using the external endpoint:
 
 ```
-Timeline Event Sources:
-  ├── medical_history entries     → "Diagnosed with Typhoid Fever" 🏥
-  ├── prescriptions               → "Prescription from Dr. Sharma" 💊
-  ├── medical_images              → "Chest X-Ray uploaded" 🩻
-  ├── emergency_assessments       → "Emergency Assessment: HIGH risk" 🚨
-  └── symptom_check_history       → "Symptom Check: Fever + Headache" 🔍
+Timeline sources:
+  medical_history  CREATE  → "Added Medical History: Hypertension"          🩺
+  prescriptions    CREATE  → "Prescription from Dr. Sharma"                  💊
+  medical_images   CREATE  → "Medical Image: Chest X-Ray"                   📷
+  emergency module POST    → "Emergency Assessment: HIGH severity"           🚨
+  symptom checker  POST    → "Symptom Check: Fever + Headache"              🤒
+  chatbot          POST    → "AI Consultation completed"                     �
 
-All sorted by event_date DESC → newest first
+All sorted by event_date DESC → most recent first
 ```
 
-### Medical History Categories
+### Medical History Categories & Statuses
 
 | Category | Description |
 |---|---|
 | `current` | Active conditions the user currently has |
 | `past` | Resolved conditions from the past |
 | `surgery` | Surgical procedures performed |
-| `chronic` | Long-term chronic conditions requiring ongoing management |
-| `family` | Family history entries (hereditary risk factors) |
+| `allergy` | Known allergens and reactions |
+| `chronic` | Long-term conditions requiring ongoing management |
+| `family` | Family history / hereditary risk factors |
 
-### Mobile PHR Screens
-
-| Screen | Key Features |
+| Status | Description |
 |---|---|
-| **PHR Home / Summary** | Count cards for each section, quick-add buttons |
-| **Medical Profile Editor** | Form with blood group picker, allergy tags, condition checkboxes, vitals sliders |
-| **Medical History List** | Filterable list by category and status, swipe-to-delete |
-| **Prescriptions List** | Card grid with doctor/diagnosis info, PDF viewer integration, upload FAB |
-| **Medical Images Gallery** | Grid view with image type filter, full-screen viewer |
-| **Unified Timeline** | Chronological feed with colour-coded event type icons |
+| `active` | Currently ongoing |
+| `resolved` | Fully treated / no longer present |
+| `managed` | Controlled with ongoing medication or lifestyle changes |
+
+### Mobile App — Screens & Features
+
+| Screen | Features |
+|---|---|
+| **Health Records Home** | Gradient hero header with live vitals chips (blood group, height, weight, BMI); summary stats row (History / Rx / Scans / Labs counts); 6-card Quick Access grid; Recent Activity timeline (last 5 events); pull-to-refresh; shimmer skeleton on load |
+| **Medical Profile** | Edit blood group, height, weight (BMI auto-computed), smoking/alcohol/activity status; tag editors for allergies, chronic conditions, medications, family history; saves to backend via `PUT /health-records/profile`; cached in Hive |
+| **Medical History** | List with category filter chips (All / Current / Chronic / Past / Surgery / Allergy / Family); add/edit/delete entries via bottom sheet form; status badge (Active / Managed / Resolved) |
+| **Prescriptions** | Card list with expiry status (Active / Expired); real add-form bottom sheet — diagnosis, doctor, hospital, date pickers, dynamic medicine rows (add/remove), instructions; copy & share prescription text; file download if attached |
+| **Medical Images** | Grid with type filter (X-Ray / MRI / CT / Blood Report / ECG / Skin / Other); upload form with title, type, body part, scan date; full-screen viewer |
+| **Medical Timeline** | Chronological feed with type-colour badges; filter by event type; grouped by month |
+| **Search Records** | Full-text search across all record types |
+| **Upload Report** | Bulk report upload page |
+
+### Offline / Cache Strategy
+
+| Operation | Strategy |
+|---|---|
+| **Read on load** | Remote first → on any network error → Hive local cache |
+| **Profile save** | Remote write → `toLocalJson()` saved to Hive on success |
+| **History / Images** | Remote write → local Hive upsert on success |
+| **Error banner** | Shown only for real connectivity failures (SocketException, timeout, 401, 5xx) — NOT for empty data (new users see empty state, not error) |
+| **Retry** | Banner includes a Retry button that calls `loadAll()` |
+
+### Admin Dashboard — Health Records
+
+The admin dashboard includes a dedicated 6-tab Health Records management page at `/health-records`:
+
+| Tab | Contents |
+|---|---|
+| **Overview** | Aggregate stats: total profiles, history entries, prescriptions, images, timeline events; privacy notice |
+| **Medical Profiles** | Paginated searchable table; view-detail dialog with full vitals, allergies, medications, family history |
+| **Medical History** | Paginated table with search + category filter (current/chronic/past/surgery/allergy/family) + status filter (active/resolved/managed); detail dialog |
+| **Prescriptions** | Paginated searchable table with medicine list; detail dialog |
+| **Medical Images** | Paginated table with image-type filter; type badges |
+| **Timeline** | All cross-user timeline events with event-type badges; paginated |
+
+Admin endpoints used (all require `admin` or `super_admin` role):
+
+| Endpoint | Description |
+|---|---|
+| `GET /admin/health-records/stats` | Aggregate counts across all five tables |
+| `GET /admin/health-records/profiles` | Paginated + searchable medical profiles |
+| `GET /admin/health-records/medical-history` | Paginated + searchable + filterable history |
+| `GET /admin/health-records/prescriptions` | Paginated + searchable prescriptions |
+| `GET /admin/health-records/images` | Paginated + type-filterable images |
+| `GET /admin/health-records/timeline` | Paginated timeline events |
+
+### Key Bug Fixes Applied
+
+| Bug | Root Cause | Fix |
+|---|---|---|
+| "Exception: Not Found" on every load | `_kBase` in datasource was `'${ApiConstants.apiPrefix}/health-records'` — when prepended to `ApiConfig.apiBaseUrl` (which already contains `/api/v1`) the URL doubled to `.../api/v1/api/v1/health-records/...` | Changed `_kBase = '/health-records'` |
+| Error banner shown for new users | `'not found'` and `'404'` were in the network-error detection list; a new user with no records triggers an empty response, not an error | Removed 404/not-found from the error list; empty state shown instead |
+| Static/dummy data shown instead of live data | `getMedicalRecords`, `getLabReports`, `getMedicalTimeline`, and the prescriptions fallback all returned `HealthRecordsDummyData.*` | Replaced all with `const []` — live data from backend only |
+| Timeline event card crash | `_TimelineEventCard` typed `event` as `dynamic` and used unsafe `.as` casts | Changed to typed `TimelineEvent` entity |
+| Local profile cache broken | `saveMedicalProfile` called `toJson()..addAll({id, user_id, ...})` which mutates an unmodifiable map | Added `toLocalJson()` method that includes all server-assigned fields |
+| SliverAppBar text overlap | `FlexibleSpaceBar.title` and the `background` vitals text rendered at the same position when collapsed | Removed `FlexibleSpaceBar.title`; collapsed title is now in `SliverAppBar.title`; vitals moved to pill chips in expanded hero |
+| Prescriptions form non-functional | Upload sheet was a placeholder with no form fields | Replaced with a full `ConsumerStatefulWidget` form (diagnosis, doctor, hospital, dates, dynamic medicine rows, saves to backend) |
+| Admin dashboard missing Medical History tab | Provider had no `AdminMedicalHistory` model or `loadMedicalHistory` method | Added model, state fields, and full `_HistoryTab` with search + filters |
 
 ---
 
@@ -1867,106 +1947,139 @@ All sorted by event_date DESC → newest first
 
 ### Overview
 
-The Health Education module is a multilingual content management and delivery system for health articles. It provides categorised browsing, full-text search, reading progress tracking, bookmarks, and a personalised recommendation engine that surfaces articles based on each user's reading history. All content auto-seeds from a built-in dataset on first request, requiring zero manual setup in development.
+The Health Education module is a fully-featured, visually rich multilingual content platform delivering WHO evidence-based health articles to users across rural South Asia. It was comprehensively overhauled with **25 meaningful articles across 12 colour-coded categories**, a vibrant multi-colour UI built with HSL-shifted gradients, live reading progress tracking, TTS (text-to-speech) listen mode, offline download, bookmarks, and a personalised recommendation engine — all offline-first.
 
-**Module path:** `backend/app/health_education/`
+**Module path:** `backend/app/health_education/`  
+**Mobile UI path:** `mobile_app/lib/features/health_education/`
 
 ### Core Features
 
 | Feature | Detail |
 |---|---|
-| **Auto-seeding** | `SeedService.seed()` runs on every dashboard/category/article request; inserts default content only if the table is empty — idempotent |
+| **25 WHO-sourced articles** | Full Markdown content with tables, emergency signs, prevention checklists, and meal plans — covering diseases, nutrition, vaccination, maternal health, first aid, mental health, and more |
+| **12 colour-coded categories** | Each category has a unique gradient colour; icons, slugs, and colours are consistent across backend seed, Flutter dummy data, and the UI palette |
+| **Auto-seeding** | `SeedService.seed()` runs on every dashboard/category/article request; idempotent — inserts defaults only when the table is empty |
 | **Multilingual content** | Articles exist in `en`, `hi`, `ne`, `bh` — client passes `?language=` param |
-| **Reading progress tracking** | Stores scroll position (0–100%) and completion flag per user per article |
-| **Recommendation engine** | Reads the user's last 20 completed/in-progress articles, finds their most-read categories, returns unseen articles from those categories |
-| **Bookmarks** | Per-user saved article list, independent of reading progress |
-| **Featured articles** | Admin-flagged articles surfaced at the top of the dashboard |
+| **Live reading progress bar** | A colour-accented bar at the top of the article detail page updates in real time as the user scrolls; debounced to 50 px intervals to prevent excessive state updates |
+| **TTS listen mode** | Full text-to-speech with play/pause, and a speed slider (0.25×–1.0×) via `flutter_tts`; markdown stripped before speech |
+| **Recommendation engine** | Ranks by `view_count + bookmark_count × 3`; returns top 10 most-engaged articles |
+| **Bookmarks** | Per-user saved article list, synced to backend with local Hive fallback |
+| **Offline download** | Individual articles can be saved to device storage and read without internet |
+| **Featured articles** | 10 articles flagged `is_featured = true` in seed data; surfaced as horizontal gradient cards on the dashboard |
 | **View counter** | Incremented atomically on each `GET /articles/{id}` call |
+| **Full-text search** | Searches title, summary, content, and tags; results show instantly with shimmer skeleton while loading |
+
+### 12 Categories (Updated)
+
+| # | Category | Slug | Colour | Icon |
+|---|---|---|---|---|
+| 1 | Diseases | `diseases` | `#F97316` (Orange) | 🩺 |
+| 2 | Nutrition | `nutrition` | `#2ECC8B` (Green) | 🥗 |
+| 3 | Vaccination | `vaccination` | `#4F94FF` (Blue) | 💉 |
+| 4 | Maternal Health | `maternal-health` | `#E879A0` (Pink) | 🤰 |
+| 5 | Child Health | `child-health` | `#FFB829` (Amber) | 👶 |
+| 6 | Hygiene | `hygiene` | `#18C8C8` (Teal) | 🧼 |
+| 7 | Healthy Lifestyle | `healthy-lifestyle` | `#926EFF` (Violet) | 🏃 |
+| 8 | Mental Health | `mental-health` | `#7C3AED` (Purple) | 🧠 |
+| 9 | Heart Health | `heart-health` | `#EF4444` (Red) | ❤️ |
+| 10 | First Aid | `first-aid` | `#F43F5E` (Rose) | 🩹 |
+| 11 | Women's Health | `womens-health` | `#EC4899` (Fuchsia) | ♀️ |
+| 12 | Eye & Ear Care | `eye-ear-care` | `#0EA5E9` (Sky) | 👁️ |
+
+### 25 Seed Articles
+
+| # | Title | Category | Featured |
+|---|---|---|---|
+| 1 | Understanding Diabetes: Causes, Symptoms & Prevention | Diseases | ✅ |
+| 2 | Malaria Prevention and Treatment Guide | Diseases | ✅ |
+| 3 | Nutrition During Pregnancy: What to Eat for a Healthy Baby | Nutrition | ✅ |
+| 4 | BCG, Polio & Childhood Vaccination Schedule | Vaccination | ✅ |
+| 5 | Hand Washing: The Most Powerful Disease Prevention Tool | Hygiene | — |
+| 6 | Managing High Blood Pressure (Hypertension) Naturally | Heart Health | ✅ |
+| 7 | Child Fever: When to Worry and Home Care Guide | Child Health | — |
+| 8 | Mental Wellness for Rural Communities | Mental Health | — |
+| 9 | Breastfeeding: Benefits and Best Practices for New Mothers | Maternal Health | ✅ |
+| 10 | Tuberculosis (TB): Facts, Prevention, and Treatment | Diseases | — |
+| 11 | Diarrhoea in Children: ORS, Zinc & Prevention | Child Health | — |
+| 12 | Anaemia in Women: Iron Deficiency, Symptoms & Iron-Rich Diet | Women's Health | ✅ |
+| 13 | Snake Bite First Aid: Do's, Don'ts & Emergency Response | First Aid | ✅ |
+| 14 | Protecting Your Eyesight: Common Eye Problems & Prevention | Eye & Ear Care | — |
+| 15 | Safe Drinking Water: Purification Methods for Rural Homes | Hygiene | — |
+| 16 | Heart Attack Warning Signs & Immediate Action Steps | Heart Health | ✅ |
+| 17 | Sleep Your Way to Better Health: Sleep Hygiene Guide | Healthy Lifestyle | — |
+| 18 | Dengue Fever: Symptoms, Warning Signs & Home Management | Diseases | ✅ |
+| 19 | Physical Activity for Health: A Beginner's Exercise Guide | Healthy Lifestyle | — |
+| 20 | Antenatal Care: Essential Pregnancy Check-ups & Tests | Maternal Health | — |
+| 21 | Understanding Cholesterol: Good vs Bad & Diet Changes | Heart Health | — |
+| 22 | Oral Health: Brushing, Flossing & Preventing Gum Disease | Hygiene | — |
+| 23 | Pneumonia in Children: Recognition, Treatment & Prevention | Diseases | — |
+| 24 | 7 Cancer Warning Signs You Should Never Ignore | Healthy Lifestyle | — |
+| 25 | Essential Newborn Care: First 28 Days Guide for Parents | Child Health | ✅ |
 
 ### Complete API Endpoints
 
 | Method | Endpoint | Auth | Description |
 |---|---|---|---|
 | `GET` | `/education/dashboard` | JWT | Full dashboard: featured + categories + recommendations + recent reading + bookmarks |
-| `GET` | `/education/categories` | JWT | All health categories with article counts |
-| `GET` | `/education/articles` | JWT | Paginated article list (filter by category, language) |
+| `GET` | `/education/categories` | JWT | All 12 health categories |
+| `GET` | `/education/articles` | JWT | Paginated article list (filter by category slug, language) |
 | `GET` | `/education/articles/{id}` | JWT | Article detail — increments view count |
-| `GET` | `/education/featured` | JWT | Featured articles (limit configurable) |
-| `GET` | `/education/search` | JWT | Full-text search across title + body |
-| `GET` | `/education/recommendations` | JWT | Personalised recommendations |
+| `GET` | `/education/featured` | JWT | Featured articles (limit configurable, default 5) |
+| `GET` | `/education/search` | JWT | Full-text search across title, summary, content, and tags |
+| `GET` | `/education/recommendations` | JWT | Ranked by engagement score (view + bookmark × 3) |
 | `GET` | `/education/bookmarks` | JWT | User's bookmarked articles |
 | `POST` | `/education/bookmarks` | JWT | Bookmark an article |
 | `DELETE` | `/education/bookmarks/{id}` | JWT | Remove a bookmark |
 | `POST` | `/education/reading-progress/{id}` | JWT | Update scroll position and completion state |
 | `GET` | `/education/health` | Public | Module health check |
 
-### Content & Category Structure
-
-Articles are organised into health categories. Each category has a slug (used as the filter key), an icon, a colour, and an article count.
-
-**Sample categories:**
-`maternal-health` · `child-health` · `nutrition` · `diabetes-management` · `heart-health` · `mental-health` · `hygiene-sanitation` · `vaccination` · `first-aid` · `respiratory-health` · `skin-care` · `eye-care` · `oral-health`
-
-Each article contains:
-- `title`, `summary`, `body` (full Markdown content)
-- `category_id`, `language` (`en|hi|ne|bh`)
-- `tags` (JSON array)
-- `read_time_minutes` (estimated)
-- `is_featured` (bool, set by admin)
-- `is_published` (bool — draft/live toggle via admin dashboard)
-- `view_count`, `created_at`, `updated_at`
-
 ### Education Module Flow
 
 ```mermaid
 flowchart TD
     A([User opens Health Education]) --> B[GET /education/dashboard\n?language=en]
-    B --> C[SeedService.seed\nInsert defaults if empty]
+    B --> C[SeedService.seed\nInsert 25 articles + 12 categories\nif tables are empty — idempotent]
     C --> D[DashboardService.get_dashboard]
 
-    D --> E[Featured Articles\nArticleService.get_featured]
-    D --> F[All Categories\nCategoryService.list_categories]
-    D --> G[Recommendations\nArticleService.get_recommendations]
+    D --> E[Featured Articles\n10 flagged articles]
+    D --> F[All 12 Categories\nwith colour + icon]
+    D --> G[Recommendations\nRanked by view_count + bookmark×3]
     D --> H[Recent Reading\nReadingHistoryService]
     D --> I[Bookmarks\nBookmarkService.list_bookmarks]
 
-    E & F & G & H & I --> J([Dashboard rendered])
+    E & F & G & H & I --> J([Dashboard rendered\nVibrant gradient UI])
 
     J --> K{User Action}
 
-    K -->|Browse category| L[GET /education/articles\n?category=child-health&language=hi]
-    K -->|Search| M[GET /education/search?q=diabetes]
-    K -->|View recommendation| N[GET /education/articles/:id]
+    K -->|Tap category tile| L[GET /education/articles\n?category=child-health&language=en]
+    K -->|Search bar| M[GET /education/search?q=dengue]
+    K -->|Tap featured card| N[GET /education/articles/:id]
 
     L --> N
     M --> N
 
     N --> O[ArticleService.get_article_detail\nIncrement view_count atomically]
-    O --> P[POST /education/reading-progress/:id\n{last_read_position: 45, is_completed: false}]
-    P --> Q[ReadingHistoryService.update_progress\nUpsert reading_history record]
-    Q --> R[Reading history drives\nfuture recommendations]
+    O --> P[Render full Markdown\nProgress bar + TTS listen mode]
+    P --> Q[POST /education/reading-progress/:id\n{last_read_position, is_completed}]
+    Q --> R[Debounced — fires every 50 px\nUpserts reading_history record]
+    R --> S[Drives future recommendations]
 
-    N --> S{Bookmark?}
-    S -- Yes --> T[POST /education/bookmarks\n{article_id}]
-    T --> U[BookmarkService.add_bookmark\nIdempotent — no duplicates]
+    N --> T{Bookmark / Download?}
+    T -- Bookmark --> U[POST /education/bookmarks\nIdempotent — no duplicates]
+    T -- Download --> V[Save full article to Hive\nAvailable offline]
 
-    style R fill:#74c69d,color:#000
+    style S fill:#74c69d,color:#000
+    style V fill:#4F94FF,color:#fff
 ```
 
 ### Recommendation Engine Logic
 
 ```mermaid
 flowchart LR
-    A[GET /education/recommendations] --> B[Load user's last 20\nreading_history records]
-    B --> C[Extract category_ids\nfrom read articles]
-    C --> D[Rank categories by\nfrequency of reads]
-    D --> E[Top 3 most-read\ncategories]
-    E --> F[Fetch unseen published articles\nfrom those categories]
-    F --> G{Enough articles\nfound?}
-    G -- Yes --> H[Return top N articles]
-    G -- No --> I[Pad with popular articles\nfrom any category\nby view_count DESC]
-    I --> H
-    H --> J([Recommendations returned\nto client])
+    A[GET /education/recommendations] --> B[Query all published articles\nfor requested language]
+    B --> C[Order by\nview_count + bookmark_count × 3 DESC]
+    C --> D[Return top 10\nhighest-engagement articles]
+    D --> E([Personalised feed\nshown in Recommended For You])
 ```
 
 ### Database Schema
@@ -1974,59 +2087,91 @@ flowchart LR
 ```
 health_categories
   ├── id (string PK, UUID)
-  ├── name, slug (unique)
-  ├── description, icon, color
-  └── article_count (denormalised)
+  ├── name, slug (unique, indexed)
+  ├── description, icon (emoji), color_hex
+  ├── sort_order, is_active
+  └── created_at
 
 health_articles
   ├── id (string PK, UUID)
-  ├── category_id (FK)
-  ├── title, summary, body (Markdown)
+  ├── category_id (FK → health_categories)
+  ├── title, slug (unique, indexed)
+  ├── summary (max 600 chars — used in cards)
+  ├── content (full Markdown — loaded only in detail view)
   ├── language (en|hi|ne|bh)
-  ├── tags (JSON array)
-  ├── read_time_minutes
+  ├── emoji, author, source
+  ├── tags (JSON array — used in search)
+  ├── read_time_min (int, minutes)
   ├── is_featured, is_published
-  ├── view_count
-  ├── author, source_url
-  └── created_at, updated_at
+  ├── view_count, bookmark_count
+  └── published_at, created_at, updated_at
 
 reading_history
   ├── id, user_id (FK), article_id (FK)
-  ├── last_read_position (0–100 %)
+  ├── last_read_position (pixel offset)
   ├── is_completed (bool)
   ├── read_count (incremented per visit)
-  └── last_read_at
+  └── created_at, updated_at
+  [UNIQUE on user_id + article_id]
 
-bookmarks
+user_bookmarks
   ├── id, user_id (FK), article_id (FK)
   └── created_at
-  [UNIQUE constraint on user_id + article_id]
+  [UNIQUE on user_id + article_id]
 ```
 
 ### Article Dashboard Response Structure
 
 ```json
 {
-  "featured": [ ...HealthArticleSummary ],
+  "featured_articles": [ ...HealthArticleSummary ],
   "categories": [ ...HealthCategoryResponse ],
-  "recommendations": [ ...HealthArticleSummary ],
-  "recent_reading": [ ...ReadingHistoryResponse ],
-  "bookmarks": [ ...HealthArticleSummary ],
-  "language": "en"
+  "recommended_articles": [ ...HealthArticleSummary ],
+  "recent_articles": [ ...HealthArticleSummary ],
+  "bookmarks": [ ...HealthArticleSummary ]
 }
 ```
 
-### Mobile App Screens
+### Mobile App — UI & Screens
 
-| Screen | Key Features |
+#### Education Home (Dashboard)
+- **Gradient hero banner** — 3-colour gradient (indigo → blue → teal) with decorative blobs, "Learn & Stay Healthy" title, WHO Evidence-Based badge, live article + topic count pills, and "Browse All Articles →" CTA
+- **Quick-facts strip** — horizontally scrollable colour pills: 25 Articles · 12 Topics · WHO Sourced · Offline Ready · Listen Mode
+- **4-column category grid** — each tile has a unique per-category gradient icon with coloured shadow; 12 categories rendered in a `GridView` with `childAspectRatio: 0.90`
+- **Featured Articles carousel** — horizontal `ListView` of gradient cards (width 230, height 206) with HSL-shifted complementary colour pairs and decorative circle overlays
+- **Daily Health Tip card** — rotates by day-of-month from 5 curated tips; colour-accented gradient background
+- **Recommended For You list** — article cards with gradient emoji icons, category colour tag, read-time, and coloured "Read →" button
+
+#### Article Detail Page
+- **Gradient SliverAppBar** — category colour → HSL-shifted second colour; category pill, emoji box, title (max 3 lines), read-time and source meta pills; 3 action buttons (bookmark, download, share) as pill containers
+- **Live reading progress bar** — thin accent-coloured bar pinned below the status bar; updates on scroll, debounced every 50 px
+- **Progress strip** — inline `%read` indicator with `LinearProgressIndicator`
+- **Quick Summary card** — accent-gradient background with info icon; shows article summary before the full content
+- **Status badges** — Featured ⭐, Offline Ready, Bookmarked — shown when applicable
+- **Markdown rendering** — via `flutter_markdown` with custom `MarkdownStyleSheet`: h1/h2 in accent colour, coloured bold text, styled blockquote borders (4 px left accent), coloured table headers with light background, rounded code blocks
+- **TTS Listen mode** — play/pause button in bottom bar; speed slider (0.25×, 0.5×, 0.75×, 1.0×) in a floating panel above the bottom bar; uses `flutter_tts` with markdown stripped before speech
+- **Bottom action bar** — 4 animated pill buttons (Listen, Save, Download, Share) with filled/unfilled states
+
+#### Article List Page
+- Category filter chips with gradient selected state and coloured shadow
+- Search bar with animated border and focus shadow
+- Infinite scroll with load-more spinner
+- Shimmer skeleton loading for 8 cards
+
+#### Bookmarks & Offline Page
+- Two-tab layout: Bookmarks / Offline
+- Pull-to-refresh on bookmarks tab
+- Empty state with animated emoji and gradient CTA button
+
+### Offline-First Behaviour
+
+| Scenario | Behaviour |
 |---|---|
-| **Education Home / Dashboard** | Featured hero card, horizontal category scroll, recommendation grid |
-| **Article List** | Paginated cards with category filter chips and search bar |
-| **Article Detail** | Full Markdown rendering via `flutter_markdown`, estimated read time, bookmark toggle, reading progress auto-saved on scroll |
-| **Bookmarks Screen** | User's saved articles with remove option |
-| **Search Results** | Instant results matching title and body content |
-
-Articles are cached locally in Hive so previously read content remains accessible offline.
+| No internet at startup | `EducationDummyData` provides all 25 articles and 12 categories instantly |
+| API returns 200 | Live data replaces dummy data; dashboard refreshes |
+| User taps Download on article | Full article stored in `LocalDbService` (Hive); accessible forever offline |
+| User opens downloaded article offline | Loaded directly from Hive; no network call needed |
+| Backend articles updated | On next successful API call, live data takes precedence over dummy fallback |
 
 ---
 

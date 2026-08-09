@@ -402,6 +402,8 @@ class _FilterChip extends StatelessWidget {
                 fontWeight: FontWeight.w700,
                 color: selected ? Colors.white : DesignTokens.textMuted,
               ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ],
         ),
@@ -480,20 +482,24 @@ class _ArticleCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Text(
-                            (article.categoryName ?? 'HEALTH').toUpperCase(),
-                            style: TextStyle(
-                              color: color,
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              (article.categoryName ?? 'HEALTH').toUpperCase(),
+                              style: TextStyle(
+                                color: color,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),

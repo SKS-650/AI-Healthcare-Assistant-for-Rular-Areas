@@ -180,7 +180,7 @@ class _BookmarksPageState extends ConsumerState<BookmarksPage>
         return _ArticleCard(
           article: article,
           onTap: () => _openArticle(article),
-          badge: _OfflineBadge(),
+          badge: const _OfflineBadge(),
           trailing: IconButton(
             icon: const Icon(Icons.delete_outline_rounded,
                 color: DesignTokens.danger, size: 20),
@@ -291,6 +291,8 @@ class _BookmarksPageState extends ConsumerState<BookmarksPage>
 // ─── Offline Badge ────────────────────────────────────────────────────────────
 
 class _OfflineBadge extends StatelessWidget {
+  const _OfflineBadge();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -399,20 +401,24 @@ class _ArticleCard extends StatelessWidget {
                   children: [
                     Row(
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              horizontal: 7, vertical: 2),
-                          decoration: BoxDecoration(
-                            color: color.withValues(alpha: 0.10),
-                            borderRadius: BorderRadius.circular(5),
-                          ),
-                          child: Text(
-                            (article.categoryName ?? 'HEALTH').toUpperCase(),
-                            style: TextStyle(
-                              color: color,
-                              fontSize: 8.5,
-                              fontWeight: FontWeight.w800,
-                              letterSpacing: 0.5,
+                        Flexible(
+                          child: Container(
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 7, vertical: 2),
+                            decoration: BoxDecoration(
+                              color: color.withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(5),
+                            ),
+                            child: Text(
+                              (article.categoryName ?? 'HEALTH').toUpperCase(),
+                              style: TextStyle(
+                                color: color,
+                                fontSize: 8.5,
+                                fontWeight: FontWeight.w800,
+                                letterSpacing: 0.5,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
                         ),
