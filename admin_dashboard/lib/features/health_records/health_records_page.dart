@@ -18,18 +18,20 @@ class _HealthRecordsPageState extends ConsumerState<HealthRecordsPage>
     with SingleTickerProviderStateMixin {
   late TabController _tab;
   final _profileSearchCtrl = TextEditingController();
+  final _historySearchCtrl = TextEditingController();
   final _prescriptionSearchCtrl = TextEditingController();
 
   @override
   void initState() {
     super.initState();
-    _tab = TabController(length: 5, vsync: this);
+    _tab = TabController(length: 6, vsync: this);
   }
 
   @override
   void dispose() {
     _tab.dispose();
     _profileSearchCtrl.dispose();
+    _historySearchCtrl.dispose();
     _prescriptionSearchCtrl.dispose();
     super.dispose();
   }
@@ -44,20 +46,28 @@ class _HealthRecordsPageState extends ConsumerState<HealthRecordsPage>
       padding: const EdgeInsets.all(24),
       child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
         Row(children: [
-          Expanded(child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Expanded(child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start, children: [
             Text('Health Records',
-                    style: Theme.of(context).textTheme.headlineMedium
-                        ?.copyWith(fontWeight: FontWeight.w700))
+                style: Theme.of(context).textTheme.headlineMedium
+                    ?.copyWith(fontWeight: FontWeight.w700))
                 .animate().fadeIn(duration: 400.ms),
-            Text('Medical profiles, prescriptions, images and timeline',
+            Text('Medical profiles, history, prescriptions, images and timeline',
                 style: Theme.of(context).textTheme.bodyMedium
                     ?.copyWith(color: AppColors.lightTextMuted))
                 .animate().fadeIn(delay: 100.ms),
           ])),
           FilledButton.icon(
-            onPressed: () { notifier.loadStats(); notifier.loadProfiles(); },
+            onPressed: () {
+              notifier.loadStats();
+              notifier.loadProfiles();
+              notifier.loadMedicalHistory();
+              notifier.loadPrescriptions();
+              notifier.loadImages();
+              notifier.loadTimeline();
+            },
             icon: const Icon(Icons.refresh_rounded, size: 16),
-            label: const Text('Refresh'),
+            label: const Text('Refresh All'),
             style: FilledButton.styleFrom(backgroundColor: AppColors.primary),
           ),
         ]).animate().fadeIn(duration: 400.ms),
@@ -87,20 +97,28 @@ class _HealthRecordsPageState extends ConsumerState<HealthRecordsPage>
           TabBar(
             controller: _tab,
             isScrollable: true,
+            tabAlignment: TabAlignment.start,
             tabs: const [
-              Tab(text: 'Overview'), Tab(text: 'Medical Profiles'),
-              Tab(text: 'Prescriptions'), Tab(text: 'Medical Images'),
+              Tab(text: 'Overview'),
+              Tab(text: 'Medical Profiles'),
+              Tab(text: 'Medical History'),
+              Tab(text: 'Prescriptions'),
+              Tab(text: 'Medical Images'),
               Tab(text: 'Timeline'),
             ],
             labelColor: AppColors.primary,
             indicatorColor: AppColors.primary,
           ),
           SizedBox(
-            height: 620,
+            height: 660,
             child: TabBarView(controller: _tab, children: [
               _OverviewTab(stats: s),
-              _ProfilesTab(state: state, notifier: notifier, searchCtrl: _profileSearchCtrl),
-              _PrescriptionsTab(state: state, notifier: notifier, searchCtrl: _prescriptionSearchCtrl),
+              _ProfilesTab(state: state, notifier: notifier,
+                  searchCtrl: _profileSearchCtrl),
+              _HistoryTab(state: state, notifier: notifier,
+                  searchCtrl: _historySearchCtrl),
+              _PrescriptionsTab(state: state, notifier: notifier,
+                  searchCtrl: _prescriptionSearchCtrl),
               _ImagesTab(state: state, notifier: notifier),
               _TimelineTab(state: state, notifier: notifier),
             ]),
@@ -147,9 +165,11 @@ class _OverviewTab extends StatelessWidget {
             const Icon(Icons.shield_rounded, color: AppColors.info, size: 20),
             const SizedBox(width: 12),
             Expanded(child: Text(
-              'Individual health records are encrypted and accessible only to users and '
-              'authorized healthcare providers. This dashboard shows aggregated data only.',
-              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: AppColors.info),
+              'Individual health records are end-to-end encrypted and accessible only '
+              'to users and authorised healthcare providers. '
+              'This dashboard shows aggregated metadata only.',
+              style: Theme.of(context).textTheme.bodySmall
+                  ?.copyWith(color: AppColors.info),
             )),
           ]),
         ),
@@ -185,7 +205,8 @@ class _ProfilesTab extends StatelessWidget {
   final HealthRecordsState state;
   final HealthRecordsNotifier notifier;
   final TextEditingController searchCtrl;
-  const _ProfilesTab({required this.state, required this.notifier, required this.searchCtrl});
+  const _ProfilesTab(
+      {required this.state, required this.notifier, required this.searchCtrl});
 
   @override
   Widget build(BuildContext context) {
@@ -201,7 +222,9 @@ class _ProfilesTab extends StatelessWidget {
         searchBar: SearchField(
           controller: searchCtrl,
           hint: 'Search by patient name...',
-          onChanged: (v) { if (v.isEmpty || v.length >= 2) notifier.setProfileSearch(v); },
+          onChanged: (v) {
+            if (v.isEmpty || v.length >= 2) notifier.setProfileSearch(v);
+          },
         ),
         columns: const [
           DataColumn(label: Text('Patient')),
@@ -210,22 +233,28 @@ class _ProfilesTab extends StatelessWidget {
           DataColumn(label: Text('Weight')),
           DataColumn(label: Text('BMI')),
           DataColumn(label: Text('Allergies')),
-          DataColumn(label: Text('Chronic Diseases')),
+          DataColumn(label: Text('Chronic')),
           DataColumn(label: Text('Actions')),
         ],
         rows: state.profiles.map((p) => DataRow(cells: [
           DataCell(_patientCell(context, p.userName, p.userEmail)),
-          DataCell(Text(p.bloodGroup ?? '—', style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(Text(p.heightCm != null ? '${p.heightCm!.toStringAsFixed(1)} cm' : '—',
+          DataCell(Text(p.bloodGroup ?? '—',
               style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(Text(p.weightKg != null ? '${p.weightKg!.toStringAsFixed(1)} kg' : '—',
+          DataCell(Text(
+              p.heightCm != null ? '${p.heightCm!.toStringAsFixed(1)} cm' : '—',
+              style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text(
+              p.weightKg != null ? '${p.weightKg!.toStringAsFixed(1)} kg' : '—',
               style: Theme.of(context).textTheme.bodySmall)),
           DataCell(Text(p.bmi != null ? p.bmi!.toStringAsFixed(1) : '—',
               style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(Text('${p.allergies.length}', style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(Text('${p.chronicDiseases.length}', style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text('${p.allergies.length}',
+              style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text('${p.chronicDiseases.length}',
+              style: Theme.of(context).textTheme.bodySmall)),
           DataCell(IconButton(
-            icon: const Icon(Icons.visibility_rounded, size: 16, color: AppColors.primary),
+            icon: const Icon(Icons.visibility_rounded,
+                size: 16, color: AppColors.primary),
             onPressed: () => _showProfileDetail(context, p),
           )),
         ])).toList(),
@@ -233,12 +262,13 @@ class _ProfilesTab extends StatelessWidget {
     );
   }
 
-  Widget _patientCell(BuildContext context, String? name, String? email) =>
+  Widget _patientCell(BuildContext ctx, String? name, String? email) =>
       Column(crossAxisAlignment: CrossAxisAlignment.start,
           mainAxisAlignment: MainAxisAlignment.center, children: [
-        Text(name ?? 'Unknown', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+        Text(name ?? 'Unknown',
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
         if (email != null)
-          Text(email, style: Theme.of(context).textTheme.labelSmall
+          Text(email, style: Theme.of(ctx).textTheme.labelSmall
               ?.copyWith(color: AppColors.lightTextMuted)),
       ]);
 
@@ -259,14 +289,18 @@ class _ProfilesTab extends StatelessWidget {
                 _dRow(context, 'Blood Group', p.bloodGroup ?? '—'),
                 _dRow(context, 'Height', p.heightCm != null ? '${p.heightCm} cm' : '—'),
                 _dRow(context, 'Weight', p.weightKg != null ? '${p.weightKg} kg' : '—'),
-                _dRow(context, 'BMI', p.bmi != null ? '${p.bmi!.toStringAsFixed(1)}' : '—'),
+                _dRow(context, 'BMI', p.bmi != null ? p.bmi!.toStringAsFixed(1) : '—'),
                 _dRow(context, 'Smoking', p.smokingStatus ?? '—'),
                 _dRow(context, 'Alcohol', p.alcoholStatus ?? '—'),
                 _dRow(context, 'Activity', p.activityLevel ?? '—'),
-                _dRow(context, 'Allergies', p.allergies.join(', ').isEmpty ? 'None' : p.allergies.join(', ')),
-                _dRow(context, 'Chronic Diseases', p.chronicDiseases.join(', ').isEmpty ? 'None' : p.chronicDiseases.join(', ')),
-                _dRow(context, 'Medications', p.currentMedications.join(', ').isEmpty ? 'None' : p.currentMedications.join(', ')),
-                _dRow(context, 'Family History', p.familyHistory.join(', ').isEmpty ? 'None' : p.familyHistory.join(', ')),
+                _dRow(context, 'Allergies',
+                    p.allergies.isEmpty ? 'None' : p.allergies.join(', ')),
+                _dRow(context, 'Chronic Diseases',
+                    p.chronicDiseases.isEmpty ? 'None' : p.chronicDiseases.join(', ')),
+                _dRow(context, 'Medications',
+                    p.currentMedications.isEmpty ? 'None' : p.currentMedications.join(', ')),
+                _dRow(context, 'Family History',
+                    p.familyHistory.isEmpty ? 'None' : p.familyHistory.join(', ')),
                 const SizedBox(height: 16),
                 Align(alignment: Alignment.centerRight,
                     child: FilledButton(
@@ -280,15 +314,247 @@ class _ProfilesTab extends StatelessWidget {
     );
   }
 
-  Widget _dRow(BuildContext context, String label, String value) =>
+  Widget _dRow(BuildContext ctx, String label, String value) =>
       Padding(padding: const EdgeInsets.only(bottom: 10),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             SizedBox(width: 140, child: Text(label,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColors.lightTextMuted, fontWeight: FontWeight.w600))),
-            Expanded(child: Text(value, style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(fontWeight: FontWeight.w500))),
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: AppColors.lightTextMuted,
+                    fontWeight: FontWeight.w600))),
+            Expanded(child: Text(value,
+                style: Theme.of(ctx).textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w500))),
           ]));
+}
+
+// ── Medical History Tab ───────────────────────────────────────────────────────
+
+class _HistoryTab extends StatelessWidget {
+  final HealthRecordsState state;
+  final HealthRecordsNotifier notifier;
+  final TextEditingController searchCtrl;
+  const _HistoryTab(
+      {required this.state, required this.notifier, required this.searchCtrl});
+
+  static const _categories = [
+    null, 'current', 'chronic', 'past', 'surgery', 'allergy', 'family'
+  ];
+  static const _statuses = [null, 'active', 'resolved', 'managed'];
+
+  @override
+  Widget build(BuildContext context) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(16),
+      child: DataTableCard(
+        title: 'Medical History',
+        isLoading: state.isLoading,
+        totalRows: state.historyTotal,
+        currentPage: state.historyPage,
+        pageSize: state.pageSize,
+        onPageChanged: (p) => notifier.loadMedicalHistory(page: p),
+        searchBar: SearchField(
+          controller: searchCtrl,
+          hint: 'Search by condition / patient name...',
+          onChanged: (v) {
+            if (v.isEmpty || v.length >= 2) notifier.setHistorySearch(v);
+          },
+        ),
+        filters: [
+          DropdownButtonHideUnderline(
+            child: SizedBox(
+              height: 40,
+              child: DropdownButton<String?>(
+                value: state.historyCategoryFilter,
+                hint: const Text('Category', style: TextStyle(fontSize: 13)),
+                isDense: true,
+                items: _categories
+                    .map((c) => DropdownMenuItem(
+                          value: c,
+                          child: Text(c == null ? 'All categories'
+                              : c[0].toUpperCase() + c.substring(1),
+                              style: const TextStyle(fontSize: 13)),
+                        ))
+                    .toList(),
+                onChanged: notifier.setHistoryCategoryFilter,
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          DropdownButtonHideUnderline(
+            child: SizedBox(
+              height: 40,
+              child: DropdownButton<String?>(
+                value: state.historyStatusFilter,
+                hint: const Text('Status', style: TextStyle(fontSize: 13)),
+                isDense: true,
+                items: _statuses
+                    .map((s) => DropdownMenuItem(
+                          value: s,
+                          child: Text(s == null ? 'All statuses'
+                              : s[0].toUpperCase() + s.substring(1),
+                              style: const TextStyle(fontSize: 13)),
+                        ))
+                    .toList(),
+                onChanged: notifier.setHistoryStatusFilter,
+              ),
+            ),
+          ),
+        ],
+        columns: const [
+          DataColumn(label: Text('Patient')),
+          DataColumn(label: Text('Condition')),
+          DataColumn(label: Text('Category')),
+          DataColumn(label: Text('Status')),
+          DataColumn(label: Text('Doctor')),
+          DataColumn(label: Text('Hospital')),
+          DataColumn(label: Text('Diagnosis Date')),
+          DataColumn(label: Text('Actions')),
+        ],
+        rows: state.medicalHistory.map((h) => DataRow(cells: [
+          DataCell(_patientCell(context, h.userName, h.userEmail)),
+          DataCell(SizedBox(width: 140,
+              child: Text(h.diseaseName,
+                  style: Theme.of(context).textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis))),
+          DataCell(_CategoryBadge(category: h.category)),
+          DataCell(_StatusBadge(status: h.status)),
+          DataCell(Text(h.doctorName ?? '—',
+              style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text(h.hospitalName ?? '—',
+              style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text(
+            h.diagnosisDate != null ? _fmtDate(h.diagnosisDate!) : '—',
+            style: Theme.of(context).textTheme.bodySmall,
+          )),
+          DataCell(IconButton(
+            icon: const Icon(Icons.visibility_rounded,
+                size: 16, color: AppColors.accent),
+            onPressed: () => _showHistoryDetail(context, h),
+          )),
+        ])).toList(),
+      ),
+    );
+  }
+
+  Widget _patientCell(BuildContext ctx, String? name, String? email) =>
+      Column(crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center, children: [
+        Text(name ?? 'Unknown',
+            style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13)),
+        if (email != null)
+          Text(email, style: Theme.of(ctx).textTheme.labelSmall
+              ?.copyWith(color: AppColors.lightTextMuted)),
+      ]);
+
+  String _fmtDate(String iso) {
+    final dt = DateTime.tryParse(iso)?.toLocal();
+    return dt != null ? DateFormat('MMM d, y').format(dt) : iso;
+  }
+
+  void _showHistoryDetail(BuildContext context, AdminMedicalHistory h) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 500),
+          child: Padding(
+            padding: const EdgeInsets.all(24),
+            child: SingleChildScrollView(
+              child: Column(mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.start, children: [
+                Text('Medical History Entry',
+                    style: Theme.of(context).textTheme.headlineSmall),
+                const SizedBox(height: 16),
+                _dRow(context, 'Patient', h.userName ?? '—'),
+                _dRow(context, 'Condition', h.diseaseName),
+                _dRow(context, 'Category', h.category),
+                _dRow(context, 'Status', h.status),
+                _dRow(context, 'Doctor', h.doctorName ?? '—'),
+                _dRow(context, 'Hospital', h.hospitalName ?? '—'),
+                _dRow(context, 'Diagnosis Date',
+                    h.diagnosisDate != null ? _fmtDate(h.diagnosisDate!) : '—'),
+                if (h.notes != null && h.notes!.isNotEmpty)
+                  _dRow(context, 'Notes', h.notes!),
+                _dRow(context, 'Created', _fmtDate(h.createdAt)),
+                const SizedBox(height: 16),
+                Align(alignment: Alignment.centerRight,
+                    child: FilledButton(
+                        style: FilledButton.styleFrom(
+                            backgroundColor: AppColors.accent),
+                        onPressed: () => Navigator.pop(context),
+                        child: const Text('Close'))),
+              ]),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _dRow(BuildContext ctx, String label, String value) =>
+      Padding(padding: const EdgeInsets.only(bottom: 10),
+          child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            SizedBox(width: 130, child: Text(label,
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: AppColors.lightTextMuted,
+                    fontWeight: FontWeight.w600))),
+            Expanded(child: Text(value,
+                style: Theme.of(ctx).textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w500))),
+          ]));
+}
+
+class _CategoryBadge extends StatelessWidget {
+  final String category;
+  const _CategoryBadge({required this.category});
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (category.toLowerCase()) {
+      'current'  => AppColors.primary,
+      'chronic'  => AppColors.warning,
+      'past'     => AppColors.lightTextMuted,
+      'surgery'  => AppColors.info,
+      'allergy'  => AppColors.error,
+      'family'   => AppColors.accent,
+      _          => AppColors.lightTextMuted,
+    };
+    final label = category[0].toUpperCase() + category.substring(1);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(label,
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
+              color: color)),
+    );
+  }
+}
+
+class _StatusBadge extends StatelessWidget {
+  final String status;
+  const _StatusBadge({required this.status});
+  @override
+  Widget build(BuildContext context) {
+    final color = switch (status.toLowerCase()) {
+      'active'   => AppColors.success,
+      'resolved' => AppColors.lightTextMuted,
+      'managed'  => AppColors.info,
+      _          => AppColors.lightTextMuted,
+    };
+    final label = status[0].toUpperCase() + status.substring(1);
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(6),
+      ),
+      child: Text(label,
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
+              color: color)),
+    );
+  }
 }
 
 // ── Prescriptions Tab ─────────────────────────────────────────────────────────
@@ -297,7 +563,8 @@ class _PrescriptionsTab extends StatelessWidget {
   final HealthRecordsState state;
   final HealthRecordsNotifier notifier;
   final TextEditingController searchCtrl;
-  const _PrescriptionsTab({required this.state, required this.notifier, required this.searchCtrl});
+  const _PrescriptionsTab(
+      {required this.state, required this.notifier, required this.searchCtrl});
 
   @override
   Widget build(BuildContext context) {
@@ -312,8 +579,10 @@ class _PrescriptionsTab extends StatelessWidget {
         onPageChanged: (p) => notifier.loadPrescriptions(page: p),
         searchBar: SearchField(
           controller: searchCtrl,
-          hint: 'Search by doctor/hospital/diagnosis...',
-          onChanged: (v) { if (v.isEmpty || v.length >= 2) notifier.setPrescriptionSearch(v); },
+          hint: 'Search by doctor / hospital / diagnosis...',
+          onChanged: (v) {
+            if (v.isEmpty || v.length >= 2) notifier.setPrescriptionSearch(v);
+          },
         ),
         columns: const [
           DataColumn(label: Text('Patient')),
@@ -326,20 +595,28 @@ class _PrescriptionsTab extends StatelessWidget {
           DataColumn(label: Text('Actions')),
         ],
         rows: state.prescriptions.map((p) => DataRow(cells: [
-          DataCell(Text(p.userName ?? '—', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
-          DataCell(Text(p.doctorName ?? '—', style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(Text(p.hospitalName ?? '—', style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(SizedBox(width: 140,
-              child: Text(p.diagnosis ?? '—', style: Theme.of(context).textTheme.bodySmall,
-                  overflow: TextOverflow.ellipsis))),
-          DataCell(Text('${p.medicines.length} item(s)', style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(Text(p.prescriptionDate != null ? _fmtDate(p.prescriptionDate!) : '—',
+          DataCell(Text(p.userName ?? '—',
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
+          DataCell(Text(p.doctorName ?? '—',
               style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(Text(p.validUntil != null ? _fmtDate(p.validUntil!) : '—',
+          DataCell(Text(p.hospitalName ?? '—',
+              style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(SizedBox(width: 140,
+              child: Text(p.diagnosis ?? '—',
+                  style: Theme.of(context).textTheme.bodySmall,
+                  overflow: TextOverflow.ellipsis))),
+          DataCell(Text('${p.medicines.length} item(s)',
+              style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text(
+              p.prescriptionDate != null ? _fmtDate(p.prescriptionDate!) : '—',
+              style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text(
+              p.validUntil != null ? _fmtDate(p.validUntil!) : '—',
               style: Theme.of(context).textTheme.bodySmall)),
           DataCell(IconButton(
-            icon: const Icon(Icons.visibility_rounded, size: 16, color: AppColors.primary),
-            onPressed: () => _showPrescriptionDetail(context, p),
+            icon: const Icon(Icons.visibility_rounded,
+                size: 16, color: AppColors.primary),
+            onPressed: () => _showDetail(context, p),
           )),
         ])).toList(),
       ),
@@ -351,7 +628,7 @@ class _PrescriptionsTab extends StatelessWidget {
     return dt != null ? DateFormat('MMM d, y').format(dt) : iso;
   }
 
-  void _showPrescriptionDetail(BuildContext context, AdminPrescription p) {
+  void _showDetail(BuildContext context, AdminPrescription p) {
     showDialog(
       context: context,
       builder: (_) => Dialog(
@@ -362,35 +639,43 @@ class _PrescriptionsTab extends StatelessWidget {
             child: SingleChildScrollView(
               child: Column(mainAxisSize: MainAxisSize.min,
                   crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text('Prescription Details', style: Theme.of(context).textTheme.headlineSmall),
+                Text('Prescription Details',
+                    style: Theme.of(context).textTheme.headlineSmall),
                 const SizedBox(height: 16),
                 _dRow(context, 'Patient', p.userName ?? '—'),
                 _dRow(context, 'Doctor', p.doctorName ?? '—'),
                 _dRow(context, 'Hospital', p.hospitalName ?? '—'),
                 _dRow(context, 'Diagnosis', p.diagnosis ?? '—'),
-                _dRow(context, 'Date', p.prescriptionDate != null ? _fmtDate(p.prescriptionDate!) : '—'),
-                _dRow(context, 'Valid Until', p.validUntil != null ? _fmtDate(p.validUntil!) : '—'),
+                _dRow(context, 'Date', p.prescriptionDate != null
+                    ? _fmtDate(p.prescriptionDate!) : '—'),
+                _dRow(context, 'Valid Until',
+                    p.validUntil != null ? _fmtDate(p.validUntil!) : '—'),
                 _dRow(context, 'Instructions', p.instructions ?? '—'),
                 _dRow(context, 'Notes', p.notes ?? '—'),
                 const SizedBox(height: 12),
                 Text('Medicines (${p.medicines.length})',
-                    style: Theme.of(context).textTheme.titleSmall?.copyWith(fontWeight: FontWeight.w700)),
+                    style: Theme.of(context).textTheme.titleSmall
+                        ?.copyWith(fontWeight: FontWeight.w700)),
                 const SizedBox(height: 8),
                 ...p.medicines.map((m) {
                   final med = m is Map ? m : <String, dynamic>{};
                   return Padding(
                     padding: const EdgeInsets.only(bottom: 6),
                     child: Row(children: [
-                      const Icon(Icons.medication_rounded, size: 14, color: AppColors.success),
+                      const Icon(Icons.medication_rounded,
+                          size: 14, color: AppColors.success),
                       const SizedBox(width: 8),
-                      Text('${med['name'] ?? 'Unknown'} — ${med['dose'] ?? ''} ${med['frequency'] ?? ''}',
-                          style: Theme.of(context).textTheme.bodySmall),
+                      Expanded(child: Text(
+                        '${med['name'] ?? 'Unknown'} — '
+                        '${med['dose'] ?? ''} ${med['frequency'] ?? ''}',
+                        style: Theme.of(context).textTheme.bodySmall)),
                     ]),
                   );
                 }),
                 const SizedBox(height: 16),
                 Align(alignment: Alignment.centerRight,
-                    child: FilledButton(onPressed: () => Navigator.pop(context),
+                    child: FilledButton(
+                        onPressed: () => Navigator.pop(context),
                         child: const Text('Close'))),
               ]),
             ),
@@ -400,14 +685,16 @@ class _PrescriptionsTab extends StatelessWidget {
     );
   }
 
-  Widget _dRow(BuildContext context, String label, String value) =>
+  Widget _dRow(BuildContext ctx, String label, String value) =>
       Padding(padding: const EdgeInsets.only(bottom: 10),
           child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             SizedBox(width: 120, child: Text(label,
-                style: Theme.of(context).textTheme.bodySmall
-                    ?.copyWith(color: AppColors.lightTextMuted, fontWeight: FontWeight.w600))),
-            Expanded(child: Text(value, style: Theme.of(context).textTheme.bodySmall
-                ?.copyWith(fontWeight: FontWeight.w500))),
+                style: Theme.of(ctx).textTheme.bodySmall?.copyWith(
+                    color: AppColors.lightTextMuted,
+                    fontWeight: FontWeight.w600))),
+            Expanded(child: Text(value,
+                style: Theme.of(ctx).textTheme.bodySmall
+                    ?.copyWith(fontWeight: FontWeight.w500))),
           ]));
 }
 
@@ -420,7 +707,9 @@ class _ImagesTab extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final imageTypes = [null, 'xray', 'mri', 'ct_scan', 'blood_report', 'ecg', 'skin', 'other'];
+    final imageTypes = [
+      null, 'xray', 'mri', 'ct_scan', 'blood_report', 'ecg', 'skin', 'other'
+    ];
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: DataTableCard(
@@ -439,7 +728,9 @@ class _ImagesTab extends StatelessWidget {
                 hint: const Text('All types', style: TextStyle(fontSize: 13)),
                 items: imageTypes.map((t) => DropdownMenuItem(
                   value: t,
-                  child: Text(t == null ? 'All types' : t.replaceAll('_', ' ').toUpperCase(),
+                  child: Text(
+                      t == null ? 'All types'
+                          : t.replaceAll('_', ' ').toUpperCase(),
                       style: const TextStyle(fontSize: 13)),
                 )).toList(),
                 onChanged: notifier.setImageTypeFilter,
@@ -458,14 +749,19 @@ class _ImagesTab extends StatelessWidget {
           DataColumn(label: Text('Scan Date')),
         ],
         rows: state.images.map((img) => DataRow(cells: [
-          DataCell(Text(img.userName ?? '—', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
+          DataCell(Text(img.userName ?? '—',
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
           DataCell(SizedBox(width: 120,
-              child: Text(img.title, style: Theme.of(context).textTheme.bodySmall,
+              child: Text(img.title,
+                  style: Theme.of(context).textTheme.bodySmall,
                   overflow: TextOverflow.ellipsis))),
           DataCell(_ImageTypeBadge(type: img.imageType)),
-          DataCell(Text(img.bodyPart ?? '—', style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(Text(img.doctorName ?? '—', style: Theme.of(context).textTheme.bodySmall)),
-          DataCell(Text(img.hospitalName ?? '—', style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text(img.bodyPart ?? '—',
+              style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text(img.doctorName ?? '—',
+              style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text(img.hospitalName ?? '—',
+              style: Theme.of(context).textTheme.bodySmall)),
           DataCell(Text(
             img.scanDate != null ? _fmtDate(img.scanDate!) : '—',
             style: Theme.of(context).textTheme.bodySmall,
@@ -484,17 +780,16 @@ class _ImagesTab extends StatelessWidget {
 class _ImageTypeBadge extends StatelessWidget {
   final String type;
   const _ImageTypeBadge({required this.type});
-
   @override
   Widget build(BuildContext context) {
     final color = switch (type.toLowerCase()) {
-      'xray' => AppColors.info,
-      'mri' => AppColors.accent,
-      'ct_scan' => AppColors.primary,
+      'xray'         => AppColors.info,
+      'mri'          => AppColors.accent,
+      'ct_scan'      => AppColors.primary,
       'blood_report' => AppColors.error,
-      'ecg' => AppColors.warning,
-      'skin' => AppColors.success,
-      _ => AppColors.lightTextMuted,
+      'ecg'          => AppColors.warning,
+      'skin'         => AppColors.success,
+      _              => AppColors.lightTextMuted,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -503,7 +798,8 @@ class _ImageTypeBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(type.replaceAll('_', ' ').toUpperCase(),
-          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
+              color: color)),
     );
   }
 }
@@ -534,7 +830,8 @@ class _TimelineTab extends StatelessWidget {
           DataColumn(label: Text('Event Date')),
         ],
         rows: state.timeline.map((e) => DataRow(cells: [
-          DataCell(Text(e.userName ?? '—', style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
+          DataCell(Text(e.userName ?? '—',
+              style: const TextStyle(fontWeight: FontWeight.w500, fontSize: 13))),
           DataCell(_EventTypeBadge(type: e.eventType)),
           DataCell(SizedBox(width: 160,
               child: Text('${e.iconEmoji ?? ''} ${e.title}',
@@ -544,7 +841,8 @@ class _TimelineTab extends StatelessWidget {
               child: Text(e.description ?? '—',
                   style: Theme.of(context).textTheme.bodySmall,
                   overflow: TextOverflow.ellipsis))),
-          DataCell(Text(_fmtDate(e.eventDate), style: Theme.of(context).textTheme.bodySmall)),
+          DataCell(Text(_fmtDate(e.eventDate),
+              style: Theme.of(context).textTheme.bodySmall)),
         ])).toList(),
       ),
     );
@@ -559,16 +857,16 @@ class _TimelineTab extends StatelessWidget {
 class _EventTypeBadge extends StatelessWidget {
   final String type;
   const _EventTypeBadge({required this.type});
-
   @override
   Widget build(BuildContext context) {
     final color = switch (type.toLowerCase()) {
-      'prescription' => AppColors.success,
-      'medical_image' => AppColors.info,
-      'medical_history' => AppColors.accent,
-      'symptom_assessment' => AppColors.warning,
+      'prescription'         => AppColors.success,
+      'medical_image'        => AppColors.info,
+      'medical_history'      => AppColors.accent,
+      'symptom_assessment'   => AppColors.warning,
       'emergency_assessment' => AppColors.error,
-      _ => AppColors.lightTextMuted,
+      'chat_conversation'    => AppColors.primary,
+      _                      => AppColors.lightTextMuted,
     };
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
@@ -577,7 +875,8 @@ class _EventTypeBadge extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
       ),
       child: Text(type.replaceAll('_', ' ').toUpperCase(),
-          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: color)),
+          style: TextStyle(fontSize: 10, fontWeight: FontWeight.w700,
+              color: color)),
     );
   }
 }

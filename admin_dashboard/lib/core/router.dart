@@ -21,6 +21,7 @@ import '../features/notifications/notifications_page.dart';
 import '../features/profile/profile_page.dart';
 import '../features/reports/reports_page.dart';
 import '../features/settings/settings_page.dart';
+import '../features/users/user_detail_page.dart';
 import '../features/users/users_page.dart';
 import '../shared/widgets/app_shell.dart';
 
@@ -29,6 +30,7 @@ class AppRoutes {
   static const login              = '/login';
   static const dashboard          = '/dashboard';
   static const users              = '/users';
+  static const userDetail         = '/users/:userId';
   static const doctors            = '/doctors';
   static const authentication     = '/authentication';
   static const emergency          = '/emergency';
@@ -85,8 +87,19 @@ final routerProvider = Provider<GoRouter>((ref) {
         routes: [
           GoRoute(path: AppRoutes.dashboard,
               pageBuilder: (_, s) => _fade(s, const DashboardPage())),
-          GoRoute(path: AppRoutes.users,
-              pageBuilder: (_, s) => _fade(s, const UsersPage())),
+          GoRoute(
+            path: AppRoutes.users,
+            pageBuilder: (_, s) => _fade(s, const UsersPage()),
+            routes: [
+              GoRoute(
+                path: ':userId',
+                pageBuilder: (_, s) => _fade(
+                  s,
+                  UserDetailPage(userId: s.pathParameters['userId']!),
+                ),
+              ),
+            ],
+          ),
           GoRoute(path: AppRoutes.doctors,
               pageBuilder: (_, s) => _fade(s, const DoctorsPage())),
           GoRoute(path: AppRoutes.authentication,

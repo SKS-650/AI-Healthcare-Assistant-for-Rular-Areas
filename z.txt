@@ -5,4 +5,5 @@ python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 
 
 
+mobile_app\build\app\outputs\flutter-apk\app-debug.apk
 

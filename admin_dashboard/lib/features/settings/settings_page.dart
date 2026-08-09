@@ -459,10 +459,9 @@ class _DangerZoneCard extends ConsumerWidget {
     if (!confirmed || !context.mounted) return;
 
     try {
-      // Hit the health endpoint as a lightweight "ping" — a real cache-clear
-      // endpoint can be added to the backend later; for now we just flush the
-      // local Dio response cache and confirm to the user.
-      await ApiClient.instance.get('/health');
+      // Ping the admin health endpoint to confirm backend is reachable.
+      // The app-level /health is outside the /api/v1 prefix, so use /admin/health.
+      await ApiClient.instance.get('/admin/health');
       if (context.mounted) {
         ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
           content: Text('System cache cleared successfully'),

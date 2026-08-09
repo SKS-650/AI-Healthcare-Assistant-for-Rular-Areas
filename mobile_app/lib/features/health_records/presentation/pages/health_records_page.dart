@@ -5,6 +5,7 @@ import 'package:intl/intl.dart';
 import 'package:shimmer/shimmer.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
+import '../../domain/entities/timeline_event.dart';
 import '../controllers/health_records_state.dart';
 import '../providers/health_records_provider.dart';
 import 'lab_reports_page.dart';
@@ -30,11 +31,9 @@ class HealthRecordsPage extends ConsumerWidget {
         HealthRecordsStatus.initial ||
         HealthRecordsStatus.loading =>
           const _LoadingSkeleton(),
-        HealthRecordsStatus.failure => _ErrorBody(
-            message: state.errorMessage ?? 'Failed to load health records.',
-            onRetry: () =>
-                ref.read(healthRecordsControllerProvider.notifier).loadAll(),
-          ),
+        // failure and all other statuses → still show the loaded body.
+        // A slim error banner is rendered inside _LoadedBody when errorMessage
+        // is non-null, so the user sees partial data AND a retry option.
         _ => _LoadedBody(state: state),
       },
     );
@@ -60,6 +59,14 @@ class _LoadedBody extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                // Non-blocking error banner — shows partial data below it
+                if (state.errorMessage != null)
+                  _ErrorBanner(
+                    message: state.errorMessage!,
+                    onRetry: () => ref
+                        .read(healthRecordsControllerProvider.notifier)
+                        .loadAll(),
+                  ),
                 _SummaryStatsRow(state: state),
                 const SizedBox(height: 8),
                 _QuickNavGrid(state: state),
@@ -84,72 +91,139 @@ class _PHRSliverAppBar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final profile = state.medicalProfile;
+    final hasVitals = profile?.bloodGroup != null ||
+        profile?.heightCm != null ||
+        profile?.weightKg != null;
+
     return SliverAppBar(
-      expandedHeight: 200,
+      expandedHeight: 220,
       pinned: true,
-      backgroundColor: DesignTokens.background,
-      foregroundColor: DesignTokens.textStrong,
+      stretch: false,
+      // The AppBar gradient background colour when collapsed/pinned
+      backgroundColor: const Color(0xFF7B5CFF),
+      foregroundColor: Colors.white,
       elevation: 0,
-      scrolledUnderElevation: 1,
+      scrolledUnderElevation: 2,
+      shadowColor: const Color(0xFF7B5CFF).withValues(alpha: 0.4),
+      // ── Collapsed toolbar title (shown when pinned) ──────────────────────
+      title: const Row(
+        children: [
+          Icon(Icons.medical_information_rounded, size: 20, color: Colors.white),
+          SizedBox(width: 8),
+          Text(
+            'Health Records',
+            style: TextStyle(
+              fontSize: 17,
+              fontWeight: FontWeight.w800,
+              color: Colors.white,
+              letterSpacing: -0.3,
+            ),
+          ),
+        ],
+      ),
+      // ── Action icons ─────────────────────────────────────────────────────
       actions: [
         IconButton(
-          tooltip: 'Search',
-          icon: const Icon(Icons.search_rounded),
+          tooltip: 'Search records',
+          icon: const Icon(Icons.search_rounded, color: Colors.white),
           onPressed: () => _push(context, const SearchRecordsPage()),
         ),
         IconButton(
-          tooltip: 'Upload',
-          icon: const Icon(Icons.upload_file_rounded),
+          tooltip: 'Upload report',
+          icon: const Icon(Icons.upload_file_rounded, color: Colors.white),
           onPressed: () => _push(context, const UploadReportPage()),
         ),
         const SizedBox(width: 4),
       ],
+      // ── Expanded hero area ───────────────────────────────────────────────
       flexibleSpace: FlexibleSpaceBar(
-        collapseMode: CollapseMode.pin,
-        background: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [Color(0xFF926EFF), Color(0xFF4F94FF)],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
-          ),
-          child: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(20, 56, 20, 16),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.end,
+        collapseMode: CollapseMode.parallax,
+        background: _HeroBackground(
+          hasVitals: hasVitals,
+          profile: profile,
+          onProfileTap: () => _push(context, const MedicalProfilePage()),
+        ),
+      ),
+    );
+  }
+}
+
+// ─── Hero gradient background ─────────────────────────────────────────────────
+
+class _HeroBackground extends StatelessWidget {
+  final bool hasVitals;
+  final dynamic profile;
+  final VoidCallback onProfileTap;
+  const _HeroBackground({
+    required this.hasVitals,
+    required this.profile,
+    required this.onProfileTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF9B5DFF), Color(0xFF4F8AFF)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: SafeArea(
+        bottom: false,
+        child: Padding(
+          // Top padding leaves room for the collapsed AppBar toolbar height (~56)
+          // so the hero content sits in the expanded portion only.
+          padding: const EdgeInsets.fromLTRB(20, 64, 20, 20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // ── Page heading ─────────────────────────────────────────────
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // Title + subtitle
                   Expanded(
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.end,
                       children: [
-                        const SizedBox(height: 6),
+                        const Text(
+                          'Health Records',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -0.5,
+                            height: 1.1,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
                         Text(
-                          profile?.bloodGroup != null
-                              ? '🩸 ${profile!.bloodGroup}  •  '
-                                  '📏 ${profile.heightCm?.toStringAsFixed(0) ?? '--'} cm  •  '
-                                  '⚖️ ${profile.weightKg?.toStringAsFixed(1) ?? '--'} kg'
+                          hasVitals
+                              ? 'Your personal health profile'
                               : 'Your Personal Health Record',
-                          style: const TextStyle(
-                            color: Colors.white70,
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.75),
                             fontSize: 13,
                           ),
                         ),
                       ],
                     ),
                   ),
+                  const SizedBox(width: 12),
+                  // Profile button — always visible in expanded area
                   GestureDetector(
-                    onTap: () => _push(context, const MedicalProfilePage()),
+                    onTap: onProfileTap,
                     child: Container(
                       padding: const EdgeInsets.symmetric(
-                          horizontal: 14, vertical: 8),
+                          horizontal: 14, vertical: 9),
                       decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(12),
+                        color: Colors.white.withValues(alpha: 0.18),
+                        borderRadius: BorderRadius.circular(14),
                         border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.3)),
+                            color: Colors.white.withValues(alpha: 0.35),
+                            width: 1.2),
                       ),
                       child: const Row(
                         mainAxisSize: MainAxisSize.min,
@@ -157,28 +231,125 @@ class _PHRSliverAppBar extends StatelessWidget {
                           Icon(Icons.person_outline_rounded,
                               color: Colors.white, size: 16),
                           SizedBox(width: 6),
-                          Text('Profile',
-                              style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 13,
-                                  fontWeight: FontWeight.w700)),
+                          Text(
+                            'Profile',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w700,
+                            ),
+                          ),
                         ],
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
+
+              const Spacer(),
+
+              // ── Vitals chips row ─────────────────────────────────────────
+              if (hasVitals) ...[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 6,
+                  children: [
+                    if (profile?.bloodGroup != null)
+                      _VitalChip(
+                          icon: Icons.water_drop_rounded,
+                          label: profile!.bloodGroup!,
+                          accent: const Color(0xFFFF6B8A)),
+                    if (profile?.heightCm != null)
+                      _VitalChip(
+                          icon: Icons.straighten_rounded,
+                          label:
+                              '${profile!.heightCm!.toStringAsFixed(0)} cm',
+                          accent: const Color(0xFF64C8FF)),
+                    if (profile?.weightKg != null)
+                      _VitalChip(
+                          icon: Icons.monitor_weight_outlined,
+                          label:
+                              '${profile!.weightKg!.toStringAsFixed(1)} kg',
+                          accent: const Color(0xFFA8FFD4)),
+                    if (profile?.bmi != null)
+                      _VitalChip(
+                          icon: Icons.health_and_safety_rounded,
+                          label: 'BMI ${profile!.bmi!.toStringAsFixed(1)}',
+                          accent: const Color(0xFFFFD580)),
+                  ],
+                ),
+              ] else ...[
+                // Prompt when no profile is set
+                GestureDetector(
+                  onTap: onProfileTap,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 14, vertical: 9),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                          color: Colors.white.withValues(alpha: 0.25)),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.add_circle_outline_rounded,
+                            color: Colors.white70, size: 15),
+                        const SizedBox(width: 6),
+                        Text(
+                          'Set up your health profile',
+                          style: TextStyle(
+                            color: Colors.white.withValues(alpha: 0.85),
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ],
           ),
         ),
-        title: const Text(
-          '📋 Health Records',
-          style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.w800,
-              color: Colors.white),
-        ),
-        titlePadding: const EdgeInsets.only(left: 56, bottom: 16),
+      ),
+    );
+  }
+}
+
+// ─── Vital chip pill ──────────────────────────────────────────────────────────
+
+class _VitalChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  final Color accent;
+  const _VitalChip(
+      {required this.icon, required this.label, required this.accent});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.15),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.25)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: accent),
+          const SizedBox(width: 5),
+          Text(
+            label,
+            style: const TextStyle(
+              color: Colors.white,
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -197,7 +368,7 @@ class _SummaryStatsRow extends StatelessWidget {
           DesignTokens.primary),
       _Stat('💊', '${state.prescriptions.length}', 'Rx',
           DesignTokens.green),
-      _Stat('🩻', '${state.medicalImages.length}', 'Scans',
+      _Stat('🔍', '${state.medicalImages.length}', 'Scans',
           DesignTokens.blue),
       _Stat('🧪', '${state.labReports.length}', 'Labs',
           DesignTokens.orange),
@@ -281,7 +452,7 @@ class _QuickNavGrid extends StatelessWidget {
           () => _push(context, const MedicalHistoryPage())),
       _NavAction('💊', 'Prescriptions', DesignTokens.green,
           () => _push(context, const PrescriptionsPage())),
-      _NavAction('🩻', 'Scans &\nImages', DesignTokens.blue,
+      _NavAction('🔍', 'Scans &\nImages', DesignTokens.blue,
           () => _push(context, const MedicalImagesPage())),
       _NavAction('🧪', 'Lab\nReports', DesignTokens.orange,
           () => _push(context, const LabReportsPage())),
@@ -467,12 +638,12 @@ class _EmptyTimelineCard extends StatelessWidget {
 }
 
 class _TimelineEventCard extends StatelessWidget {
-  final dynamic event;
+  final TimelineEvent event;
   const _TimelineEventCard({required this.event});
 
   @override
   Widget build(BuildContext context) {
-    final color = _colorFor(event.eventType as String);
+    final color = _colorFor(event.eventType);
     return Container(
       margin: const EdgeInsets.only(bottom: 8),
       padding: const EdgeInsets.all(12),
@@ -492,7 +663,7 @@ class _TimelineEventCard extends StatelessWidget {
             ),
             child: Center(
               child: Text(
-                event.emoji as String,
+                event.emoji,
                 style: const TextStyle(fontSize: 20),
               ),
             ),
@@ -503,7 +674,7 @@ class _TimelineEventCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  event.title as String,
+                  event.title,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     fontSize: 13,
@@ -512,11 +683,11 @@ class _TimelineEventCard extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                 ),
-                if ((event.description as String?) != null &&
-                    (event.description as String).isNotEmpty) ...[
+                if (event.description != null &&
+                    event.description!.isNotEmpty) ...[
                   const SizedBox(height: 2),
                   Text(
-                    event.description as String,
+                    event.description!,
                     style: const TextStyle(
                         fontSize: 11, color: DesignTokens.textMuted),
                     maxLines: 1,
@@ -528,7 +699,7 @@ class _TimelineEventCard extends StatelessWidget {
           ),
           const SizedBox(width: 8),
           Text(
-            DateFormat('d MMM').format(event.eventDate as DateTime),
+            DateFormat('d MMM').format(event.eventDate),
             style: const TextStyle(
                 fontSize: 11,
                 color: DesignTokens.textSubtle,
@@ -608,52 +779,54 @@ class _SkeletonBox extends StatelessWidget {
   }
 }
 
-// ─── Error body ───────────────────────────────────────────────────────────────
+// ─── Error banner (non-blocking — content still renders below) ────────────────
 
-class _ErrorBody extends StatelessWidget {
+class _ErrorBanner extends StatelessWidget {
   final String message;
   final VoidCallback onRetry;
-  const _ErrorBody({required this.message, required this.onRetry});
+  const _ErrorBanner({required this.message, required this.onRetry});
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(32),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Text('😔', style: TextStyle(fontSize: 56)),
-            const SizedBox(height: 16),
-            const Text(
-              'Could not load records',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: DesignTokens.textStrong),
-            ),
-            const SizedBox(height: 8),
-            Text(
-              message,
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                  color: DesignTokens.textMuted, fontSize: 13),
-            ),
-            const SizedBox(height: 24),
-            FilledButton.icon(
-              onPressed: onRetry,
-              icon: const Icon(Icons.refresh_rounded),
-              label: const Text('Retry'),
-              style: FilledButton.styleFrom(
-                  backgroundColor: DesignTokens.primary,
-                  foregroundColor: Colors.white),
-            ),
-          ],
-        ),
+    return Container(
+      margin: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      decoration: BoxDecoration(
+        color: DesignTokens.danger.withValues(alpha: 0.07),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: DesignTokens.danger.withValues(alpha: 0.25)),
       ),
+      child: Row(children: [
+        const Text('⚠️', style: TextStyle(fontSize: 16)),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            message,
+            style: const TextStyle(
+              fontSize: 12,
+              color: DesignTokens.danger,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ),
+        TextButton(
+          onPressed: onRetry,
+          style: TextButton.styleFrom(
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+            minimumSize: Size.zero,
+            tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+          ),
+          child: const Text('Retry',
+              style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: DesignTokens.danger)),
+        ),
+      ]),
     );
   }
 }
+
 
 void _push(BuildContext context, Widget page) =>
     Navigator.of(context).push(MaterialPageRoute(builder: (_) => page));

@@ -27,7 +27,7 @@ class QuickActionGrid extends StatelessWidget {
           crossAxisCount: 2,
           mainAxisSpacing: 16,
           crossAxisSpacing: 16,
-          childAspectRatio: 1.55,
+          childAspectRatio: 1.35,
         ),
         itemCount: items.length,
         itemBuilder: (context, i) => _QuickActionCard(

@@ -22,7 +22,6 @@ Endpoints:
   DELETE /images/{id}                 — Delete medical image
 
   GET    /timeline                    — Get unified medical timeline
-
   POST   /timeline/external           — Push external event (inter-module)
   GET    /health                      — Module health check
 """
@@ -32,7 +31,8 @@ from __future__ import annotations
 import json
 from typing import Optional
 
-from fastapi import APIRouter, Depends, File, Form, Query, Response, UploadFile, status
+from fastapi import APIRouter, Depends, File, Form, Query, Request, Response, UploadFile, status
+from pydantic import BaseModel
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser
@@ -61,6 +61,13 @@ from app.health_records.services import (
 )
 
 router = APIRouter(prefix="/health-records", tags=["Medical Records"])
+
+
+# ─── Helper: detect JSON vs multipart ────────────────────────────────────────
+
+def _is_json(request: Request) -> bool:
+    ct = request.headers.get("content-type", "")
+    return "application/json" in ct
 
 
 # ─── Dashboard summary ────────────────────────────────────────────────────────
@@ -114,7 +121,7 @@ async def upsert_profile(
 )
 async def list_history(
     current_user: CurrentUser,
-    category: Optional[str] = Query(default=None, description="Filter by category"),
+    category: Optional[str] = Query(default=None),
     limit:    int           = Query(default=100, ge=1, le=200),
     offset:   int           = Query(default=0, ge=0),
     db: AsyncSession = Depends(get_db),
@@ -191,20 +198,37 @@ async def list_prescriptions(
     status_code=status.HTTP_201_CREATED,
     summary="Upload prescription",
     description=(
-        "Create a prescription record.  Optionally attach a PDF/image file. "
-        "Send `metadata` as a JSON string in the form field."
+        "Create a prescription record with an optional PDF/image file. "
+        "Accepts application/json (no file) or multipart/form-data "
+        "(metadata JSON string in the 'metadata' field, optional file)."
     ),
 )
 async def create_prescription(
+    request: Request,
     current_user: CurrentUser,
-    metadata: str = Form(
-        default="{}",
-        description="JSON-encoded PrescriptionCreate fields",
-    ),
-    file: Optional[UploadFile] = File(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> PrescriptionResponse:
-    payload = PrescriptionCreate.model_validate_json(metadata)
+    """
+    Dual content-type handler — avoids the FastAPI limitation that prevents
+    mixing a Pydantic body parameter with Form fields in the same function.
+    """
+    file: Optional[UploadFile] = None
+
+    if _is_json(request):
+        # Mobile app path: application/json body
+        raw = await request.json()
+        payload = PrescriptionCreate.model_validate(raw)
+    else:
+        # Multipart path: metadata field (JSON string) + optional file
+        form = await request.form()
+        metadata_str = form.get("metadata", "{}")
+        payload = PrescriptionCreate.model_validate_json(
+            metadata_str if metadata_str else "{}"
+        )
+        uploaded = form.get("file")
+        if uploaded and hasattr(uploaded, "filename"):
+            file = uploaded  # type: ignore[assignment]
+
     return await PrescriptionService.create(db, current_user.id, payload, file=file)
 
 
@@ -249,19 +273,31 @@ async def list_images(
     summary="Upload medical image / scan",
     description=(
         "Upload a medical image (X-Ray, MRI, CT, etc.) with metadata. "
-        "Send `metadata` as a JSON string in the form field."
+        "Accepts application/json (no file) or multipart/form-data "
+        "(metadata JSON string in the 'metadata' field, optional file)."
     ),
 )
 async def upload_image(
+    request: Request,
     current_user: CurrentUser,
-    metadata: str = Form(
-        default="{}",
-        description="JSON-encoded MedicalImageCreate fields",
-    ),
-    file: Optional[UploadFile] = File(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> MedicalImageResponse:
-    image_meta = MedicalImageCreate.model_validate_json(metadata)
+    """Dual content-type handler — same pattern as create_prescription."""
+    file: Optional[UploadFile] = None
+
+    if _is_json(request):
+        raw = await request.json()
+        image_meta = MedicalImageCreate.model_validate(raw)
+    else:
+        form = await request.form()
+        metadata_str = form.get("metadata", "{}")
+        image_meta = MedicalImageCreate.model_validate_json(
+            metadata_str if metadata_str else "{}"
+        )
+        uploaded = form.get("file")
+        if uploaded and hasattr(uploaded, "filename"):
+            file = uploaded  # type: ignore[assignment]
+
     return await MedicalImageService.upload(db, current_user.id, image_meta, file=file)
 
 
@@ -306,25 +342,37 @@ async def get_timeline(
     status_code=status.HTTP_201_CREATED,
     summary="Push external timeline event",
     description=(
-        "Called by other backend modules (symptom checker, chatbot, emergency) "
-        "to push an event onto the authenticated user's medical timeline."
+        "Called by mobile app or other backend modules to append an event to "
+        "the authenticated user's medical timeline. Accepts application/json "
+        "or application/x-www-form-urlencoded."
     ),
 )
 async def push_external_event(
+    request: Request,
     current_user: CurrentUser,
-    event_type:   str                = Form(),
-    title:        str                = Form(),
-    description:  Optional[str]      = Form(default=None),
-    reference_id: Optional[str]      = Form(default=None),
     db: AsyncSession = Depends(get_db),
 ) -> TimelineEventResponse:
+    """Dual content-type handler for timeline push."""
+    if _is_json(request):
+        data = await request.json()
+        ev_type   = data.get("event_type", "")
+        ev_title  = data.get("title", "")
+        ev_desc   = data.get("description")
+        ev_ref    = data.get("reference_id")
+    else:
+        form = await request.form()
+        ev_type   = form.get("event_type", "")
+        ev_title  = form.get("title", "")
+        ev_desc   = form.get("description") or None
+        ev_ref    = form.get("reference_id") or None
+
     return await TimelineService.record_external_event(
         db,
         user_id=current_user.id,
-        event_type=event_type,
-        title=title,
-        description=description,
-        reference_id=reference_id,
+        event_type=str(ev_type),
+        title=str(ev_title),
+        description=ev_desc,
+        reference_id=ev_ref,
     )
 
 

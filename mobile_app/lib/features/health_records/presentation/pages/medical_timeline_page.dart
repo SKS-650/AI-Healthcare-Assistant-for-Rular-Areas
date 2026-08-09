@@ -1,4 +1,4 @@
-﻿import 'package:flutter/material.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
@@ -19,13 +19,13 @@ class _MedicalTimelinePageState extends ConsumerState<MedicalTimelinePage> {
   String? _activeFilter;
 
   static const _filters = [
-    (null,                   'All',         '📋'),
-    ('medical_history',      'History',     '🩺'),
-    ('prescription',         'Prescription','💊'),
-    ('medical_image',        'Scans',       '🩻'),
-    ('symptom_assessment',   'Symptoms',    '🤒'),
-    ('chat_conversation',    'AI Chat',     '💬'),
-    ('emergency_assessment', 'Emergency',   '🚨'),
+    (null,                   'All',         '??'),
+    ('medical_history',      'History',     '??'),
+    ('prescription',         'Prescription','??'),
+    ('medical_image',        'Scans',       '??'),
+    ('symptom_assessment',   'Symptoms',    '??'),
+    ('chat_conversation',    'AI Chat',     '??'),
+    ('emergency_assessment', 'Emergency',   '??'),
   ];
 
   @override
@@ -48,7 +48,7 @@ class _MedicalTimelinePageState extends ConsumerState<MedicalTimelinePage> {
         elevation: 0,
         scrolledUnderElevation: 0,
         title: const Row(children: [
-          Text('📅', style: TextStyle(fontSize: 20)),
+          Text('??', style: TextStyle(fontSize: 20)),
           SizedBox(width: 8),
           Text('Medical Timeline',
               style: TextStyle(
@@ -139,7 +139,7 @@ class _EventGroup {
   const _EventGroup({required this.monthLabel, required this.events});
 }
 
-// ─── Timeline group (one month) ───────────────────────────────────────────────
+// --- Timeline group (one month) -----------------------------------------------
 
 class _TimelineGroup extends StatelessWidget {
   final _EventGroup group;
@@ -199,7 +199,7 @@ class _TimelineGroup extends StatelessWidget {
   }
 }
 
-// ─── Single timeline tile ─────────────────────────────────────────────────────
+// --- Single timeline tile -----------------------------------------------------
 
 class _TimelineTile extends StatelessWidget {
   final TimelineEvent event;
@@ -365,7 +365,7 @@ class _TypeBadge extends StatelessWidget {
       );
 }
 
-// ─── Empty state ──────────────────────────────────────────────────────────────
+// --- Empty state --------------------------------------------------------------
 
 class _EmptyTimeline extends StatelessWidget {
   @override
@@ -375,7 +375,7 @@ class _EmptyTimeline extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text('📅', style: TextStyle(fontSize: 56)),
+              Text('??', style: TextStyle(fontSize: 56)),
               SizedBox(height: 16),
               Text('No Timeline Events',
                   style: TextStyle(

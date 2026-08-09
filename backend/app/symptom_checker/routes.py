@@ -13,6 +13,8 @@ from .schemas import (
 from .service import symptom_checker_service
 from ..auth.dependencies import get_current_user
 from ..auth.models import UserModel
+from ..database.connection import get_async_session as get_db
+from sqlalchemy.ext.asyncio import AsyncSession
 
 router = APIRouter(prefix="/symptom-checker", tags=["Symptom Checker"])
 
@@ -20,7 +22,8 @@ router = APIRouter(prefix="/symptom-checker", tags=["Symptom Checker"])
 @router.post("/predict", response_model=SymptomCheckResponse)
 async def predict_disease(
     request: SymptomCheckRequest,
-    current_user: UserModel = Depends(get_current_user)
+    current_user: UserModel = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
     """
     Predict possible diseases based on symptoms.
@@ -61,7 +64,41 @@ async def predict_disease(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=result.get("message", "Prediction failed")
         )
-    
+
+    # ── Push timeline event ───────────────────────────────────────────────────
+    # Fire-and-forget: a timeline failure must never break the symptom result.
+    try:
+        top_disease = ""
+        risk_level  = "unknown"
+        confidence  = 0.0
+
+        predictions = result.get("predictions") or result.get("top_diseases") or []
+        if predictions and isinstance(predictions, list) and len(predictions) > 0:
+            first = predictions[0]
+            if isinstance(first, dict):
+                top_disease = first.get("disease") or first.get("name") or ""
+                confidence  = float(first.get("confidence") or first.get("probability") or 0.0)
+            else:
+                top_disease = str(first)
+
+        risk_level = (
+            result.get("risk_level")
+            or result.get("risk_assessment", {}).get("level")
+            or "unknown"
+        )
+        pct = f"{confidence * 100:.1f}%"
+
+        from app.health_records.services import TimelineService
+        await TimelineService.record_external_event(
+            db,
+            user_id=str(current_user.id),
+            event_type="symptom_assessment",
+            title=f"Symptom Check: {top_disease}" if top_disease else "Symptom Assessment",
+            description=f"{risk_level.capitalize()} risk · {pct} confidence",
+        )
+    except Exception:
+        pass  # non-fatal
+
     return result
 
 

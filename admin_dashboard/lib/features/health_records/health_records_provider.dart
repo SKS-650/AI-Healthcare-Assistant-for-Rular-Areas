@@ -90,6 +90,52 @@ class AdminMedicalProfile {
       );
 }
 
+class AdminMedicalHistory {
+  final String id;
+  final String userId;
+  final String? userName;
+  final String? userEmail;
+  final String diseaseName;
+  final String category;
+  final String status;
+  final String? diagnosisDate;
+  final String? doctorName;
+  final String? hospitalName;
+  final String? notes;
+  final String createdAt;
+
+  const AdminMedicalHistory({
+    required this.id,
+    required this.userId,
+    this.userName,
+    this.userEmail,
+    required this.diseaseName,
+    required this.category,
+    required this.status,
+    this.diagnosisDate,
+    this.doctorName,
+    this.hospitalName,
+    this.notes,
+    required this.createdAt,
+  });
+
+  factory AdminMedicalHistory.fromJson(Map<String, dynamic> j) =>
+      AdminMedicalHistory(
+        id: j['id'] as String? ?? '',
+        userId: j['user_id'] as String? ?? '',
+        userName: j['user_name'] as String?,
+        userEmail: j['user_email'] as String?,
+        diseaseName: j['disease_name'] as String? ?? '',
+        category: j['category'] as String? ?? 'current',
+        status: j['status'] as String? ?? 'active',
+        diagnosisDate: j['diagnosis_date'] as String?,
+        doctorName: j['doctor_name'] as String?,
+        hospitalName: j['hospital_name'] as String?,
+        notes: j['notes'] as String?,
+        createdAt: j['created_at'] as String? ?? '',
+      );
+}
+
 class AdminPrescription {
   final String id;
   final String userId;
@@ -237,6 +283,13 @@ class HealthRecordsState {
   final int profilesPage;
   final String profileSearch;
 
+  final List<AdminMedicalHistory> medicalHistory;
+  final int historyTotal;
+  final int historyPage;
+  final String historySearch;
+  final String? historyCategoryFilter;
+  final String? historyStatusFilter;
+
   final List<AdminPrescription> prescriptions;
   final int prescriptionsTotal;
   final int prescriptionsPage;
@@ -261,6 +314,12 @@ class HealthRecordsState {
     this.profilesTotal = 0,
     this.profilesPage = 1,
     this.profileSearch = '',
+    this.medicalHistory = const [],
+    this.historyTotal = 0,
+    this.historyPage = 1,
+    this.historySearch = '',
+    this.historyCategoryFilter,
+    this.historyStatusFilter,
     this.prescriptions = const [],
     this.prescriptionsTotal = 0,
     this.prescriptionsPage = 1,
@@ -284,6 +343,14 @@ class HealthRecordsState {
     int? profilesTotal,
     int? profilesPage,
     String? profileSearch,
+    List<AdminMedicalHistory>? medicalHistory,
+    int? historyTotal,
+    int? historyPage,
+    String? historySearch,
+    String? historyCategoryFilter,
+    bool clearHistoryCategory = false,
+    String? historyStatusFilter,
+    bool clearHistoryStatus = false,
     List<AdminPrescription>? prescriptions,
     int? prescriptionsTotal,
     int? prescriptionsPage,
@@ -305,6 +372,16 @@ class HealthRecordsState {
         profilesTotal: profilesTotal ?? this.profilesTotal,
         profilesPage: profilesPage ?? this.profilesPage,
         profileSearch: profileSearch ?? this.profileSearch,
+        medicalHistory: medicalHistory ?? this.medicalHistory,
+        historyTotal: historyTotal ?? this.historyTotal,
+        historyPage: historyPage ?? this.historyPage,
+        historySearch: historySearch ?? this.historySearch,
+        historyCategoryFilter: clearHistoryCategory
+            ? null
+            : (historyCategoryFilter ?? this.historyCategoryFilter),
+        historyStatusFilter: clearHistoryStatus
+            ? null
+            : (historyStatusFilter ?? this.historyStatusFilter),
         prescriptions: prescriptions ?? this.prescriptions,
         prescriptionsTotal: prescriptionsTotal ?? this.prescriptionsTotal,
         prescriptionsPage: prescriptionsPage ?? this.prescriptionsPage,
@@ -312,7 +389,8 @@ class HealthRecordsState {
         images: images ?? this.images,
         imagesTotal: imagesTotal ?? this.imagesTotal,
         imagesPage: imagesPage ?? this.imagesPage,
-        imageTypeFilter: clearImageType ? null : (imageTypeFilter ?? this.imageTypeFilter),
+        imageTypeFilter:
+            clearImageType ? null : (imageTypeFilter ?? this.imageTypeFilter),
         timeline: timeline ?? this.timeline,
         timelineTotal: timelineTotal ?? this.timelineTotal,
         timelinePage: timelinePage ?? this.timelinePage,
@@ -326,6 +404,7 @@ class HealthRecordsNotifier extends StateNotifier<HealthRecordsState> {
   HealthRecordsNotifier() : super(const HealthRecordsState()) {
     loadStats();
     loadProfiles();
+    loadMedicalHistory();
     loadPrescriptions();
     loadImages();
     loadTimeline();
@@ -333,19 +412,27 @@ class HealthRecordsNotifier extends StateNotifier<HealthRecordsState> {
 
   Future<void> loadStats() async {
     try {
-      final resp = await ApiClient.instance.get('/admin/health-records/stats');
+      final resp =
+          await ApiClient.instance.get('/admin/health-records/stats');
       state = state.copyWith(
-        stats: HealthRecordsStats.fromJson(resp.data as Map<String, dynamic>),
+        stats: HealthRecordsStats.fromJson(
+            resp.data as Map<String, dynamic>),
       );
     } catch (_) {}
   }
 
   Future<void> loadProfiles({int? page}) async {
     final p = page ?? state.profilesPage;
-    state = state.copyWith(isLoading: true, clearError: true, profilesPage: p);
+    state =
+        state.copyWith(isLoading: true, clearError: true, profilesPage: p);
     try {
-      final params = <String, dynamic>{'page': p, 'page_size': state.pageSize};
-      if (state.profileSearch.isNotEmpty) params['search'] = state.profileSearch;
+      final params = <String, dynamic>{
+        'page': p,
+        'page_size': state.pageSize,
+      };
+      if (state.profileSearch.isNotEmpty) {
+        params['search'] = state.profileSearch;
+      }
       final resp = await ApiClient.instance
           .get('/admin/health-records/profiles', queryParameters: params);
       final d = resp.data as Map<String, dynamic>;
@@ -362,14 +449,56 @@ class HealthRecordsNotifier extends StateNotifier<HealthRecordsState> {
     }
   }
 
+  Future<void> loadMedicalHistory({int? page}) async {
+    final p = page ?? state.historyPage;
+    state =
+        state.copyWith(isLoading: true, clearError: true, historyPage: p);
+    try {
+      final params = <String, dynamic>{
+        'page': p,
+        'page_size': state.pageSize,
+      };
+      if (state.historySearch.isNotEmpty) {
+        params['search'] = state.historySearch;
+      }
+      if (state.historyCategoryFilter != null) {
+        params['category'] = state.historyCategoryFilter;
+      }
+      if (state.historyStatusFilter != null) {
+        params['status'] = state.historyStatusFilter;
+      }
+      final resp = await ApiClient.instance.get(
+          '/admin/health-records/medical-history',
+          queryParameters: params);
+      final d = resp.data as Map<String, dynamic>;
+      state = state.copyWith(
+        isLoading: false,
+        medicalHistory: (d['entries'] as List? ?? [])
+            .cast<Map<String, dynamic>>()
+            .map(AdminMedicalHistory.fromJson)
+            .toList(),
+        historyTotal: d['total'] as int? ?? 0,
+      );
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: errorMessage(e));
+    }
+  }
+
   Future<void> loadPrescriptions({int? page}) async {
     final p = page ?? state.prescriptionsPage;
-    state = state.copyWith(isLoading: true, clearError: true, prescriptionsPage: p);
+    state = state.copyWith(
+        isLoading: true, clearError: true, prescriptionsPage: p);
     try {
-      final params = <String, dynamic>{'page': p, 'page_size': state.pageSize};
-      if (state.prescriptionSearch.isNotEmpty) params['search'] = state.prescriptionSearch;
-      final resp = await ApiClient.instance
-          .get('/admin/health-records/prescriptions', queryParameters: params);
+      final params = <String, dynamic>{
+        'page': p,
+        'page_size': state.pageSize,
+      };
+      if (state.prescriptionSearch.isNotEmpty) {
+        params['search'] = state.prescriptionSearch;
+      }
+      final resp = await ApiClient.instance.get(
+          '/admin/health-records/prescriptions',
+          queryParameters: params);
       final d = resp.data as Map<String, dynamic>;
       state = state.copyWith(
         isLoading: false,
@@ -386,10 +515,16 @@ class HealthRecordsNotifier extends StateNotifier<HealthRecordsState> {
 
   Future<void> loadImages({int? page}) async {
     final p = page ?? state.imagesPage;
-    state = state.copyWith(isLoading: true, clearError: true, imagesPage: p);
+    state =
+        state.copyWith(isLoading: true, clearError: true, imagesPage: p);
     try {
-      final params = <String, dynamic>{'page': p, 'page_size': state.pageSize};
-      if (state.imageTypeFilter != null) params['image_type'] = state.imageTypeFilter;
+      final params = <String, dynamic>{
+        'page': p,
+        'page_size': state.pageSize,
+      };
+      if (state.imageTypeFilter != null) {
+        params['image_type'] = state.imageTypeFilter;
+      }
       final resp = await ApiClient.instance
           .get('/admin/health-records/images', queryParameters: params);
       final d = resp.data as Map<String, dynamic>;
@@ -408,9 +543,13 @@ class HealthRecordsNotifier extends StateNotifier<HealthRecordsState> {
 
   Future<void> loadTimeline({int? page}) async {
     final p = page ?? state.timelinePage;
-    state = state.copyWith(isLoading: true, clearError: true, timelinePage: p);
+    state =
+        state.copyWith(isLoading: true, clearError: true, timelinePage: p);
     try {
-      final params = <String, dynamic>{'page': p, 'page_size': state.pageSize};
+      final params = <String, dynamic>{
+        'page': p,
+        'page_size': state.pageSize,
+      };
       final resp = await ApiClient.instance
           .get('/admin/health-records/timeline', queryParameters: params);
       final d = resp.data as Map<String, dynamic>;
@@ -427,9 +566,30 @@ class HealthRecordsNotifier extends StateNotifier<HealthRecordsState> {
     }
   }
 
+  // ── Search / filter setters ────────────────────────────────────────────────
+
   void setProfileSearch(String v) {
     state = state.copyWith(profileSearch: v, profilesPage: 1);
     loadProfiles();
+  }
+
+  void setHistorySearch(String v) {
+    state = state.copyWith(historySearch: v, historyPage: 1);
+    loadMedicalHistory();
+  }
+
+  void setHistoryCategoryFilter(String? v) {
+    state = v == null
+        ? state.copyWith(clearHistoryCategory: true, historyPage: 1)
+        : state.copyWith(historyCategoryFilter: v, historyPage: 1);
+    loadMedicalHistory();
+  }
+
+  void setHistoryStatusFilter(String? v) {
+    state = v == null
+        ? state.copyWith(clearHistoryStatus: true, historyPage: 1)
+        : state.copyWith(historyStatusFilter: v, historyPage: 1);
+    loadMedicalHistory();
   }
 
   void setPrescriptionSearch(String v) {

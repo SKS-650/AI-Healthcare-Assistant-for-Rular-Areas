@@ -74,6 +74,9 @@ class MedicalProfileModel extends MedicalProfile {
     );
   }
 
+  /// Converts to JSON for the backend PUT /health-records/profile endpoint.
+  /// Only the upsert fields are included (no id/user_id/timestamps — the
+  /// backend ignores those on upsert).
   Map<String, dynamic> toJson() => {
         'blood_group':         bloodGroup,
         'height_cm':           heightCm,
@@ -93,5 +96,15 @@ class MedicalProfileModel extends MedicalProfile {
                   nextDue:   v.nextDue,
                 ).toJson())
             .toList(),
+      };
+
+  /// Full JSON including server-assigned fields — used for local Hive cache.
+  Map<String, dynamic> toLocalJson() => {
+        ...toJson(),
+        'id':         id,
+        'user_id':    userId,
+        'bmi':        bmi,
+        'created_at': createdAt.toIso8601String(),
+        'updated_at': updatedAt.toIso8601String(),
       };
 }

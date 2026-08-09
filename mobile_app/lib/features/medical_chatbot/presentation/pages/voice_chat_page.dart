@@ -73,34 +73,47 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
             SafeArea(
               child: LayoutBuilder(
                 builder: (context, constraints) {
-                  // Use scrollable layout when screen height is too compact
-                  // (e.g. landscape, small phones, web browser resize)
+                  // Use scrollable layout on all but the tallest phones
+                  // to prevent overflow on mid/small screens (~720p and below).
                   final availableHeight = constraints.maxHeight;
-                  final needsScroll    = availableHeight < 620;
+                  // Threshold raised to 720 — screens ≥720 logical px can
+                  // safely use larger spacing; everything else uses compact gaps.
+                  final needsScroll = availableHeight < 720;
+
+                  // Adaptive spacing — proportional to available height so the
+                  // layout fills tall screens without any Spacer (which cannot
+                  // live inside a SingleChildScrollView > Column).
+                  final largeGap    = needsScroll ? 14.0 : (availableHeight * 0.055).clamp(24.0, 60.0);
+                  final orbSize     = needsScroll ? 130.0 : 175.0;
+                  final waveHeight  = needsScroll ? 40.0  : 56.0;
+                  final waveCount   = needsScroll ? 13    : 17;
+                  final topPad      = needsScroll ? 8.0   : 16.0;
+                  final midPad      = needsScroll ? 12.0  : 20.0;
+                  final afterWave   = needsScroll ? 14.0  : largeGap;
+                  final afterCard   = needsScroll ? 16.0  : largeGap;
+                  final afterLang   = needsScroll ? 16.0  : 24.0;
+                  final afterMic    = needsScroll ? 10.0  : 14.0;
+                  final bottomPad   = needsScroll ? 20.0  : 32.0;
 
                   final content = Column(
-                    mainAxisSize: needsScroll
-                        ? MainAxisSize.min   // shrink-wrap when scrollable
-                        : MainAxisSize.max,  // fill screen on normal phones
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      SizedBox(height: needsScroll ? 8 : 4),
+                      SizedBox(height: topPad),
 
                       // ── Status pill ─────────────────────────────────
                       _StatusPill(
                           isListening: isListening, isSpeaking: isSpeaking),
 
-                      if (!needsScroll) const Spacer(flex: 2),
-                      SizedBox(height: needsScroll ? 16 : 0),
+                      SizedBox(height: largeGap),
 
                       // ── Animated orb ────────────────────────────────
                       OrbAnimation(
                         isListening: isListening,
                         isSpeaking:  isSpeaking,
-                        // Slightly smaller orb on compact screens
-                        size: needsScroll ? 130 : 175,
+                        size: orbSize,
                       ),
 
-                      SizedBox(height: needsScroll ? 12 : 20),
+                      SizedBox(height: midPad),
 
                       // ── Waveform ─────────────────────────────────────
                       WaveformBars(
@@ -108,12 +121,11 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
                         color:    isListening
                             ? DesignTokens.danger
                             : DesignTokens.primary,
-                        barCount: needsScroll ? 13 : 17,
-                        height:   needsScroll ? 40 : 56,
+                        barCount: waveCount,
+                        height:   waveHeight,
                       ),
 
-                      if (!needsScroll) const Spacer(flex: 1),
-                      SizedBox(height: needsScroll ? 14 : 0),
+                      SizedBox(height: afterWave),
 
                       // ── Transcript / response / hint card ────────────
                       AnimatedSwitcher(
@@ -146,8 +158,7 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
                               ),
                       ),
 
-                      if (!needsScroll) const Spacer(flex: 2),
-                      SizedBox(height: needsScroll ? 16 : 0),
+                      SizedBox(height: afterCard),
 
                       // ── Language selector ─────────────────────────────
                       _LangRow(
@@ -155,7 +166,7 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
                         onSelect: controller.updateLanguageCode,
                       ),
 
-                      SizedBox(height: needsScroll ? 16 : 24),
+                      SizedBox(height: afterLang),
 
                       // ── Mic button ─────────────────────────────────────
                       _MicButton(
@@ -165,7 +176,7 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
                             controller.toggleListening(continuous: true),
                       ),
 
-                      SizedBox(height: needsScroll ? 10 : 14),
+                      SizedBox(height: afterMic),
 
                       // ── Action row ─────────────────────────────────────
                       _ActionRow(
@@ -187,21 +198,22 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
                         ),
                       ),
 
-                      SizedBox(height: needsScroll ? 20 : 32),
+                      SizedBox(height: bottomPad),
                     ],
                   );
 
-                  if (needsScroll) {
-                    return SingleChildScrollView(
-                      physics: const ClampingScrollPhysics(),
-                      child: ConstrainedBox(
-                        constraints: BoxConstraints(
-                            minHeight: availableHeight),
+                  // Always wrap in SingleChildScrollView — on small phones it
+                  // scrolls; on tall phones the ConstrainedBox centres content.
+                  return SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    child: ConstrainedBox(
+                      constraints: BoxConstraints(minHeight: availableHeight),
+                      child: Align(
+                        alignment: Alignment.center,
                         child: content,
                       ),
-                    );
-                  }
-                  return content;
+                    ),
+                  );
                 },
               ),
             ),

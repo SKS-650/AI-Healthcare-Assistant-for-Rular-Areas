@@ -59,7 +59,10 @@ class AuthState {
 
 // ── Notifier ──────────────────────────────────────────────────────────────────
 class AuthNotifier extends StateNotifier<AuthState> {
-  static const _storage = FlutterSecureStorage();
+  // Same web options as ApiClient so both read from the same localStorage store.
+  static const _storage = FlutterSecureStorage(
+    webOptions: WebOptions(dbName: 'admin_secure', publicKey: 'admin_key'),
+  );
 
   AuthNotifier() : super(const AuthState(isLoading: true)) {
     _restoreSession();

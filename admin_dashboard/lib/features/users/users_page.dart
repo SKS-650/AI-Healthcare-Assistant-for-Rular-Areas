@@ -1,8 +1,10 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_animate/flutter_animate.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:intl/intl.dart';
 
+import '../../core/api.dart';
 import '../../core/models.dart';
 import '../../core/theme.dart';
 import '../../shared/widgets/data_table_card.dart';
@@ -312,18 +314,66 @@ class _ExportButton extends StatelessWidget {
       builder: (ctx) => AlertDialog(
         title: const Text('Export Users'),
         content: const Text(
-            'Export user data as CSV or JSON. The file will include all user fields.'),
+            'Export user data as CSV or JSON. Includes up to 1 000 users.'),
         actions: [
           TextButton(
-              onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel')),
+          OutlinedButton.icon(
+            icon: const Icon(Icons.data_object_rounded, size: 16),
+            label: const Text('Export JSON'),
+            onPressed: () { Navigator.pop(ctx); _doExport(context, 'json'); },
+          ),
           FilledButton.icon(
             icon: const Icon(Icons.file_download_rounded, size: 16),
             label: const Text('Export CSV'),
-            onPressed: () => Navigator.pop(ctx),
+            onPressed: () { Navigator.pop(ctx); _doExport(context, 'csv'); },
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _doExport(BuildContext context, String format) async {
+    try {
+      final resp = await ApiClient.instance.get(
+        '/admin/export/users',
+        queryParameters: {'format': format},
+      );
+      final payload = resp.data as Map<String, dynamic>;
+      final content = payload['data'] as String? ?? '';
+      final count   = payload['count'] as int? ?? 0;
+      if (!context.mounted) return;
+      await showDialog(
+        context: context,
+        builder: (d) => AlertDialog(
+          title: Text('Export — $count users (${format.toUpperCase()})'),
+          content: SizedBox(
+            width: 560,
+            height: 320,
+            child: SingleChildScrollView(
+              child: SelectableText(
+                content,
+                style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+              ),
+            ),
+          ),
+          actions: [
+            FilledButton(
+              onPressed: () => Navigator.pop(d),
+              child: const Text('Close'),
+            ),
+          ],
+        ),
+      );
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('Export failed: ${errorMessage(e)}'),
+          backgroundColor: AppColors.error,
+        ));
+      }
+    }
   }
 }
 
@@ -339,7 +389,7 @@ class _UserActions extends StatelessWidget {
           child: IconButton(
             icon: const Icon(Icons.visibility_rounded,
                 size: 16, color: AppColors.primary),
-            onPressed: () => _showUserDetails(context),
+            onPressed: () => context.go('/users/${user.id}'),
           ),
         ),
         Tooltip(
@@ -383,72 +433,6 @@ class _UserActions extends StatelessWidget {
           ),
         ),
       ]);
-
-  void _showUserDetails(BuildContext context) {
-    showDialog(
-      context: context,
-      builder: (_) => Dialog(
-        child: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 520),
-          child: Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text('User Details',
-                    style: Theme.of(context).textTheme.headlineSmall),
-                const SizedBox(height: 20),
-                _detailRow(context, 'Full Name', user.fullName),
-                _detailRow(context, 'Email', user.email),
-                _detailRow(context, 'Phone', user.phone ?? 'Not set'),
-                _detailRow(context, 'Role', user.role.replaceAll('_', ' ').toUpperCase()),
-                _detailRow(context, 'Status', user.isActive ? 'Active' : 'Inactive'),
-                _detailRow(context, 'Email Verified', user.emailVerified ? 'Yes' : 'No'),
-                _detailRow(context, 'Language', user.language.toUpperCase()),
-                _detailRow(context, 'Chat Sessions', '${user.totalConversations}'),
-                _detailRow(context, 'Emergency Checks', '${user.totalEmergencyAssessments}'),
-                _detailRow(context, 'Joined',
-                    DateFormat('MMMM d, y').format(user.createdAt)),
-                if (user.lastLogin != null)
-                  _detailRow(context, 'Last Login',
-                      DateFormat('MMMM d, y HH:mm').format(user.lastLogin!)),
-                const SizedBox(height: 20),
-                Align(
-                  alignment: Alignment.centerRight,
-                  child: FilledButton(
-                    onPressed: () => Navigator.pop(context),
-                    child: const Text('Close'),
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _detailRow(BuildContext context, String label, String value) =>
-      Padding(
-        padding: const EdgeInsets.only(bottom: 10),
-        child: Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          SizedBox(
-            width: 140,
-            child: Text(label,
-                style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: AppColors.lightTextMuted,
-                    fontWeight: FontWeight.w600)),
-          ),
-          Expanded(
-            child: Text(value,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodySmall
-                    ?.copyWith(fontWeight: FontWeight.w500)),
-          ),
-        ]),
-      );
 
   void _showRoleDialog(BuildContext context) {
     String selectedRole = user.role;

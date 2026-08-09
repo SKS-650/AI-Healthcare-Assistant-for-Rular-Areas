@@ -2600,16 +2600,40 @@ The app communicates connectivity state clearly to users:
 
 ### Overview
 
-The Admin Dashboard is a Flutter Web application that gives platform administrators and healthcare managers full visibility and control over the entire platform. It connects to the same FastAPI backend via admin-scoped JWT tokens and provides 15 distinct management panels behind a collapsible sidebar. All data tables are paginated, searchable, and filterable. The dashboard supports both light and dark mode with a custom theme.
+The Admin Dashboard is a Flutter Web application that gives platform administrators and healthcare managers full visibility and complete control over the entire platform. It connects to the same FastAPI backend via admin-scoped JWT tokens and provides **18 distinct management panels** behind a collapsible sidebar. All data tables are paginated, searchable, and filterable. The dashboard supports both light and dark mode with a custom theme.
 
 **Directory:** `admin_dashboard/`
+
+**URL:** http://localhost:5000
+
+**Default credentials:** `admin@healthcare.ai` / `Admin@123456` (role: `super_admin`)
+
+### Running the Admin Dashboard
+
+```powershell
+cd admin_dashboard
+flutter pub get
+flutter run -d chrome --web-port 5000
+```
+
+### Token Storage on Web
+
+Both `ApiClient._storage` and `AuthNotifier._storage` use `WebOptions` so tokens persist across page reloads in Chrome/Edge:
+
+```dart
+static const _storage = FlutterSecureStorage(
+  webOptions: WebOptions(dbName: 'admin_secure', publicKey: 'admin_key'),
+);
+```
+
+This stores tokens in `localStorage` via the Web Crypto API. Without this, `flutter_secure_storage` silently fails to write tokens on Flutter Web — causing the login page to reappear immediately after successful authentication.
 
 ### Shared UI Infrastructure
 
 ```mermaid
 flowchart LR
     subgraph Shell["App Shell (app.dart)"]
-        SIDEBAR["Collapsible Sidebar\n15 nav items\n(expand/collapse on hover)"]
+        SIDEBAR["Collapsible Sidebar\n18 nav items\n(expand/collapse on hover)"]
         TOPBAR["Top Bar\n• Notifications bell + badge + dropdown\n• Dark/light mode toggle\n• Admin user chip + logout"]
         CONTENT["Content Area\n(go_router page rendering)"]
     end
@@ -2625,25 +2649,30 @@ flowchart LR
     end
 ```
 
-**Collapsible Sidebar Navigation:**
+**Collapsible Sidebar Navigation (18 items):**
 
-| Icon | Route | Panel |
+| Section | Route | Panel |
 |---|---|---|
-| 📊 | `/dashboard` | Dashboard & KPIs |
-| 👥 | `/users` | User Management |
-| 🩺 | `/doctors` | Doctors Management |
-| 🚨 | `/emergency` | Emergency Monitoring |
-| 💬 | `/chatbot` | Chatbot Monitoring |
-| 📚 | `/education` | Health Education CMS |
-| 📈 | `/analytics` | Symptom Analytics |
-| 🗄️ | `/datasets` | Dataset Management |
-| 📋 | `/reports` | Reports & Charts |
-| 🔍 | `/logs` | Audit Logs |
-| ⚙️ | `/settings` | System Settings |
-| 🏥 | `/health-records` | Health Records Admin |
-| 👤 | `/profile` | Admin Profile |
-| 💡 | `/disease-prediction` | Disease Prediction Stats |
-| 💬 | `/feedback` | User Feedback |
+| **Overview** | `/dashboard` | Dashboard & KPIs |
+| **User Management** | `/users` | User Management |
+| | `/users/:userId` | Per-User Detail (6 tabs) |
+| | `/doctors` | Doctors Management |
+| | `/authentication` | Authentication & Sessions |
+| | `/profile` *(user profiles section)* | User Profiles |
+| **Modules** | `/emergency` | Emergency Monitoring |
+| | `/chatbot` | AI Chatbot Monitoring |
+| | `/disease-prediction` | Disease Prediction Stats |
+| | `/health-records` | Health Records Admin |
+| | `/medical-history` | Medical History |
+| | `/education` | Health Education CMS |
+| | `/feedback` | User Feedback |
+| **System** | `/analytics` | Analytics & Insights |
+| | `/datasets` | Dataset Management |
+| | `/reports` | Reports & Charts |
+| | `/logs` | Audit Logs |
+| | `/notifications` | Notifications |
+| | `/settings` | System Settings |
+| **Account** | `/profile` | Admin Profile |
 
 ### Token Management in Admin Dashboard
 
@@ -2653,6 +2682,14 @@ The Dio client (`lib/core/api.dart`) uses `flutter_secure_storage` and a token r
 On every request:     Add Authorization: Bearer <access_token>
 On HTTP 401:          POST /auth/refresh → retry with new token
 If refresh fails:     clearTokens() → navigate to /login
+```
+
+**Backend URL configuration** (`lib/core/constants.dart`):
+
+```dart
+static const String _backendHost = 'localhost:8000';
+// Change to LAN IP for device testing:
+// static const String _backendHost = '192.168.1.100:8000';
 ```
 
 ---
@@ -2711,25 +2748,122 @@ Full CRUD management of all registered users with bulk operations and CSV/JSON e
 - Paginated data table (20/page) with search by name/email
 - Filter by role (`patient` · `doctor` · `admin` · `super_admin`) and status (`active` · `inactive`)
 - Stat chips: Total · Active · Inactive · Doctors · Admins
-- Per-row actions: View Details · Activate/Deactivate · Change Role · Delete
+- Per-row actions: **View Details** (→ full detail page) · Activate/Deactivate · Change Role · Delete
 - Multi-row checkbox selection → Bulk Action bar (Activate / Deactivate / Delete)
 - Add User dialog — creates admin-verified account bypassing password-strength rules
-- Export dialog — downloads users as CSV or JSON (`GET /admin/export/users`)
+- Export dialog — calls `GET /admin/export/users?format=csv|json`, displays result in selectable text dialog for copy/save
 
 **Admin API calls used:**
 
 | Action | Endpoint |
 |---|---|
 | Load users | `GET /admin/users?search=&role=&is_active=&page=` |
-| View user detail | `GET /admin/users/{id}` |
+| Create user | `POST /admin/users` |
 | Activate/Deactivate | `PATCH /admin/users/{id}/status` |
 | Change role | `PATCH /admin/users/{id}/role` |
 | Delete user | `DELETE /admin/users/{id}` |
 | Bulk action | `POST /admin/users/bulk-action` |
-| Create user | `POST /admin/users` |
-| Export | `GET /admin/export/users?format=csv` |
+| Export CSV/JSON | `GET /admin/export/users?format=csv\|json` |
 
-**User Detail Dialog shows:** Full name · Email · Phone · Role · Status · Email Verified · Language · Chat sessions count · Emergency checks count · Joined date · Last login
+---
+
+### Panel 2a — Per-User Detail Page (6 Tabs)
+
+**Route:** `/users/:userId` · **Provider:** `UserDetailNotifier` (StateNotifierProvider.family)
+
+Clicking the **eye icon (👁)** on any user row navigates to a full-screen detail page with 6 lazy-loaded tabs. Each tab loads its data on first open.
+
+#### Tab 1 — Profile
+
+Read-only summary of everything known about the user plus one-click action buttons.
+
+| Field shown | Source |
+|---|---|
+| Full name, email, phone | `AdminUser` model |
+| Role badge | colour-coded: patient/doctor/admin/super_admin |
+| Active / Inactive status badge | `is_active` |
+| Email verified flag | `email_verified` |
+| Language | user's preferred language code |
+| Chat conversations total | `total_conversations` |
+| Emergency assessments total | `total_emergency_assessments` |
+| Joined date | `created_at` |
+| Last login | `last_login` |
+
+**Quick-action buttons on Profile tab:**
+
+| Button | Role required | API call | Effect |
+|---|---|---|---|
+| Activate / Deactivate | admin+ | `PATCH /admin/users/{id}/status` | Toggles `is_active` immediately |
+| Change Role | super_admin | `PATCH /admin/users/{id}/role` | Shows role dropdown; saves on confirm |
+| Reset Password | super_admin | `POST /admin/users/{id}/reset-password` | Prompts for new password (min 6 chars) |
+| Revoke All Sessions | admin+ | `POST /admin/users/{id}/revoke-sessions` | Deactivates all sessions + refresh tokens → user is immediately logged out everywhere |
+
+#### Tab 2 — Edit
+
+Inline form to modify the user's profile fields directly.
+
+| Field | Notes |
+|---|---|
+| Full Name | Text field with non-empty validation |
+| Phone | Optional; uniqueness check against other users |
+| Language | Dropdown: English / Hindi / Nepali / Spanish / French |
+| Email Verified | Checkbox — admin can manually mark as verified |
+| Phone Verified | Checkbox — admin can manually mark as verified |
+
+Also contains a **Force Reset Password** card (super_admin only) — enter new password, show/hide toggle, calls `POST /admin/users/{id}/reset-password`.
+
+**API call:** `PATCH /admin/users/{id}/profile`
+
+#### Tab 3 — Chats
+
+Paginated list of every chatbot conversation this user ever had.
+
+Each card shows: title · message count · emergency flag count · language · date.
+Data loads on first tab open. Pagination: 15 per page.
+
+**API call:** `GET /admin/users/{id}/conversations?page=&page_size=15`
+
+#### Tab 4 — Emergency
+
+Paginated list of every emergency assessment this user ran.
+
+Each card shows: risk level badge (colour-coded) · EMERGENCY badge if triggered · possible emergency type · symptoms chips · age/gender · SOS trigger count · date.
+
+**API call:** `GET /admin/users/{id}/emergencies?page=&page_size=15`
+
+#### Tab 5 — Symptoms
+
+Paginated list of every disease prediction / symptom check this user submitted.
+
+Each card shows: risk level badge · EMERGENCY badge · top predicted disease with confidence % · symptoms chips · age/gender · date.
+
+**API call:** `GET /admin/users/{id}/symptom-checks?page=&page_size=15`
+
+#### Tab 6 — Sessions
+
+All login sessions (active and expired) across every device.
+
+Each card shows: device icon (mobile/desktop) · device info · IP address · last active time · Active/Expired badge.
+
+**Revoke All button** (visible only when active sessions exist): calls `POST /admin/users/{id}/revoke-sessions` — deactivates all `user_sessions` rows and revokes all `refresh_tokens` rows.
+
+**API call:** `GET /admin/users/{id}/sessions`
+
+**Complete per-user backend endpoints:**
+
+| Method | Endpoint | Role | Description |
+|---|---|---|---|
+| `GET` | `/admin/users/{id}` | admin+ | Full profile with activity counts |
+| `PATCH` | `/admin/users/{id}/status` | admin+ | Activate or deactivate |
+| `PATCH` | `/admin/users/{id}/role` | super_admin | Change role |
+| `DELETE` | `/admin/users/{id}` | super_admin | Permanently delete |
+| `PATCH` | `/admin/users/{id}/profile` | admin+ | Edit name/phone/language/verification flags |
+| `POST` | `/admin/users/{id}/reset-password` | super_admin | Force-set new password |
+| `POST` | `/admin/users/{id}/revoke-sessions` | admin+ | Revoke all sessions + refresh tokens |
+| `GET` | `/admin/users/{id}/conversations` | admin+ | Paginated chat history |
+| `GET` | `/admin/users/{id}/emergencies` | admin+ | Paginated emergency assessments |
+| `GET` | `/admin/users/{id}/sessions` | admin+ | All sessions with active count |
+| `GET` | `/admin/users/{id}/symptom-checks` | admin+ | Paginated symptom check history |
 
 ---
 
@@ -2959,10 +3093,12 @@ Grouped system configuration editor with a danger zone for destructive operation
 
 **Features:**
 - Settings grouped by category: `General` · `AI / Chatbot` · `Emergency` · `Notifications` · `Security`
-- Inline edit for each setting key/value pair
-- Save per setting or save all (PATCH)
-- Danger Zone section: clear all sessions · revoke all tokens · reset to defaults
-- System metrics panel: CPU usage · memory usage · disk usage (via `GET /admin/system/metrics` using `psutil`)
+- Inline edit for each setting key/value pair (click pencil icon → text field → tick to save / X to cancel)
+- Each setting shows: key name · description · value type badge (`string` / `integer` / `boolean`) · current value
+- Save per setting individually (`PATCH /admin/settings/{key}`)
+- Danger Zone section:
+  - **Clear Cache** — pings `GET /admin/health` to verify backend reachability (not `/health` — that is the app-level endpoint outside the API prefix)
+  - **Export All Data** — calls `GET /admin/reports?days=365`, shows full JSON in a selectable text dialog for copy/save
 
 **Admin API calls:**
 
@@ -2970,8 +3106,8 @@ Grouped system configuration editor with a danger zone for destructive operation
 |---|---|---|
 | Get all settings | `GET /admin/settings` | Admin |
 | Update setting | `PATCH /admin/settings/{key}` | Super Admin |
-| Get system metrics | `GET /admin/system/metrics` | Admin |
-| Get system health | `GET /admin/system/health` | Admin |
+| Admin health ping | `GET /admin/health` | Admin |
+| Export all data | `GET /admin/reports?days=365` | Admin |
 
 ---
 
@@ -2994,19 +3130,77 @@ Platform-wide visibility into user health records for clinical oversight.
 
 ---
 
-### Panel 13 — Authentication Management (within Admin)
+### Panel 13 — Authentication Management
 
-Accessible from the Logs / Settings panels.
+Accessible from the sidebar under **User Management → Authentication**.
 
 **Features:**
-- Active sessions list (all users) with revoke button
-- Refresh token list with revoke button
-- OTP codes audit log (pending vs. used counts)
+- Active sessions list (all users platform-wide) with per-session revoke button
+- Refresh token list with per-token revoke button
+- OTP codes audit log (shows purpose, attempts, pending/used/expired status)
+- Stats header: active sessions count · active tokens count · pending OTPs · unverified email count
 - Manually verify user email or phone (Super Admin)
 - Revoke all sessions for a specific user
+- Pagination for each tab (sessions / tokens / OTP logs) — 20/page
 
 **Admin API calls:**
-`GET /admin/auth/sessions` · `DELETE /admin/auth/sessions/{id}` · `DELETE /admin/auth/sessions/user/{user_id}` · `GET /admin/auth/tokens` · `DELETE /admin/auth/tokens/{id}` · `GET /admin/auth/otp-logs` · `PATCH /admin/auth/verify-email/{user_id}` · `PATCH /admin/auth/verify-phone/{user_id}`
+
+| Action | Endpoint |
+|---|---|
+| List sessions | `GET /admin/auth/sessions?page=` |
+| Revoke session | `DELETE /admin/auth/sessions/{id}` |
+| Revoke all for user | `DELETE /admin/auth/sessions/user/{user_id}` |
+| List refresh tokens | `GET /admin/auth/tokens?page=` |
+| Revoke token | `DELETE /admin/auth/tokens/{id}` |
+| OTP logs | `GET /admin/auth/otp-logs?page=` |
+| Verify email | `PATCH /admin/auth/verify-email/{user_id}` |
+| Verify phone | `PATCH /admin/auth/verify-phone/{user_id}` |
+
+---
+
+### Panel 14 — Notifications
+
+**Route:** `/notifications`
+
+Admin notification centre for system-generated alerts.
+
+**Features:**
+- List of admin notifications with read/unread badge
+- Mark individual notification as read (`PATCH /admin/notifications/{id}/read`)
+- Unread count badge shown in the top bar notification bell
+- Notification types: user registration spike · high-risk emergency · model reload required · system health degraded
+
+**Admin API calls:**
+`GET /admin/notifications` · `PATCH /admin/notifications/{id}/read`
+
+---
+
+### Panel 15 — User Feedback
+
+**Route:** `/feedback` · **Provider:** `FeedbackNotifier`
+
+Manage all user-submitted feedback from the mobile app.
+
+**Features:**
+- Stats bar: total · pending · reviewed · in-progress · resolved · dismissed · avg rating · today · this week
+- Category breakdown chart (general / bug_report / feature_request / chatbot / emergency / ui_ux / performance)
+- Priority breakdown (low / normal / high / critical)
+- Paginated feedback table with filters: search · category · status · priority · rating (1–5 stars)
+- Per-row: view full detail dialog (message · module · platform · app version · user info · admin notes)
+- Update status (pending → reviewed → in_progress → resolved → dismissed)
+- Update priority
+- Add/edit admin notes
+- Delete feedback item
+
+**Admin API calls:**
+
+| Action | Endpoint |
+|---|---|
+| Load feedback | `GET /admin/feedback?search=&category=&status=&priority=&rating=&page=` |
+| Load stats | `GET /admin/feedback/stats` |
+| Get single | `GET /admin/feedback/{id}` |
+| Update | `PATCH /admin/feedback/{id}` (status / priority / admin_notes) |
+| Delete | `DELETE /admin/feedback/{id}` |
 
 ---
 
@@ -3015,29 +3209,39 @@ Accessible from the Logs / Settings panels.
 ```mermaid
 flowchart TD
     A([Admin opens browser]) --> B[GET / → redirect /login]
-    B --> C[AdminLoginPage\nEmail + Password form]
-    C --> D[POST /admin/auth/login\nor POST /api/v1/auth/login]
-    D --> E{Valid admin\ncredentials?}
+    B --> C[LoginPage\nEmail + Password form]
+    C --> D[POST /api/v1/auth/login]
+    D --> E{Valid admin\ncredentials?\nrole = admin or super_admin}
     E -- No --> F[Show error snackbar]
     F --> C
-    E -- Yes --> G[Store JWT in\nflutter_secure_storage]
+    E -- Yes --> G[Save JWT to localStorage\nvia flutter_secure_storage\nWebOptions]
     G --> H[Navigate to /dashboard]
 
     H --> I[DashboardNotifier.load\nGET /admin/dashboard\nGET /admin/system/health]
-    I --> J[Render 8 KPI cards\n4 trend charts\nSystem health badges]
+    I --> J[Render KPI cards\ntrend charts\nSystem health badges\nRecent users + emergencies]
 
     J --> K{Admin selects panel}
-    K -->|Users| L[UsersNotifier.load\nGET /admin/users]
-    K -->|Analytics| M[GET /admin/analytics/*\n6 parallel calls]
-    K -->|Emergency| N[GET /admin/emergency\nGET /admin/emergency/stats]
-    K -->|Chatbot| O[GET /admin/chatbot/conversations\nGET /admin/chatbot/stats]
-    K -->|Education| P[GET /admin/education/articles]
-    K -->|Datasets| Q[DatasetNotifier.loadDatasets\n+ loadStats]
-    K -->|Reports| R[GET /admin/reports?days=30]
-    K -->|Logs| S[GET /admin/logs]
-    K -->|Settings| T[GET /admin/settings\nGET /admin/system/metrics]
+    K -->|Users| L[UsersNotifier.load\nGET /admin/users\nClick 👁 → /users/:id\n6-tab UserDetailPage]
+    K -->|Doctors| L2[GET /admin/doctors]
+    K -->|Authentication| M[GET /admin/auth/sessions\n+ tokens + otp-logs]
+    K -->|Analytics| N[GET /admin/analytics/*\n7 parallel calls]
+    K -->|Emergency| O[GET /admin/emergency\nGET /admin/emergency/stats]
+    K -->|Chatbot| P[GET /admin/chatbot/conversations\nGET /admin/chatbot/stats]
+    K -->|Education| Q[GET /admin/education/articles]
+    K -->|Disease Prediction| R[GET /admin/disease-prediction/stats\n+ history]
+    K -->|Health Records| S[GET /admin/health-records/\nprofiles + prescriptions + images\n+ history + timeline]
+    K -->|Datasets| T[DatasetNotifier.loadDatasets\n+ loadStats]
+    K -->|Reports| U[GET /admin/reports?days=30]
+    K -->|Logs| V[GET /admin/logs]
+    K -->|Settings| W[GET /admin/settings]
+    K -->|Notifications| X[GET /admin/notifications]
+    K -->|Feedback| Y[GET /admin/feedback\n+ GET /admin/feedback/stats]
+
+    L --> LA[UserDetailPage\nProfile · Edit · Chats\nEmergency · Symptoms · Sessions]
+    LA --> LB[Per-user API calls:\nGET conversations/emergencies\nsessions/symptom-checks\nPATCH profile/status/role\nPOST reset-password\nPOST revoke-sessions]
 
     style G fill:#74c69d,color:#000
+    style LA fill:#bee3f8,color:#000
 ```
 
 ---

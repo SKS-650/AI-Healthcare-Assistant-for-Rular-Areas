@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:intl/intl.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
+import '../../domain/entities/doctor.dart';
 import '../../domain/entities/prescription.dart';
 import '../providers/health_records_provider.dart';
 
@@ -474,109 +475,410 @@ class _EmptyPrescriptions extends StatelessWidget {
       );
 }
 
-// ─── Upload sheet (placeholder) ───────────────────────────────────────────────
+// ─── Add Prescription sheet ───────────────────────────────────────────────────
+// Full form that saves to the backend via the health records controller.
 
-class _UploadPrescriptionSheet extends StatelessWidget {
+class _UploadPrescriptionSheet extends ConsumerStatefulWidget {
   const _UploadPrescriptionSheet();
 
   @override
+  ConsumerState<_UploadPrescriptionSheet> createState() =>
+      _UploadPrescriptionSheetState();
+}
+
+class _UploadPrescriptionSheetState
+    extends ConsumerState<_UploadPrescriptionSheet> {
+  final _diagnosisCtrl  = TextEditingController();
+  final _doctorCtrl     = TextEditingController();
+  final _hospitalCtrl   = TextEditingController();
+  final _instructionCtrl = TextEditingController();
+
+  DateTime _prescribedAt = DateTime.now();
+  DateTime? _validUntil;
+
+  // Dynamic medicine list — each entry: {name, dose, frequency, duration}
+  final List<Map<String, TextEditingController>> _medicines = [];
+
+  bool _saving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _addMedicine(); // start with one medicine row
+  }
+
+  @override
+  void dispose() {
+    _diagnosisCtrl.dispose();
+    _doctorCtrl.dispose();
+    _hospitalCtrl.dispose();
+    _instructionCtrl.dispose();
+    for (final m in _medicines) {
+      for (final c in m.values) {
+        c.dispose();
+      }
+    }
+    super.dispose();
+  }
+
+  void _addMedicine() {
+    setState(() => _medicines.add({
+          'name':      TextEditingController(),
+          'dose':      TextEditingController(),
+          'frequency': TextEditingController(),
+          'duration':  TextEditingController(),
+        }));
+  }
+
+  void _removeMedicine(int index) {
+    final m = _medicines.removeAt(index);
+    for (final c in m.values) {
+      c.dispose();
+    }
+    setState(() {});
+  }
+
+  Future<void> _pickDate({required bool isValid}) async {
+    final initial = isValid ? (_validUntil ?? _prescribedAt) : _prescribedAt;
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: initial,
+      firstDate: DateTime(2000),
+      lastDate: DateTime(2100),
+      builder: (ctx, child) => Theme(
+        data: Theme.of(ctx).copyWith(
+          colorScheme: const ColorScheme.light(
+              primary: DesignTokens.green, onPrimary: Colors.white),
+        ),
+        child: child!,
+      ),
+    );
+    if (picked == null) return;
+    setState(() {
+      if (isValid) {
+        _validUntil = picked;
+      } else {
+        _prescribedAt = picked;
+      }
+    });
+  }
+
+  Future<void> _save() async {
+    final diagnosis = _diagnosisCtrl.text.trim();
+    final doctorName = _doctorCtrl.text.trim();
+    if (diagnosis.isEmpty && doctorName.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+        content: Text('Enter at least a diagnosis or doctor name.'),
+        backgroundColor: DesignTokens.danger,
+        behavior: SnackBarBehavior.floating,
+      ));
+      return;
+    }
+
+    setState(() => _saving = true);
+
+    final medicines = _medicines
+        .map((m) => MedicineDosage(
+              name:      m['name']!.text.trim(),
+              dose:      m['dose']!.text.trim(),
+              frequency: m['frequency']!.text.trim(),
+              duration:  m['duration']!.text.trim(),
+            ))
+        .where((m) => m.name.isNotEmpty)
+        .toList();
+
+    final prescription = Prescription(
+      id:           '',
+      diagnosis:    diagnosis,
+      doctor: Doctor(
+        id:            '',
+        name:          doctorName.isEmpty ? 'Unknown' : doctorName,
+        specialty:     '',
+        hospital:      _hospitalCtrl.text.trim(),
+        contactNumber: '',
+      ),
+      prescribedAt:  _prescribedAt,
+      validUntil:    _validUntil,
+      medicines:     medicines,
+      instructions:  _instructionCtrl.text.trim(),
+    );
+
+    final ok = await ref
+        .read(healthRecordsControllerProvider.notifier)
+        .createPrescription(prescription);
+
+    if (mounted) {
+      setState(() => _saving = false);
+      if (ok) {
+        Navigator.of(context).pop();
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('✅ Prescription saved'),
+          backgroundColor: DesignTokens.green,
+          behavior: SnackBarBehavior.floating,
+        ));
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+          content: Text('Failed to save prescription. Try again.'),
+          backgroundColor: DesignTokens.danger,
+          behavior: SnackBarBehavior.floating,
+        ));
+      }
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final bottom = MediaQuery.of(context).viewInsets.bottom;
     return Container(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+      margin: EdgeInsets.only(bottom: bottom),
       decoration: const BoxDecoration(
         color: DesignTokens.surface,
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Container(
-            width: 40, height: 4,
-            margin: const EdgeInsets.only(bottom: 20),
-            decoration: BoxDecoration(
-                color: DesignTokens.border,
-                borderRadius: BorderRadius.circular(2)),
-          ),
-          const Text('💊 Upload Prescription',
-              style: TextStyle(
-                  fontSize: 18,
-                  fontWeight: FontWeight.w800,
-                  color: DesignTokens.textStrong)),
-          const SizedBox(height: 20),
-          const _UploadTile(Icons.picture_as_pdf_rounded, 'Upload PDF',
-              'Prescription or lab report in PDF format', DesignTokens.danger),
-          const SizedBox(height: 10),
-          const _UploadTile(Icons.photo_camera_rounded, 'Take a Photo',
-              'Capture paper prescription with camera', DesignTokens.blue),
-          const SizedBox(height: 10),
-          const _UploadTile(Icons.folder_open_rounded, 'Choose from Files',
-              'Select image or document from storage', DesignTokens.primary),
-          const SizedBox(height: 16),
-          SizedBox(
-            width: double.infinity,
-            child: OutlinedButton(
-              onPressed: () => Navigator.pop(context),
-              style: OutlinedButton.styleFrom(
-                minimumSize: const Size.fromHeight(48),
-                side: const BorderSide(color: DesignTokens.border),
-                shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(14)),
+      child: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 32),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Handle
+            Center(
+              child: Container(
+                width: 40, height: 4,
+                margin: const EdgeInsets.only(bottom: 16),
+                decoration: BoxDecoration(
+                    color: DesignTokens.border,
+                    borderRadius: BorderRadius.circular(2)),
               ),
-              child: const Text('Cancel'),
             ),
+            const Text('💊 Add Prescription',
+                style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w800,
+                    color: DesignTokens.textStrong)),
+            const SizedBox(height: 20),
+
+            // Diagnosis
+            _field(_diagnosisCtrl, 'Diagnosis / Condition',
+                Icons.medical_information_rounded),
+            const SizedBox(height: 12),
+
+            // Doctor & Hospital
+            Row(children: [
+              Expanded(
+                  child: _field(_doctorCtrl, 'Doctor Name',
+                      Icons.person_outline_rounded)),
+              const SizedBox(width: 10),
+              Expanded(
+                  child: _field(_hospitalCtrl, 'Hospital / Clinic',
+                      Icons.local_hospital_outlined)),
+            ]),
+            const SizedBox(height: 12),
+
+            // Dates
+            Row(children: [
+              Expanded(child: _dateField(
+                icon: Icons.calendar_today_rounded,
+                label: 'Prescribed on',
+                date: _prescribedAt,
+                onTap: () => _pickDate(isValid: false),
+              )),
+              const SizedBox(width: 10),
+              Expanded(child: _dateField(
+                icon: Icons.event_available_rounded,
+                label: 'Valid until (opt.)',
+                date: _validUntil,
+                onTap: () => _pickDate(isValid: true),
+              )),
+            ]),
+            const SizedBox(height: 16),
+
+            // Medicines
+            Row(children: [
+              const Text('Medicines',
+                  style: TextStyle(
+                      fontSize: 14,
+                      fontWeight: FontWeight.w700,
+                      color: DesignTokens.textStrong)),
+              const Spacer(),
+              TextButton.icon(
+                onPressed: _addMedicine,
+                icon: const Icon(Icons.add_rounded, size: 16),
+                label: const Text('Add'),
+                style: TextButton.styleFrom(
+                    foregroundColor: DesignTokens.green,
+                    padding: EdgeInsets.zero),
+              ),
+            ]),
+            const SizedBox(height: 6),
+            ...List.generate(_medicines.length, (i) => _MedicineRow(
+              controllers: _medicines[i],
+              index: i,
+              onRemove: _medicines.length > 1 ? () => _removeMedicine(i) : null,
+            )),
+            const SizedBox(height: 12),
+
+            // Instructions
+            _field(_instructionCtrl, 'Instructions (optional)',
+                Icons.notes_rounded, maxLines: 3),
+            const SizedBox(height: 24),
+
+            // Save button
+            SizedBox(
+              width: double.infinity,
+              child: FilledButton(
+                onPressed: _saving ? null : _save,
+                style: FilledButton.styleFrom(
+                  backgroundColor: DesignTokens.green,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size.fromHeight(52),
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                ),
+                child: _saving
+                    ? const SizedBox(
+                        width: 20, height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : const Text('Save Prescription',
+                        style: TextStyle(
+                            fontWeight: FontWeight.w700, fontSize: 15)),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _field(TextEditingController ctrl, String label, IconData icon,
+      {int maxLines = 1}) =>
+      TextField(
+        controller: ctrl,
+        maxLines: maxLines,
+        decoration: InputDecoration(
+          labelText: label,
+          prefixIcon: Icon(icon, size: 18, color: DesignTokens.green),
+          filled: true,
+          fillColor: DesignTokens.surfaceMuted,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(12),
+              borderSide: BorderSide.none),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        ),
+      );
+
+  Widget _dateField({
+    required IconData icon,
+    required String label,
+    required DateTime? date,
+    required VoidCallback onTap,
+  }) =>
+      GestureDetector(
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+          decoration: BoxDecoration(
+            color: DesignTokens.surfaceMuted,
+            borderRadius: BorderRadius.circular(12),
           ),
+          child: Row(children: [
+            Icon(icon, size: 16, color: DesignTokens.green),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(label,
+                      style: const TextStyle(
+                          fontSize: 11, color: DesignTokens.textSubtle)),
+                  Text(
+                    date != null
+                        ? DateFormat('d MMM yyyy').format(date)
+                        : 'Not set',
+                    style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: date != null
+                            ? DesignTokens.textStrong
+                            : DesignTokens.textMuted),
+                  ),
+                ],
+              ),
+            ),
+          ]),
+        ),
+      );
+}
+
+// ─── Single medicine row ──────────────────────────────────────────────────────
+
+class _MedicineRow extends StatelessWidget {
+  final Map<String, TextEditingController> controllers;
+  final int index;
+  final VoidCallback? onRemove;
+  const _MedicineRow(
+      {required this.controllers,
+      required this.index,
+      required this.onRemove});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(10),
+      decoration: BoxDecoration(
+        color: DesignTokens.green.withValues(alpha: 0.05),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: DesignTokens.green.withValues(alpha: 0.15)),
+      ),
+      child: Column(
+        children: [
+          Row(children: [
+            Text('Medicine ${index + 1}',
+                style: const TextStyle(
+                    fontSize: 12,
+                    fontWeight: FontWeight.w700,
+                    color: DesignTokens.green)),
+            const Spacer(),
+            if (onRemove != null)
+              GestureDetector(
+                onTap: onRemove,
+                child: const Icon(Icons.remove_circle_outline_rounded,
+                    size: 18, color: DesignTokens.danger),
+              ),
+          ]),
+          const SizedBox(height: 8),
+          Row(children: [
+            Expanded(flex: 3, child: _mini(controllers['name']!, 'Name *')),
+            const SizedBox(width: 8),
+            Expanded(flex: 2, child: _mini(controllers['dose']!, 'Dose')),
+          ]),
+          const SizedBox(height: 6),
+          Row(children: [
+            Expanded(child: _mini(controllers['frequency']!, 'Frequency')),
+            const SizedBox(width: 8),
+            Expanded(child: _mini(controllers['duration']!, 'Duration')),
+          ]),
         ],
       ),
     );
   }
-}
 
-class _UploadTile extends StatelessWidget {
-  final IconData icon;
-  final String title, subtitle;
-  final Color color;
-  const _UploadTile(this.icon, this.title, this.subtitle, this.color);
-
-  @override
-  Widget build(BuildContext context) => Material(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(14),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(14),
-          onTap: () => Navigator.pop(context),
-          child: Padding(
-            padding: const EdgeInsets.all(14),
-            child: Row(children: [
-              Container(
-                width: 44, height: 44,
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.12),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Icon(icon, color: color, size: 22),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w700,
-                            fontSize: 14,
-                            color: DesignTokens.textStrong)),
-                    const SizedBox(height: 2),
-                    Text(subtitle,
-                        style: const TextStyle(
-                            fontSize: 12,
-                            color: DesignTokens.textMuted)),
-                  ],
-                ),
-              ),
-              Icon(Icons.chevron_right_rounded,
-                  color: color, size: 20),
-            ]),
-          ),
+  Widget _mini(TextEditingController ctrl, String hint) => TextField(
+        controller: ctrl,
+        style: const TextStyle(fontSize: 13),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(fontSize: 12, color: DesignTokens.textMuted),
+          filled: true,
+          fillColor: DesignTokens.surface,
+          isDense: true,
+          border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(8),
+              borderSide: BorderSide.none),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         ),
       );
 }

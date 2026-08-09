@@ -3,19 +3,38 @@
 import 'package:flutter/material.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
+import '../../../../../core/services/timeline_push_service.dart';
 import '../../domain/entities/prediction_result.dart';
 import '../../../medical_chatbot/presentation/pages/chat_page.dart';
 import '../widgets/charts/confidence_chart.dart';
 import 'disease_detail_page.dart';
 import 'recommendation_page.dart';
 
-class PredictionResultPage extends StatelessWidget {
+class PredictionResultPage extends StatefulWidget {
   final PredictionResult result;
 
   const PredictionResultPage({super.key, required this.result});
 
-  Color _riskColor(String risk) {
-    switch (risk.toLowerCase()) {
+  @override
+  State<PredictionResultPage> createState() => _PredictionResultPageState();
+}
+
+class _PredictionResultPageState extends State<PredictionResultPage> {
+  PredictionResult get result => widget.result;
+
+  @override
+  void initState() {
+    super.initState();
+    // Fire-and-forget: push to health records timeline.
+    // Done in initState so it runs exactly once when the result is shown.
+    TimelinePushService.instance.pushSymptomAssessment(
+      diseaseName: result.disease.name,
+      confidence: result.confidence,
+      riskLevel: result.riskLevel,
+    );
+  }
+
+  Color _riskColor(String risk) {    switch (risk.toLowerCase()) {
       case 'low':
         return DesignTokens.success;
       case 'medium':

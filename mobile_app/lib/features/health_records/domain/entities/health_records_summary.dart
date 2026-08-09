@@ -18,4 +18,19 @@ class HealthRecordsSummary {
 
   int get totalRecords =>
       medicalHistoryCount + prescriptionCount + medicalImageCount;
+
+  HealthRecordsSummary copyWith({
+    bool? hasProfile,
+    int? medicalHistoryCount,
+    int? prescriptionCount,
+    int? medicalImageCount,
+    List<TimelineEvent>? recentTimeline,
+  }) =>
+      HealthRecordsSummary(
+        hasProfile: hasProfile ?? this.hasProfile,
+        medicalHistoryCount: medicalHistoryCount ?? this.medicalHistoryCount,
+        prescriptionCount: prescriptionCount ?? this.prescriptionCount,
+        medicalImageCount: medicalImageCount ?? this.medicalImageCount,
+        recentTimeline: recentTimeline ?? this.recentTimeline,
+      );
 }

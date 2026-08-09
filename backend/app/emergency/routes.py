@@ -25,8 +25,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.auth.dependencies import CurrentUser, OptionalUser
 from app.database.connection import get_async_session as get_db
-from app.emergency.schemas import (
-    AssessmentHistoryResponse,
+from app.emergency.schemas import (    AssessmentHistoryResponse,
     EmergencyAssessmentRequest,
     EmergencyAssessmentResponse,
     EmergencyContactCreate,
@@ -65,7 +64,28 @@ async def run_assessment(
     db: AsyncSession = Depends(get_db),
 ) -> EmergencyAssessmentResponse:
     user_id = current_user.id if current_user else None
-    return await EmergencyAssessmentService.run_assessment(db, payload, user_id)
+    result = await EmergencyAssessmentService.run_assessment(db, payload, user_id)
+
+    # ── Push timeline event ───────────────────────────────────────────────────
+    # Only push when we have an authenticated user. Non-fatal.
+    if user_id:
+        try:
+            from app.health_records.services import TimelineService
+            risk_level  = result.risk_level.value if hasattr(result.risk_level, "value") else str(result.risk_level)
+            risk_score  = result.risk_score
+            emergency   = result.possible_emergency or "Emergency Assessment"
+            await TimelineService.record_external_event(
+                db,
+                user_id=str(user_id),
+                event_type="emergency_assessment",
+                title=f"Emergency: {emergency}",
+                description=f"{risk_level.capitalize()} risk · Score {risk_score}/100",
+                reference_id=str(result.id) if hasattr(result, "id") and result.id else None,
+            )
+        except Exception:
+            pass  # non-fatal
+
+    return result
 
 
 @router.get(

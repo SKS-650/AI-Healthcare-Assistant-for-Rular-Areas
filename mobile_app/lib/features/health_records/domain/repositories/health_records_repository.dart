@@ -42,8 +42,8 @@ abstract class HealthRecordsRepository {
   // ── Unified Timeline ──────────────────────────────────────────────────────
   Future<List<TimelineEvent>> getTimelineEvents({
     String? eventType,
-    int limit,
-    int offset,
+    int limit = 50,
+    int offset = 0,
   });
 
   // ── Dashboard Summary ─────────────────────────────────────────────────────

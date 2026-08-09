@@ -178,120 +178,135 @@ class _WelcomePageState extends State<WelcomePage>
   }
 
   Widget _buildBody(Size size) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.center,
-      children: [
-        const Spacer(flex: 3),
+    // Wrap in SingleChildScrollView so that on small phones the spacers
+    // collapse gracefully and content is never clipped or overflowed.
+    return SingleChildScrollView(
+      physics: const ClampingScrollPhysics(),
+      child: ConstrainedBox(
+        // Ensure the Column fills at least the full screen height so that
+        // Spacers still push content apart on large phones.
+        constraints: BoxConstraints(minHeight: size.height),
+        child: IntrinsicHeight(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Spacer(flex: 3),
 
-        // ── Logo orb ───────────────────────────────────────────────────────
-        AnimatedBuilder(
-          animation: Listenable.merge([_enterCtrl, _pulseCtrl]),
-          builder: (_, __) => FadeTransition(
-            opacity: _logoFade,
-            child: Transform.scale(
-              scale: _logoScale.value * _pulse.value,
-              child: _LogoOrb(ringCtrl: _ringCtrl),
-            ),
-          ),
-        ),
+              // ── Logo orb ─────────────────────────────────────────────────
+              AnimatedBuilder(
+                animation: Listenable.merge([_enterCtrl, _pulseCtrl]),
+                builder: (_, __) => FadeTransition(
+                  opacity: _logoFade,
+                  child: Transform.scale(
+                    scale: _logoScale.value * _pulse.value,
+                    child: _LogoOrb(ringCtrl: _ringCtrl),
+                  ),
+                ),
+              ),
 
-        const SizedBox(height: 28),
+              const SizedBox(height: 28),
 
-        // ── App name ───────────────────────────────────────────────────────
-        SlideTransition(
-          position: _titleSlide,
-          child: FadeTransition(
-            opacity: _titleFade,
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                ShaderMask(
-                  shaderCallback: (b) => const LinearGradient(
-                    colors: [Colors.white, Color(0xFFD4C8FF)],
-                  ).createShader(b),
-                  child: const Text(
-                    'AI Healthcare',
+              // ── App name ──────────────────────────────────────────────────
+              SlideTransition(
+                position: _titleSlide,
+                child: FadeTransition(
+                  opacity: _titleFade,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ShaderMask(
+                        shaderCallback: (b) => const LinearGradient(
+                          colors: [Colors.white, Color(0xFFD4C8FF)],
+                        ).createShader(b),
+                        child: const Text(
+                          'AI Healthcare',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 34,
+                            fontWeight: FontWeight.w900,
+                            letterSpacing: -1.0,
+                            height: 1.05,
+                          ),
+                        ),
+                      ),
+                      ShaderMask(
+                        shaderCallback: (b) => const LinearGradient(
+                          colors: [Color(0xFFB89EFF), Color(0xFF926EFF)],
+                        ).createShader(b),
+                        child: const Text(
+                          'A S S I S T A N T',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w300,
+                            letterSpacing: 6,
+                            height: 1.6,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                      Text(
+                        'Smart, accessible healthcare for everyone',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                          color: Colors.white.withValues(alpha: 0.55),
+                          fontSize: 13.5,
+                          height: 1.5,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 24),
+
+              // ── Feature pills ─────────────────────────────────────────────
+              SlideTransition(
+                position: _pillSlide,
+                child: FadeTransition(
+                  opacity: _pillFade,
+                  child: const _FeaturePills(),
+                ),
+              ),
+
+              const Spacer(flex: 3),
+
+              // ── Auth buttons ──────────────────────────────────────────────
+              SlideTransition(
+                position: _btnSlide,
+                child: FadeTransition(
+                  opacity: _btnFade,
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 24),
+                    child: _AuthButtons(shimmerCtrl: _shimmerCtrl),
+                  ),
+                ),
+              ),
+
+              const SizedBox(height: 14),
+
+              // ── Terms ─────────────────────────────────────────────────────
+              FadeTransition(
+                opacity: _btnFade,
+                child: Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 24),
+                  child: Text(
+                    'By continuing you agree to our Terms & Privacy Policy',
+                    textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 34,
-                      fontWeight: FontWeight.w900,
-                      letterSpacing: -1.0,
-                      height: 1.05,
+                      fontSize: 10.5,
+                      color: Colors.white.withValues(alpha: 0.28),
+                      height: 1.5,
                     ),
                   ),
                 ),
-                ShaderMask(
-                  shaderCallback: (b) => const LinearGradient(
-                    colors: [Color(0xFFB89EFF), Color(0xFF926EFF)],
-                  ).createShader(b),
-                  child: const Text(
-                    'A S S I S T A N T',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 14,
-                      fontWeight: FontWeight.w300,
-                      letterSpacing: 6,
-                      height: 1.6,
-                    ),
-                  ),
-                ),
-                const SizedBox(height: 10),
-                Text(
-                  'Smart, accessible healthcare for everyone',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(
-                    color: Colors.white.withValues(alpha: 0.55),
-                    fontSize: 13.5,
-                    height: 1.5,
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 28),
+            ],
           ),
         ),
-
-        const SizedBox(height: 24),
-
-        // ── Feature pills ──────────────────────────────────────────────────
-        SlideTransition(
-          position: _pillSlide,
-          child: FadeTransition(
-            opacity: _pillFade,
-            child: const _FeaturePills(),
-          ),
-        ),
-
-        const Spacer(flex: 3),
-
-        // ── Auth buttons ───────────────────────────────────────────────────
-        SlideTransition(
-          position: _btnSlide,
-          child: FadeTransition(
-            opacity: _btnFade,
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 24),
-              child: _AuthButtons(shimmerCtrl: _shimmerCtrl),
-            ),
-          ),
-        ),
-
-        const SizedBox(height: 14),
-
-        // ── Terms ──────────────────────────────────────────────────────────
-        FadeTransition(
-          opacity: _btnFade,
-          child: Text(
-            'By continuing you agree to our Terms & Privacy Policy',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 10.5,
-              color: Colors.white.withValues(alpha: 0.28),
-              height: 1.5,
-            ),
-          ),
-        ),
-        const SizedBox(height: 28),
-      ],
+      ),
     );
   }
 }

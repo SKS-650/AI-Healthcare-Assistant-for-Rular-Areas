@@ -4,12 +4,14 @@ class EmptyState extends StatelessWidget {
   final String title;
   final String message;
   final IconData icon;
+  final Widget? action;
 
   const EmptyState({
     super.key,
     required this.title,
     required this.message,
     this.icon = Icons.folder_open_outlined,
+    this.action,
   });
 
   @override
@@ -33,6 +35,10 @@ class EmptyState extends StatelessWidget {
               textAlign: TextAlign.center,
               style: Theme.of(context).textTheme.bodyMedium,
             ),
+            if (action != null) ...[
+              const SizedBox(height: 16),
+              action!,
+            ],
           ],
         ),
       ),

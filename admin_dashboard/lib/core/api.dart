@@ -7,7 +7,10 @@ class ApiClient {
   ApiClient._();
   static final ApiClient instance = ApiClient._();
 
-  static const _storage = FlutterSecureStorage();
+  // Web: use localStorage so tokens persist across page reloads in Chrome.
+  static const _storage = FlutterSecureStorage(
+    webOptions: WebOptions(dbName: 'admin_secure', publicKey: 'admin_key'),
+  );
   late final Dio _dio = _buildDio();
 
   Dio _buildDio() {

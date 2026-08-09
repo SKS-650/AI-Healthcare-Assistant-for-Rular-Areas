@@ -4,6 +4,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../../shared/design_system/design_tokens.dart';
 import '../../../../../shared/utils/phone_call_service.dart';
+import '../../../../../core/services/timeline_push_service.dart';
 import '../../../medical_chatbot/presentation/pages/chat_page.dart';
 import '../../domain/entities/emergency_assessment.dart';
 import '../../domain/entities/first_aid_guide.dart';
@@ -12,16 +13,36 @@ import '../../domain/entities/risk_level.dart';
 import '../providers/emergency_provider.dart';
 import 'sos_page.dart';
 
-class EmergencyResultPage extends ConsumerWidget {
+class EmergencyResultPage extends ConsumerStatefulWidget {
   const EmergencyResultPage({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<EmergencyResultPage> createState() => _EmergencyResultPageState();
+}
+
+class _EmergencyResultPageState extends ConsumerState<EmergencyResultPage> {
+  bool _timelinePushed = false;
+
+  @override
+  Widget build(BuildContext context) {
     final state = ref.watch(assessmentControllerProvider);
     final result = state.result;
 
     if (result == null) {
       return const Scaffold(body: Center(child: CircularProgressIndicator()));
+    }
+
+    // Push to timeline once the result is available — fire-and-forget.
+    if (!_timelinePushed) {
+      _timelinePushed = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        TimelinePushService.instance.pushEmergencyAssessment(
+          possibleEmergency: result.possibleEmergency,
+          riskLevel: result.riskLevel.displayName,
+          riskScore: result.riskScore,
+          assessmentId: result.id,
+        );
+      });
     }
 
     return Scaffold(

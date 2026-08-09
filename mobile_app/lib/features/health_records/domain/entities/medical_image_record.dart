@@ -48,12 +48,12 @@ class MedicalImageRecord {
 
   String get typeEmoji {
     const emojis = {
-      'xray':         '🩻',
-      'mri':          '🧠',
-      'ct_scan':      '🔬',
+      'xray':         '📷',
+      'mri':          '🔮',
+      'ct_scan':      '🔭',
       'blood_report': '🩸',
       'ecg':          '❤️',
-      'skin':         '🫀',
+      'skin':         '🫁',
       'other':        '📄',
     };
     return emojis[imageType] ?? '📄';

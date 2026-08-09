@@ -287,13 +287,7 @@ class LocalDbService {
   Future<void> saveMedicalProfile(MedicalProfileModel profile) async {
     await _ensureInit();
     if (_profileBox == null) return;
-    await _profileBox!.put('profile', jsonEncode(profile.toJson()
-      ..addAll({
-        'id':         profile.id,
-        'user_id':    profile.userId,
-        'created_at': profile.createdAt.toIso8601String(),
-        'updated_at': profile.updatedAt.toIso8601String(),
-      })));
+    await _profileBox!.put('profile', jsonEncode(profile.toLocalJson()));
   }
 
   Future<MedicalProfileModel?> loadMedicalProfile() async {

@@ -2197,3 +2197,354 @@ async def update_user_profile(
         "bio": getattr(profile, "bio", None),
         "message": "Profile updated successfully",
     }
+
+
+# ─── Per-User Detail Endpoints ────────────────────────────────────────────────
+# These endpoints were appended — import all needed models explicitly here.
+from app.auth.models import UserModel
+from sqlalchemy import update as _sa_update
+
+@router.get(
+    "/users/{user_id}/conversations",
+    summary="Get chat conversations for a specific user",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def get_user_conversations(
+    user_id: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Paginated list of chatbot conversations belonging to a single user."""
+    from sqlalchemy import func, select, desc, and_
+    from app.medical_chatbot.database.models import Conversation, Message
+
+    user = await db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    q = select(Conversation).where(Conversation.user_id == user_id)
+    total = (await db.execute(select(func.count()).select_from(q.subquery()))).scalar_one()
+    offset = (page - 1) * page_size
+    result = await db.execute(
+        q.order_by(desc(Conversation.updated_at)).offset(offset).limit(page_size)
+    )
+    rows = result.scalars().all()
+
+    items = []
+    for conv in rows:
+        msg_count = (await db.execute(
+            select(func.count(Message.id)).where(Message.conversation_id == conv.id)
+        )).scalar_one()
+        emg_count = (await db.execute(
+            select(func.count(Message.id)).where(
+                and_(Message.conversation_id == conv.id, Message.emergency_detected == True)
+            )
+        )).scalar_one()
+        items.append({
+            "id": conv.id,
+            "title": conv.title,
+            "language": conv.language,
+            "message_count": msg_count,
+            "emergency_count": emg_count,
+            "is_active": conv.is_active,
+            "created_at": conv.created_at.isoformat() if conv.created_at else None,
+            "updated_at": conv.updated_at.isoformat() if conv.updated_at else None,
+        })
+
+    return {
+        "conversations": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": math.ceil(total / page_size) if total else 1,
+    }
+
+
+@router.get(
+    "/users/{user_id}/emergencies",
+    summary="Get emergency assessments for a specific user",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def get_user_emergencies(
+    user_id: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Paginated list of emergency assessments for a single user."""
+    from app.emergency.models import EmergencyAssessment, SosEvent
+
+    user = await db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    q = select(EmergencyAssessment).where(EmergencyAssessment.user_id == user_id)
+    total = (await db.execute(select(func.count()).select_from(q.subquery()))).scalar_one()
+    offset = (page - 1) * page_size
+    result = await db.execute(
+        q.order_by(desc(EmergencyAssessment.created_at)).offset(offset).limit(page_size)
+    )
+    rows = result.scalars().all()
+
+    items = []
+    for ea in rows:
+        sos_count = (await db.execute(
+            select(func.count(SosEvent.id)).where(SosEvent.assessment_id == ea.id)
+        )).scalar_one()
+        items.append({
+            "id": ea.id,
+            "age": ea.age,
+            "gender": ea.gender,
+            "symptoms": ea.symptoms or [],
+            "risk_level": ea.risk_level,
+            "risk_score": ea.risk_score,
+            "is_emergency": ea.is_emergency,
+            "emergency_type": ea.emergency_type,
+            "possible_emergency": ea.possible_emergency,
+            "sos_required": ea.sos_required,
+            "sos_count": sos_count,
+            "created_at": ea.created_at.isoformat() if ea.created_at else None,
+        })
+
+    return {
+        "emergencies": items,
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": math.ceil(total / page_size) if total else 1,
+    }
+
+
+@router.get(
+    "/users/{user_id}/sessions",
+    summary="Get active sessions for a specific user",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def get_user_sessions(
+    user_id: str,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Returns all (active + inactive) sessions for a user."""
+    from app.auth.models import UserSessionModel
+
+    user = await db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    result = await db.execute(
+        select(UserSessionModel)
+        .where(UserSessionModel.user_id == user_id)
+        .order_by(desc(UserSessionModel.last_active_at))
+        .limit(50)
+    )
+    sessions = result.scalars().all()
+
+    return {
+        "sessions": [
+            {
+                "id": s.id,
+                "device_info": s.device_info,
+                "ip_address": s.ip_address,
+                "is_active": s.is_active,
+                "created_at": s.created_at.isoformat() if s.created_at else None,
+                "last_active_at": s.last_active_at.isoformat() if s.last_active_at else None,
+                "expires_at": s.expires_at.isoformat() if s.expires_at else None,
+            }
+            for s in sessions
+        ],
+        "total_active": sum(1 for s in sessions if s.is_active),
+    }
+
+
+@router.post(
+    "/users/{user_id}/revoke-sessions",
+    summary="Revoke all active sessions for a user",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def revoke_user_sessions(
+    user_id: str,
+    current_user: AdminUser,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Force-logout a user by revoking all their active sessions and refresh tokens."""
+    from app.auth.models import UserSessionModel, RefreshTokenModel
+
+    user = await db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Deactivate all sessions
+    await db.execute(
+        update(UserSessionModel)
+        .where(UserSessionModel.user_id == user_id, UserSessionModel.is_active == True)
+        .values(is_active=False)
+    )
+    # Revoke all refresh tokens
+    await db.execute(
+        update(RefreshTokenModel)
+        .where(RefreshTokenModel.user_id == user_id, RefreshTokenModel.is_revoked == False)
+        .values(is_revoked=True)
+    )
+    await db.commit()
+
+    await ActivityLogService.log(
+        db, current_user.id, "user.revoke_sessions", "users", user_id, "User",
+        description=f"Revoked all sessions for {user.email}",
+        severity="warning",
+        ip_address=request.client.host if request.client else None,
+    )
+
+    return {"message": f"All sessions for {user.full_name} have been revoked"}
+
+
+class _ResetPasswordBody(schemas.BaseModel):
+    new_password: str
+
+
+@router.post(
+    "/users/{user_id}/reset-password",
+    summary="Admin force-reset a user's password",
+    dependencies=[Depends(require_role(Role.SUPER_ADMIN))],
+)
+async def admin_reset_password(
+    user_id: str,
+    body: _ResetPasswordBody,
+    current_user: AdminUser,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Directly set a new password for any user (super_admin only)."""
+    from app.auth.password import hash_password
+
+    if len(body.new_password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters")
+
+    user = await db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    user.password_hash = hash_password(body.new_password)
+    await db.commit()
+
+    await ActivityLogService.log(
+        db, current_user.id, "user.reset_password", "users", user_id, "User",
+        description=f"Force-reset password for {user.email}",
+        severity="warning",
+        ip_address=request.client.host if request.client else None,
+    )
+
+    return {"message": f"Password for {user.full_name} has been reset"}
+
+
+class _UpdateProfileBody(schemas.BaseModel):
+    full_name: Optional[str] = None
+    phone: Optional[str] = None
+    language: Optional[str] = None
+    email_verified: Optional[bool] = None
+    phone_verified: Optional[bool] = None
+
+
+@router.patch(
+    "/users/{user_id}/profile",
+    summary="Admin edit a user's profile fields",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def admin_update_profile(
+    user_id: str,
+    body: _UpdateProfileBody,
+    current_user: AdminUser,
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Edit name, phone, language, or verification flags for any user."""
+    user = await db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    if body.full_name is not None:
+        user.full_name = body.full_name.strip()
+    if body.phone is not None:
+        # Check uniqueness if phone is being changed
+        if body.phone != user.phone:
+            from app.auth import repository as auth_repo
+            existing = await auth_repo.get_user_by_phone(db, body.phone)
+            if existing and existing.id != user_id:
+                raise HTTPException(status_code=400, detail="Phone already in use by another user")
+        user.phone = body.phone or None
+    if body.language is not None:
+        user.language = body.language
+    if body.email_verified is not None:
+        user.email_verified = body.email_verified
+    if body.phone_verified is not None:
+        user.phone_verified = body.phone_verified
+
+    await db.commit()
+    await db.refresh(user)
+
+    await ActivityLogService.log(
+        db, current_user.id, "user.update_profile", "users", user_id, "User",
+        description=f"Updated profile for {user.email}",
+        ip_address=request.client.host if request.client else None,
+    )
+
+    return {
+        "id": user.id,
+        "full_name": user.full_name,
+        "email": user.email,
+        "phone": user.phone,
+        "language": user.language,
+        "email_verified": user.email_verified,
+        "phone_verified": user.phone_verified,
+        "message": "Profile updated successfully",
+    }
+
+
+@router.get(
+    "/users/{user_id}/symptom-checks",
+    summary="Get symptom check history for a specific user",
+    dependencies=[Depends(require_role(Role.ADMIN, Role.SUPER_ADMIN))],
+)
+async def get_user_symptom_checks(
+    user_id: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    db: AsyncSession = Depends(get_db),
+) -> dict:
+    """Paginated symptom check / disease prediction history for a single user."""
+    from app.symptom_checker.models import SymptomCheckHistory
+
+    user = await db.get(UserModel, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    q = select(SymptomCheckHistory).where(SymptomCheckHistory.user_id == user_id)
+    total = (await db.execute(select(func.count()).select_from(q.subquery()))).scalar_one()
+    offset = (page - 1) * page_size
+    result = await db.execute(
+        q.order_by(desc(SymptomCheckHistory.created_at)).offset(offset).limit(page_size)
+    )
+    rows = result.scalars().all()
+
+    return {
+        "symptom_checks": [
+            {
+                "id": r.id,
+                "symptoms": r.symptoms or [],
+                "age": r.age,
+                "gender": r.gender,
+                "predicted_disease": r.predicted_disease,
+                "confidence": r.confidence,
+                "risk_level": r.risk_level,
+                "risk_score": r.risk_score,
+                "is_emergency": r.is_emergency,
+                "created_at": r.created_at.isoformat() if r.created_at else None,
+            }
+            for r in rows
+        ],
+        "total": total,
+        "page": page,
+        "page_size": page_size,
+        "total_pages": math.ceil(total / page_size) if total else 1,
+    }
