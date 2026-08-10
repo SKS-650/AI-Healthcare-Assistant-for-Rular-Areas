@@ -291,7 +291,7 @@ class ServerOfflinePage extends StatelessWidget {
 
   String _backendUrl() {
     try {
-      return 'http://192.168.18.26:8000';
+      return 'http://192.168.137.1:8000';
     } catch (_) {
       return 'unknown';
     }

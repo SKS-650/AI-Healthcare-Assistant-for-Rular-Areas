@@ -6,7 +6,7 @@ class AppConstants {
   // ── API ────────────────────────────────────────────────────────────────────
   // Development: uses localhost. For device testing on the same WiFi network,
   // change _backendHost to the machine's LAN IP (e.g. '192.168.18.26:8000').
-  static const String _backendHost = 'localhost:8000';
+  static const String _backendHost = '192.168.137.1:8000';
   static const String baseUrl = 'http://$_backendHost';
   static const String apiPrefix = '/api/v1';
   static const String apiBase = '$baseUrl$apiPrefix';
