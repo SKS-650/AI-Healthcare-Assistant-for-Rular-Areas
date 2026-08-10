@@ -1,4 +1,5 @@
 import 'package:flutter/foundation.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 
 import '../constants/api_constants.dart';
 
@@ -9,17 +10,18 @@ class ApiConfig {
   static const int receiveTimeout = 30;
 
   // ─────────────────────────────────────────────────────────────────────────
-  // WIFI BACKEND URL — update this one constant if your laptop IP changes.
+  // BACKEND URL — Now loaded from .env file!
   //
-  // How to find your IP:  run `ipconfig` on Windows → look for "IPv4 Address"
-  //                       on the WiFi adapter.
-  //
-  // Format MUST be:  http://<IP>:<PORT>   ← colon between IP and port, no slash at end
+  // To change IP address: Just edit mobile_app/.env file
+  // No need to modify this code anymore!
   // ─────────────────────────────────────────────────────────────────────────
-  static const String _wifiBackendUrl = 'http://192.168.137.1:8000';
+
+  /// Get backend URL from .env file (fallback to localhost if not set)
+  static String get _envBackendUrl => 
+      dotenv.env['BACKEND_URL'] ?? 'http://localhost:8000';
 
   // ─────────────────────────────────────────────────────────────────────────
-  // Override via dart-define (optional — for CI / team members with different IPs):
+  // Override via dart-define (optional — for CI / team members):
   //   flutter run --dart-define=BACKEND_URL=http://192.168.x.x:8000
   // ─────────────────────────────────────────────────────────────────────────
   static const _backendUrlOverride = String.fromEnvironment('BACKEND_URL');
@@ -28,25 +30,32 @@ class ApiConfig {
   ///
   /// Priority:
   ///   1. BACKEND_URL dart-define (if provided)
-  ///   2. Android emulator       → http://10.0.2.2:8000
-  ///   3. Physical Android/iOS   → [_wifiBackendUrl]  (WiFi LAN)
-  ///   4. Web / Desktop          → http://localhost:8000
+  ///   2. .env file BACKEND_URL
+  ///   3. Android emulator       → http://10.0.2.2:8000
+  ///   4. Web                    → http://localhost:8000
   static String get baseUrl {
     // 1. Explicit override wins
     if (_backendUrlOverride.isNotEmpty) return _backendUrlOverride;
 
-    if (kIsWeb) return 'http://localhost:8000';
+    // 2. For physical devices, use .env configuration
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.android) {
+      // Check if running on emulator
+      const isEmulator = bool.fromEnvironment('IS_EMULATOR', defaultValue: false);
+      if (isEmulator) {
+        return 'http://10.0.2.2:8000'; // Android emulator
+      }
+      return _envBackendUrl; // Physical device - use .env
+    }
 
-    return switch (defaultTargetPlatform) {
-      // Android emulator uses a special alias to reach the host machine
-      TargetPlatform.android =>
-        const bool.fromEnvironment('IS_EMULATOR', defaultValue: false)
-            ? 'http://10.0.2.2:8000'
-            : _wifiBackendUrl,
-      // iOS / Desktop
-      TargetPlatform.iOS => 'http://localhost:8000',
-      _ => 'http://localhost:8000',
-    };
+    // 3. For iOS physical devices, use .env
+    if (!kIsWeb && defaultTargetPlatform == TargetPlatform.iOS) {
+      return _envBackendUrl;
+    }
+
+    // 4. Web and other platforms use localhost
+    if (kIsWeb) return 'http://localhost:8000';
+    
+    return _envBackendUrl; // Fallback to .env
   }
 
   /// Full URL for symptoms endpoint (GET /api/v1/symptom-checker/symptoms)
@@ -75,9 +84,9 @@ class ApiConfig {
       TargetPlatform.android =>
         const bool.fromEnvironment('IS_EMULATOR', defaultValue: false)
             ? 'Android emulator (10.0.2.2:8000)'
-            : 'Android physical device (WiFi: $_wifiBackendUrl)',
-      TargetPlatform.iOS => 'iOS Simulator (localhost:8000)',
-      _ => 'Desktop (localhost:8000)',
+            : 'Android physical device (.env: $_envBackendUrl)',
+      TargetPlatform.iOS => 'iOS Device (.env: $_envBackendUrl)',
+      _ => 'From .env ($_envBackendUrl)',
     };
   }
 }

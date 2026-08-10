@@ -1,0 +1,43 @@
+# cd d:\MinorProject\ai_healthcare_assistant.\.venv\Scripts\activate
+
+# cd backend
+# python -m uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+# uvicorn app.main:app --reload
+
+
+# mobile_app\build\app\outputs\flutter-apk\app-debug.apk
+
+
+
+
+# You need to change IP address in 3 files:
+# Main File (Mobile App):
+
+# 1)            api_config.dart
+# d:\MinorProject\ai_healthcare_assistant\mobile_app\lib\config\api_config.dart
+#  - Line 19
+# Change: 'http://192.168.254.11:8000'
+# Other Locations:
+
+# 2)             .env
+# d:\MinorProject\ai_healthcare_assistant\backend\.env
+#  - Line 5 & 6
+
+# APP_BASE_URL
+# CORS_ORIGINS (add your new IP here too)
+
+# 3)               server_status_banner.dart
+# d:\MinorProject\ai_healthcare_assistant\mobile_app\lib\core\widgets\server_status_banner.dart
+#  - Line 294
+
+# Change: 'http://192.168.18.26:8000'
+# Optional (Admin Dashboard):
+
+# 4)                 constants.dart
+#  - Line 9
+# If you use admin dashboard on device
+# Priority order:
+
+# Must change: #1 (api_config.dart)
+# Should change: #2 (backend/.env for CORS)
+# Can change: #3 and #4 (for consistency)

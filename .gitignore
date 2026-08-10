@@ -14,6 +14,14 @@ backend/.env.*
 ai_models/.env
 ai_models/.env.*
 
+# Flutter app environment files (contain WiFi IP addresses and backend URLs)
+mobile_app/.env
+mobile_app/.env.*
+!mobile_app/.env.example
+admin_dashboard/.env
+admin_dashboard/.env.*
+!admin_dashboard/.env.example
+
 # ─── API Keys / Credentials files ────────────────────────────────────────────
 **/credentials.json
 **/service_account*.json

@@ -11,6 +11,7 @@ import '../../domain/entities/chatbot_settings.dart';
 import '../../domain/entities/conversation.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/suggestion.dart';
+import '../../domain/entities/voice_type.dart';
 import '../../domain/repositories/chatbot_repository.dart';
 import '../datasources/chatbot_dummy_data.dart';
 import '../models/chat_message_model.dart';
@@ -227,10 +228,17 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
         LocalDbService.instance.getSetting<bool>('tts_enabled', defaultValue: true) ?? true;
     final save =
         LocalDbService.instance.getSetting<bool>('save_history', defaultValue: true) ?? true;
+    final voiceSpeed =
+        LocalDbService.instance.getSetting<double>('voice_speed', defaultValue: 1.0) ?? 1.0;
+    final voiceTypeCode =
+        LocalDbService.instance.getSetting<String>('voice_type', defaultValue: 'neutral') ?? 'neutral';
+    
     _settings = ChatbotSettingsModel(
       language: Language.fromCode(lang),
       voiceResponsesEnabled: tts,
       saveHistory: save,
+      voiceSpeed: voiceSpeed,
+      voiceType: VoiceType.fromCode(voiceTypeCode),
     );
     return _settings;
   }
@@ -241,6 +249,8 @@ class ChatbotRepositoryImpl implements ChatbotRepository {
     await LocalDbService.instance.saveSetting('language', settings.language.code);
     await LocalDbService.instance.saveSetting('tts_enabled', settings.voiceResponsesEnabled);
     await LocalDbService.instance.saveSetting('save_history', settings.saveHistory);
+    await LocalDbService.instance.saveSetting('voice_speed', settings.voiceSpeed);
+    await LocalDbService.instance.saveSetting('voice_type', settings.voiceType.code);
     return _settings;
   }
 

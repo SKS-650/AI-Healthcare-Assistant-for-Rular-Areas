@@ -18,6 +18,7 @@ import '../../domain/entities/conversation.dart';
 import '../../domain/entities/language.dart';
 import '../../domain/entities/suggestion.dart';
 import '../../domain/entities/voice_state.dart';
+import '../../domain/entities/voice_type.dart';
 import '../../domain/usecases/get_suggestions.dart';
 import '../../domain/usecases/load_chat_history.dart';
 import '../../domain/usecases/load_conversation.dart';
@@ -494,9 +495,13 @@ class ChatbotController extends StateNotifier<ChatbotState> {
   Future<void> speakText(String text, {String? language}) async {
     final lang        = language ?? state.selectedLanguage;
     final sliderSpeed = state.settings?.voiceSpeed ?? 1.0;
-    final baseRate    = lang == 'en' ? 0.50 : 0.44;
-    final ttsRate     = (baseRate * sliderSpeed).clamp(0.2, 0.9);
-    final clipped     = _stripMarkdown(text); // clips to 900 chars
+    final voiceType   = state.settings?.voiceType ?? VoiceType.neutral;
+    
+    // Apply voice-specific speed modifier
+    final speedModifier = voiceType.speechRateModifier;
+    final baseRate      = lang == 'en' ? 0.50 : 0.44;
+    final ttsRate       = (baseRate * sliderSpeed * speedModifier).clamp(0.2, 0.9);
+    final clipped       = _stripMarkdown(text); // clips to 900 chars
 
     if (clipped.isEmpty) return;
 
@@ -511,7 +516,13 @@ class ChatbotController extends StateNotifier<ChatbotState> {
 
     final resolvedLocale = _resolveLocaleFromCache(_ttsLocale(lang));
 
-    // ── 2. Apply TTS settings — each call isolated so one failure can't
+    // ── 2. Get pitch from voice type settings ─────────────────────────────
+    final ttsPitch = voiceType.getPitchForLanguage(lang);
+
+    // ── 3. Select appropriate voice based on voice type ───────────────────
+    await _selectBestVoiceForType(voiceType, lang);
+
+    // ── 4. Apply TTS settings — each call isolated so one failure can't
     //        crash the whole speak sequence. ──────────────────────────────
     if (resolvedLocale != null) {
       try { await _tts.setLanguage(resolvedLocale); } catch (_) {}
@@ -519,10 +530,10 @@ class ChatbotController extends StateNotifier<ChatbotState> {
     try { await _tts.setSpeechRate(ttsRate); }       catch (_) {}
     try { await _tts.setVolume(1.0); }               catch (_) {}
     try {
-      await _tts.setPitch(lang == 'hi' || lang == 'bho' ? 1.05 : 1.0);
+      await _tts.setPitch(ttsPitch);
     } catch (_) {}
 
-    // ── 3. Speak ──────────────────────────────────────────────────────────
+    // ── 5. Speak ──────────────────────────────────────────────────────────
     try {
       state = state.copyWith(
           voiceState: state.voiceState.copyWith(isSpeaking: true));
@@ -531,6 +542,73 @@ class ChatbotController extends StateNotifier<ChatbotState> {
       if (!mounted) return;
       state = state.copyWith(
           voiceState: state.voiceState.copyWith(isSpeaking: false));
+    }
+  }
+
+  /// Select the best available voice for the given voice type and language.
+  /// 
+  /// This method queries available TTS voices and attempts to find one that
+  /// matches the desired gender and quality. Different devices have different
+  /// voice sets, so we use pattern matching to find the best match.
+  Future<void> _selectBestVoiceForType(VoiceType voiceType, String lang) async {
+    try {
+      // Get all available voices from TTS engine
+      final voices = await _tts.getVoices;
+      
+      if (voices == null || (voices as List).isEmpty) {
+        // No voices available, TTS will use default
+        return;
+      }
+
+      // Get voice name patterns for this voice type and language
+      final patterns = voiceType.getVoiceNamePatterns(lang);
+      final gender = voiceType.gender;
+      
+      // Search for best matching voice
+      dynamic bestVoice;
+      int bestScore = 0;
+
+      for (final voice in voices as List) {
+        final voiceMap = voice as Map<dynamic, dynamic>;
+        final voiceName = (voiceMap['name'] as String? ?? '').toLowerCase();
+        final voiceLocale = (voiceMap['locale'] as String? ?? '').toLowerCase();
+        
+        int score = 0;
+
+        // Score based on pattern matching (highest priority)
+        for (int i = 0; i < patterns.length; i++) {
+          if (voiceName.contains(patterns[i].toLowerCase())) {
+            score += (patterns.length - i) * 10; // Earlier patterns get higher scores
+            break;
+          }
+        }
+
+        // Score based on gender match
+        if (voiceName.contains(gender.toLowerCase())) {
+          score += 5;
+        }
+
+        // Score based on locale match
+        final targetLocale = _ttsLocale(lang).toLowerCase();
+        if (voiceLocale.contains(targetLocale) || 
+            targetLocale.contains(voiceLocale)) {
+          score += 3;
+        }
+
+        // Update best voice if this one scores higher
+        if (score > bestScore) {
+          bestScore = score;
+          bestVoice = voice;
+        }
+      }
+
+      // If we found a good match, set it
+      if (bestVoice != null && bestScore > 0) {
+        await _tts.setVoice(bestVoice);
+      }
+    } catch (e) {
+      // Voice selection failed, continue with default voice
+      // TTS will still work with pitch and rate adjustments
     }
   }
 

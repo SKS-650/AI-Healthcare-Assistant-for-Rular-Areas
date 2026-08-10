@@ -1,5 +1,6 @@
 import '../../domain/entities/chatbot_settings.dart';
 import '../../domain/entities/language.dart';
+import '../../domain/entities/voice_type.dart';
 import 'language_model.dart';
 
 class ChatbotSettingsModel extends ChatbotSettings {
@@ -7,6 +8,7 @@ class ChatbotSettingsModel extends ChatbotSettings {
     required super.language,
     super.voiceResponsesEnabled,
     super.voiceSpeed,
+    super.voiceType,
     super.fontSize,
     super.saveHistory,
   });
@@ -18,6 +20,7 @@ class ChatbotSettingsModel extends ChatbotSettings {
       ),
       voiceResponsesEnabled: json['voiceResponsesEnabled'] as bool? ?? true,
       voiceSpeed: (json['voiceSpeed'] as num?)?.toDouble() ?? 1.0,
+      voiceType: VoiceType.fromCode(json['voiceType'] as String? ?? 'neutral'),
       fontSize: (json['fontSize'] as num?)?.toDouble() ?? 16,
       saveHistory: json['saveHistory'] as bool? ?? true,
     );
@@ -32,6 +35,7 @@ class ChatbotSettingsModel extends ChatbotSettings {
       ),
       voiceResponsesEnabled: settings.voiceResponsesEnabled,
       voiceSpeed: settings.voiceSpeed,
+      voiceType: settings.voiceType,
       fontSize: settings.fontSize,
       saveHistory: settings.saveHistory,
     );
@@ -41,6 +45,7 @@ class ChatbotSettingsModel extends ChatbotSettings {
     Language? language,
     bool? voiceResponsesEnabled,
     double? voiceSpeed,
+    VoiceType? voiceType,
     double? fontSize,
     bool? saveHistory,
   }) {
@@ -49,6 +54,7 @@ class ChatbotSettingsModel extends ChatbotSettings {
       voiceResponsesEnabled:
           voiceResponsesEnabled ?? this.voiceResponsesEnabled,
       voiceSpeed: voiceSpeed ?? this.voiceSpeed,
+      voiceType: voiceType ?? this.voiceType,
       fontSize: fontSize ?? this.fontSize,
       saveHistory: saveHistory ?? this.saveHistory,
     );
@@ -64,6 +70,7 @@ class ChatbotSettingsModel extends ChatbotSettings {
       ).toJson(),
       'voiceResponsesEnabled': voiceResponsesEnabled,
       'voiceSpeed': voiceSpeed,
+      'voiceType': voiceType.code,
       'fontSize': fontSize,
       'saveHistory': saveHistory,
     };

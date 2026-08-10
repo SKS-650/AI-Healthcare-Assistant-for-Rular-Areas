@@ -4085,6 +4085,75 @@ Refresh via `POST /api/v1/auth/refresh` (30-day refresh token).
 
 ## 20. Network & WiFi Configuration
 
+### ✨ NEW: Simplified IP Configuration (Environment Variables)
+
+**The entire IP configuration process has been centralized!** You now only need to edit **ONE file** when switching WiFi networks.
+
+#### Quick Setup for New Developers
+
+1. **Copy the environment templates:**
+   ```powershell
+   # Mobile app
+   copy mobile_app\.env.example mobile_app\.env
+   
+   # Admin dashboard
+   copy admin_dashboard\.env.example admin_dashboard\.env
+   ```
+
+2. **Find your computer's IP address:**
+   ```powershell
+   ipconfig
+   # Look for "IPv4 Address" under the WiFi adapter section
+   # Example: 192.168.1.100
+   ```
+
+3. **Edit the `.env` files** with your IP address:
+   
+   **`mobile_app/.env`:**
+   ```env
+   BACKEND_URL=http://192.168.1.100:8000
+   ```
+   
+   **`admin_dashboard/.env`:**
+   ```env
+   BACKEND_URL=http://192.168.1.100:8000
+   ```
+
+4. **Install dependencies and restart:**
+   ```powershell
+   # Mobile app
+   cd mobile_app
+   flutter pub get
+   flutter run
+   
+   # Admin dashboard
+   cd admin_dashboard
+   flutter pub get
+   flutter run -d chrome
+   ```
+
+#### When You Switch WiFi Networks
+
+**That's it!** Just update the IP address in **TWO `.env` files** (one for mobile, one for dashboard) and restart the apps. No code changes needed!
+
+The `.env` files are git-ignored, so your local IP configuration won't accidentally get committed to version control.
+
+#### How It Works
+
+Both apps use the `flutter_dotenv` package to load environment variables at startup:
+- **Mobile app**: Reads `BACKEND_URL` from `mobile_app/.env`
+- **Admin dashboard**: Reads `BACKEND_URL` from `admin_dashboard/.env`
+- **Fallback**: If `.env` file is missing, apps default to `http://localhost:8000`
+
+All API calls throughout both apps automatically use the configured backend URL.
+
+---
+
+### Legacy Method (Manual Code Editing)
+
+<details>
+<summary>Click to expand old manual configuration method</summary>
+
 ### Changing WiFi Networks
 
 When your development machine connects to a different WiFi network, it gets a new LAN IP address. Two files must be updated:
@@ -4107,7 +4176,7 @@ ipconfig
 # Look for "IPv4 Address" under the WiFi adapter section
 ```
 
-Then rebuild both apps (`flutter run`).
+Then rebuild both apps (`flutter run`).</details>
 
 ### OpenRouter Rate Limit Handling
 

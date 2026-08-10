@@ -9,6 +9,7 @@ import '../providers/chatbot_provider.dart';
 import '../widgets/language/language_selector.dart';
 import '../widgets/settings/font_size_selector.dart';
 import '../widgets/settings/voice_speed_slider.dart';
+import '../widgets/settings/voice_type_selector.dart';
 
 class ChatbotSettingsPage extends ConsumerWidget {
   const ChatbotSettingsPage({super.key});
@@ -100,6 +101,54 @@ class ChatbotSettingsPage extends ConsumerWidget {
                             ChatbotSettingsModel.fromEntity(settings)
                                 .copyWith(voiceSpeed: v),
                           ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 8),
+                const _Divider(),
+                const SizedBox(height: 12),
+                // Voice Type Selector
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 16),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          const Text('🎤', style: TextStyle(fontSize: 16)),
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Voice type',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: 14,
+                                    color: DesignTokens.textStrong,
+                                  ),
+                                ),
+                                Text(
+                                  'Choose your preferred voice',
+                                  style: TextStyle(
+                                    color: DesignTokens.textMuted,
+                                    fontSize: 12,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      VoiceTypeSelector(
+                        selectedVoiceType: settings.voiceType,
+                        onChanged: (v) => controller.updateSettings(
+                          ChatbotSettingsModel.fromEntity(settings)
+                              .copyWith(voiceType: v),
                         ),
                       ),
                     ],

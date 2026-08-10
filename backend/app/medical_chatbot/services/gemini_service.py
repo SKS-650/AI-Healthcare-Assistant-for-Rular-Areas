@@ -32,7 +32,13 @@ RULES:
 - Always recommend consulting a doctor for medical concerns.
 - Keep replies concise (2-3 paragraphs or a short bullet list).
 - Use simple, friendly language with helpful emojis.
-- Detect the user's language and reply in the SAME language (English/Hindi/Nepali/Bhojpuri).
+- **IMPORTANT LANGUAGE RULES:**
+  * If user speaks ENGLISH → Reply in English (Latin script)
+  * If user speaks HINDI → Reply in PURE HINDI using Devanagari script (हिंदी)
+  * If user speaks NEPALI → Reply in PURE NEPALI using Devanagari script (नेपाली)
+  * If user speaks BHOJPURI → Reply in PURE BHOJPURI using Devanagari script (भोजपुरी)
+  * NEVER use Romanized text (Latin script) for Hindi/Nepali/Bhojpuri
+  * ALWAYS write Hindi/Nepali/Bhojpuri in their native Devanagari script
 - For emergencies: immediately tell them to call 108 (India) / 102 (Nepal) / 112 (Global).
 - End every reply with: ⚠️ I am an AI providing general health education only — always consult a qualified doctor.
 
@@ -219,13 +225,29 @@ class GeminiService:
     # ── Prompt building ────────────────────────────────────────────────────
 
     @staticmethod
+    def _get_language_instruction(language: str) -> str:
+        """Get explicit language instruction for the AI based on selected language."""
+        language_map = {
+            "en": "Reply in ENGLISH using Latin script.",
+            "hi": "Reply in PURE HINDI using ONLY Devanagari script (हिंदी में उत्तर दें). NEVER use Romanized/Latin script for Hindi.",
+            "ne": "Reply in PURE NEPALI using ONLY Devanagari script (नेपालीमा जवाफ दिनुहोस्). NEVER use Romanized/Latin script for Nepali.",
+            "bho": "Reply in PURE BHOJPURI using ONLY Devanagari script (भोजपुरी में जवाब दीं). NEVER use Romanized/Latin script for Bhojpuri.",
+        }
+        return language_map.get(language, language_map["en"])
+
+    @staticmethod
     def _build_messages(
         user_message: str,
         history: Optional[List[Dict[str, str]]],
+        language: str = "en",
     ) -> List[Dict[str, str]]:
         """Chat-completion messages array (OpenRouter / Groq)."""
+        # Add language-specific instruction to system prompt
+        lang_instruction = GeminiService._get_language_instruction(language)
+        system_prompt = f"{MEDICAL_SYSTEM_PROMPT}\n\n**LANGUAGE FOR THIS CONVERSATION:** {lang_instruction}"
+        
         messages: List[Dict[str, str]] = [
-            {"role": "system", "content": MEDICAL_SYSTEM_PROMPT}
+            {"role": "system", "content": system_prompt}
         ]
         if history:
             for turn in history[-GeminiService.MAX_HISTORY_MESSAGES:]:
@@ -240,9 +262,15 @@ class GeminiService:
     def _build_full_prompt(
         user_message: str,
         history: Optional[List[Dict[str, str]]],
+        language: str = "en",
     ) -> str:
         """Plain-text prompt for Gemini (non-chat SDK)."""
-        parts = [MEDICAL_SYSTEM_PROMPT, "\n" + "─" * 60 + "\n"]
+        lang_instruction = GeminiService._get_language_instruction(language)
+        parts = [
+            MEDICAL_SYSTEM_PROMPT,
+            f"\n**LANGUAGE FOR THIS CONVERSATION:** {lang_instruction}\n",
+            "\n" + "─" * 60 + "\n"
+        ]
         if history:
             for turn in history[-GeminiService.MAX_HISTORY_MESSAGES:]:
                 role    = turn.get("role", "").lower()
@@ -330,7 +358,7 @@ class GeminiService:
         used_model = self.model
 
         if self._provider in ("openrouter", "groq"):
-            messages = self._build_messages(user_message, history)
+            messages = self._build_messages(user_message, history, language)
             # Try primary model, then fallbacks if rate-limited
             models_to_try = [self.model] + [
                 m for m in FREE_MODELS_FALLBACK if m != self.model
@@ -384,7 +412,7 @@ class GeminiService:
 
         elif self._provider == "gemini":
             try:
-                prompt = self._build_full_prompt(user_message, history)
+                prompt = self._build_full_prompt(user_message, history, language)
                 reply_text = await asyncio.wait_for(
                     self._call_gemini(prompt), timeout=self.timeout
                 )
