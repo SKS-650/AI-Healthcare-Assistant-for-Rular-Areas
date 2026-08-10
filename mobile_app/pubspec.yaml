@@ -20,10 +20,11 @@ dependencies:
   flutter_riverpod: ^2.5.1
 
   # ── Voice / STT / TTS ─────────────────────────────────────────────────────
-  speech_to_text: ^7.3.0
-  flutter_tts: ^4.0.2
-  record: ^7.1.1
-  audioplayers: ^6.0.0
+  speech_to_text: ^7.3.0              # Native STT (online, requires internet)
+  flutter_tts: ^4.0.2                 # Native TTS (works offline)
+  record: ^7.1.1                      # Audio recording
+  audioplayers: ^6.0.0                # Audio playback
+  path_provider: ^2.1.4               # For temp audio file storage
 
   # ── Local Database (Offline cache) ────────────────────────────────────────
   hive: ^2.2.3

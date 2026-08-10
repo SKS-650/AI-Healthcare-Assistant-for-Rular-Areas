@@ -104,6 +104,15 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
                       _StatusPill(
                           isListening: isListening, isSpeaking: isSpeaking),
 
+                      // ── STT Engine indicator (show when listening) ────
+                      if (isListening)
+                        Padding(
+                          padding: const EdgeInsets.only(top: 8),
+                          child: _SttEngineIndicator(
+                            sttEngine: state.voiceState.sttEngine,
+                          ),
+                        ),
+
                       SizedBox(height: largeGap),
 
                       // ── Animated orb ────────────────────────────────
@@ -241,6 +250,7 @@ class _VoiceChatPageState extends ConsumerState<VoiceChatPage>
         ],
       ),
       actions: [
+        // Network status badge
         Container(
           margin: const EdgeInsets.only(right: 14),
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
@@ -621,4 +631,56 @@ class _Btn extends StatelessWidget {
               style: TextStyle(color: color, fontWeight: FontWeight.w700, fontSize: 13)),
         ),
       );
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
+// STT Engine indicator (online vs offline)
+// ─────────────────────────────────────────────────────────────────────────────
+
+class _SttEngineIndicator extends StatelessWidget {
+  final String? sttEngine;
+  const _SttEngineIndicator({required this.sttEngine});
+
+  @override
+  Widget build(BuildContext context) {
+    if (sttEngine == null) return const SizedBox.shrink();
+
+    final isOffline = sttEngine == 'offline';
+    final icon = isOffline ? '🔌' : '☁️';
+    final label = isOffline ? 'Offline mode' : 'Online mode';
+    final sublabel = isOffline 
+        ? 'Processing locally (may be slower)' 
+        : 'Cloud processing (faster)';
+    final color = isOffline ? DesignTokens.warning : DesignTokens.success;
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.1),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: color.withValues(alpha: 0.3)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(icon, style: const TextStyle(fontSize: 12)),
+          const SizedBox(width: 6),
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(label,
+                  style: TextStyle(
+                      color: color, fontSize: 10, fontWeight: FontWeight.w700)),
+              Text(sublabel,
+                  style: TextStyle(
+                      color: color.withValues(alpha: 0.7),
+                      fontSize: 9,
+                      fontWeight: FontWeight.w500)),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
 }

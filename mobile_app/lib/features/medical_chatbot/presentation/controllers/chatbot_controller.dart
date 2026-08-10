@@ -10,6 +10,8 @@ import 'package:audioplayers/audioplayers.dart';
 import '../../data/models/chat_message_model.dart';
 import '../../data/models/chatbot_settings_model.dart';
 import '../../data/models/conversation_model.dart';
+// import '../../data/services/offline_stt_service.dart';  // TODO: Implement when Whisper package is stable
+// import '../../data/services/audio_recorder_service.dart';
 import '../../domain/entities/chat_message.dart';
 import '../../domain/entities/chatbot_settings.dart';
 import '../../domain/entities/conversation.dart';
@@ -22,6 +24,7 @@ import '../../domain/usecases/load_conversation.dart';
 import '../../domain/usecases/save_chat_history.dart';
 import '../../domain/usecases/send_dummy_message.dart';
 import '../../domain/repositories/chatbot_repository.dart';
+import '../../../../core/network/network_info.dart';
 import 'chatbot_state.dart';
 
 class ChatbotController extends StateNotifier<ChatbotState> {
@@ -31,13 +34,24 @@ class ChatbotController extends StateNotifier<ChatbotState> {
   final LoadChatHistory   _loadChatHistory;
   final SaveChatHistory   _saveChatHistory;
   final ChatbotRepository _repository;
+  final NetworkInfo       _networkInfo;
 
   // ── Voice services ────────────────────────────────────────────────────────
   final stt.SpeechToText _speech = stt.SpeechToText();
   final FlutterTts        _tts   = FlutterTts();
   final AudioPlayer       _audio = AudioPlayer();
 
+  // ── Offline voice services (DISABLED - package not available yet) ─────────
+  // final OfflineSttService    _offlineStt = OfflineSttService();
+  // final AudioRecorderService _recorder   = AudioRecorderService();
+  // bool _offlineSttInitialized = false;
+
   bool _sttInitialized = false;
+
+  /// Cached set of TTS locales supported by this device (lowercase).
+  /// Populated once at init. Null means we haven't queried yet.
+  /// Empty set means query failed — skip setLanguage entirely.
+  Set<String>? _ttsAvailableLocales;
 
   /// When true the assistant will auto-listen after speaking (Siri mode)
   bool _continuousMode = false;
@@ -50,15 +64,18 @@ class ChatbotController extends StateNotifier<ChatbotState> {
     required LoadChatHistory   loadChatHistory,
     required SaveChatHistory   saveChatHistory,
     required ChatbotRepository repository,
+    required NetworkInfo       networkInfo,
   })  : _loadConversation = loadConversation,
         _sendDummyMessage = sendDummyMessage,
         _getSuggestions   = getSuggestions,
         _loadChatHistory  = loadChatHistory,
         _saveChatHistory  = saveChatHistory,
         _repository       = repository,
+        _networkInfo      = networkInfo,
         super(const ChatbotState()) {
     load();
     _initTts();
+    // _initOfflineStt();  // TODO: Enable when Whisper package is available
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -117,6 +134,52 @@ class ChatbotController extends StateNotifier<ChatbotState> {
       state = state.copyWith(
           voiceState: state.voiceState.copyWith(isSpeaking: false));
     });
+    // Pre-cache available TTS locales so setLanguage never throws at speak time.
+    _prefetchTtsLocales();
+  }
+
+  /// Initialize offline STT service (Whisper) in the background.
+  /// 
+  /// DISABLED: Whisper Flutter package not available on pub.dev yet.
+  /// TODO: Enable this when a stable Whisper package is available.
+  /*
+  Future<void> _initOfflineStt() async {
+    try {
+      print('🔄 Initializing offline STT (Whisper)...');
+      await _offlineStt.initialize();
+      _offlineSttInitialized = true;
+      print('✅ Offline STT ready for all languages');
+    } catch (e) {
+      print('⚠️ Offline STT initialization failed: $e');
+      print('   Voice input will require internet connection');
+      _offlineSttInitialized = false;
+    }
+  }
+  */
+
+  /// Queries the TTS engine for available locales once and caches the result.
+  /// Uses runZonedGuarded to catch any native RangeError that the plugin
+  /// throws inside the platform channel before Dart's try-catch can intercept.
+  Future<void> _prefetchTtsLocales() async {
+    try {
+      // flutter_tts getLanguages can throw a RangeError on Android when the
+      // TTS engine's language list has fewer entries than expected.
+      // We wrap in Future.sync to ensure any synchronous throw is also caught.
+      final raw = await Future<dynamic>.sync(() => _tts.getLanguages);
+      if (raw is List) {
+        _ttsAvailableLocales = raw
+            .whereType<Object>()
+            .map((e) => e.toString().toLowerCase().trim())
+            .where((s) => s.isNotEmpty)
+            .toSet();
+      } else {
+        _ttsAvailableLocales = {};
+      }
+    } catch (_) {
+      // Engine threw RangeError or any other error during locale enumeration.
+      // Empty set signals: skip setLanguage and rely on engine default.
+      _ttsAvailableLocales = {};
+    }
   }
 
   // ─────────────────────────────────────────────────────────────────────────
@@ -177,6 +240,18 @@ class ChatbotController extends StateNotifier<ChatbotState> {
     // Stop TTS before listening (no echo)
     if (state.voiceState.isSpeaking) await _tts.stop();
 
+    // ── Check connectivity ─────────────────────────────────────────────────
+    final hasInternet = await _networkInfo.isConnected;
+
+    // Try offline STT first (on-device recognition)
+    // If device doesn't support it, will fall back to online automatically
+    await _startOfflineOrOnlineListening(preferOffline: !hasInternet);
+  }
+
+  /// Start listening using offline or online STT based on connectivity.
+  Future<void> _startOfflineOrOnlineListening({bool preferOffline = false}) async {
+    if (!mounted) return; // Safety check
+    
     if (!_sttInitialized) {
       _sttInitialized = await _speech.initialize(
         onError: (e) {
@@ -190,7 +265,8 @@ class ChatbotController extends StateNotifier<ChatbotState> {
             ),
           );
           // In continuous mode, retry after a short delay
-          if (_continuousMode) {
+          if (_continuousMode && mounted) {
+            _restartListenTimer?.cancel();
             _restartListenTimer = Timer(const Duration(seconds: 2), () {
               if (mounted && _continuousMode) _startListening();
             });
@@ -199,6 +275,7 @@ class ChatbotController extends StateNotifier<ChatbotState> {
         onStatus: (status) {
           if (!mounted) return;
           if (status == 'done' || status == 'notListening') {
+            if (!mounted) return;
             state = state.copyWith(
               voiceState: state.voiceState.copyWith(
                 isListening: false,
@@ -210,7 +287,10 @@ class ChatbotController extends StateNotifier<ChatbotState> {
       );
     }
 
+    if (!mounted) return; // Safety check
+
     if (!_sttInitialized) {
+      if (!mounted) return;
       state = state.copyWith(
         voiceState: state.voiceState.copyWith(
           errorMessage: '🎙️ Speech recognition not available on this device.',
@@ -219,7 +299,37 @@ class ChatbotController extends StateNotifier<ChatbotState> {
       return;
     }
 
-    final localeId = _sttLocale(state.selectedLanguage);
+    // ── Check available locales ────────────────────────────────────────────
+    final availableLocales = await _speech.locales();
+    if (!mounted) return; // Safety check
+    
+    final requestedLocale = _sttLocale(state.selectedLanguage);
+    
+    // Try to find best matching locale
+    String? actualLocale = _findBestMatchingLocale(
+      availableLocales, 
+      requestedLocale,
+      state.selectedLanguage,
+    );
+
+    if (actualLocale == null) {
+      if (!mounted) return;
+      // No matching locale found - show helpful error
+      final langName = _languageName(state.selectedLanguage);
+      state = state.copyWith(
+        voiceState: state.voiceState.copyWith(
+          errorMessage: 
+            '🌐 $langName voice recognition not available.\n\n'
+            '💡 Your device may need to download the language pack.\n'
+            'Go to: Settings → System → Languages & input → On-device recognition\n\n'
+            'Switching to English for now...',
+        ),
+      );
+      // Fallback to English
+      actualLocale = 'en-IN';
+    }
+
+    if (!mounted) return; // Safety check
 
     state = state.copyWith(
       voiceState: state.voiceState.copyWith(
@@ -227,6 +337,7 @@ class ChatbotController extends StateNotifier<ChatbotState> {
         isRecording: true,
         transcript:  '',
         clearError:  true,
+        sttEngine:   preferOffline ? 'offline' : 'online',
       ),
     );
 
@@ -257,15 +368,112 @@ class ChatbotController extends StateNotifier<ChatbotState> {
         partialResults: true,
         cancelOnError:  true,
         listenMode:     stt.ListenMode.dictation,
-        localeId:       localeId,
+        localeId:       actualLocale,
         listenFor:      const Duration(seconds: 60),
         pauseFor:       const Duration(seconds: 4),
+        onDevice:       preferOffline, // ← Enable on-device recognition when offline
       ),
     );
   }
 
+  /// Find the best matching locale from available locales.
+  /// 
+  /// Priority:
+  /// 1. Exact match (e.g., 'hi-IN')
+  /// 2. Language code match (e.g., 'hi' matches 'hi-IN', 'hi-PK')
+  /// 3. Special fallbacks (Bhojpuri → Hindi, Nepali → Hindi if ne-NP unavailable)
+  /// 4. null (not available)
+  String? _findBestMatchingLocale(
+    List<stt.LocaleName> availableLocales,
+    String requestedLocale,
+    String langCode,
+  ) {
+    final requested = requestedLocale.toLowerCase();
+    final langPrefix = langCode.toLowerCase();
+
+    // Debug: Print available locales (helps troubleshooting)
+    // print('🔍 Available STT locales: ${availableLocales.map((l) => l.localeId).join(", ")}');
+    // print('🎯 Requested: $requested for language: $langCode');
+
+    // 1. Exact match
+    for (final locale in availableLocales) {
+      if (locale.localeId.toLowerCase() == requested) {
+        return locale.localeId;
+      }
+    }
+
+    // 2. Language prefix match (hi matches hi-IN, hi-PK, etc.)
+    for (final locale in availableLocales) {
+      final localeId = locale.localeId.toLowerCase();
+      if (localeId.startsWith(langPrefix) || localeId.startsWith('$langPrefix-')) {
+        return locale.localeId;
+      }
+    }
+
+    // 3. Special case: Nepali (ne/ne-NP) - try broader search
+    if (langCode == 'ne') {
+      // Try any locale containing 'ne' or 'nep'
+      for (final locale in availableLocales) {
+        final localeId = locale.localeId.toLowerCase();
+        if (localeId.contains('ne-') || localeId.contains('nep')) {
+          return locale.localeId;
+        }
+      }
+      // Fallback: If Nepali not available, use Hindi (similar script/phonetics)
+      for (final locale in availableLocales) {
+        if (locale.localeId.toLowerCase().startsWith('hi')) {
+          // Show warning that we're using Hindi fallback
+          if (mounted) {
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (mounted) {
+                state = state.copyWith(
+                  voiceState: state.voiceState.copyWith(
+                    errorMessage: 
+                      '⚠️ Nepali voice pack not installed.\n'
+                      'Using Hindi recognition as fallback.\n\n'
+                      'Download Nepali: Settings → Languages → On-device recognition',
+                  ),
+                );
+              }
+            });
+          }
+          return locale.localeId;
+        }
+      }
+    }
+
+    // 4. For Bhojpuri (bho), try Hindi variants
+    if (langCode == 'bho') {
+      for (final locale in availableLocales) {
+        if (locale.localeId.toLowerCase().startsWith('hi')) {
+          return locale.localeId;
+        }
+      }
+    }
+
+    return null;
+  }
+
+  /// Get human-readable language name for error messages.
+  String _languageName(String code) {
+    const names = {
+      'en':  'English',
+      'hi':  'Hindi',
+      'ne':  'Nepali',
+      'bho': 'Bhojpuri',
+      'bn':  'Bengali',
+      'ta':  'Tamil',
+      'te':  'Telugu',
+      'mr':  'Marathi',
+    };
+    return names[code] ?? 'Selected language';
+  }
+
   Future<void> _stopListening() async {
+    // Stop STT engine
     await _speech.stop();
+    // await _recorder.stopRecording();  // TODO: Enable when offline STT is ready
+    
     if (!mounted) return;
     state = state.copyWith(
       voiceState: state.voiceState.copyWith(
@@ -284,26 +492,38 @@ class ChatbotController extends StateNotifier<ChatbotState> {
   // ─────────────────────────────────────────────────────────────────────────
 
   Future<void> speakText(String text, {String? language}) async {
-    final lang     = language ?? state.selectedLanguage;
-    // Read voiceSpeed from settings (slider range 0.6–1.6, default 1.0)
-    // flutter_tts setSpeechRate expects 0.0–1.0, so we scale:
-    //   slider 0.6 → tts 0.36,  slider 1.0 → tts 0.50,  slider 1.6 → tts 0.72
+    final lang        = language ?? state.selectedLanguage;
     final sliderSpeed = state.settings?.voiceSpeed ?? 1.0;
-    // Base rate per language (non-English slightly slower for clarity)
-    final baseRate = lang == 'en' ? 0.50 : 0.44;
-    // Scale: slider 1.0 = base rate, proportionally faster/slower
-    final ttsRate  = (baseRate * sliderSpeed).clamp(0.2, 0.9);
+    final baseRate    = lang == 'en' ? 0.50 : 0.44;
+    final ttsRate     = (baseRate * sliderSpeed).clamp(0.2, 0.9);
+    final clipped     = _stripMarkdown(text); // clips to 900 chars
 
+    if (clipped.isEmpty) return;
+
+    // ── 1. Resolve the safest available locale ────────────────────────────
+    // If prefetch hasn't finished yet, wait briefly for it (max 1 sec).
+    if (_ttsAvailableLocales == null) {
+      await Future.any([
+        _prefetchTtsLocales(),
+        Future<void>.delayed(const Duration(seconds: 1)),
+      ]);
+    }
+
+    final resolvedLocale = _resolveLocaleFromCache(_ttsLocale(lang));
+
+    // ── 2. Apply TTS settings — each call isolated so one failure can't
+    //        crash the whole speak sequence. ──────────────────────────────
+    if (resolvedLocale != null) {
+      try { await _tts.setLanguage(resolvedLocale); } catch (_) {}
+    }
+    try { await _tts.setSpeechRate(ttsRate); }       catch (_) {}
+    try { await _tts.setVolume(1.0); }               catch (_) {}
     try {
-      await _tts.setLanguage(_ttsLocale(lang));
-      await _tts.setSpeechRate(ttsRate);
-      await _tts.setVolume(1.0);
       await _tts.setPitch(lang == 'hi' || lang == 'bho' ? 1.05 : 1.0);
+    } catch (_) {}
 
-      final clean   = _stripMarkdown(text);
-      // _stripMarkdown already clips to 900 chars
-      final clipped = clean;
-
+    // ── 3. Speak ──────────────────────────────────────────────────────────
+    try {
       state = state.copyWith(
           voiceState: state.voiceState.copyWith(isSpeaking: true));
       await _tts.speak(clipped);
@@ -312,6 +532,56 @@ class ChatbotController extends StateNotifier<ChatbotState> {
       state = state.copyWith(
           voiceState: state.voiceState.copyWith(isSpeaking: false));
     }
+  }
+
+  /// Returns the best available locale string from the cached set,
+  /// or null if the cache is empty / the engine should use its default.
+  ///
+  /// Priority:
+  ///   1. Exact match       (e.g. "hi-in")
+  ///   2. Language prefix   (e.g. "hi" in "hi-in")
+  ///   3. en-IN / en-US / en-GB / any English
+  ///   4. null  → skip setLanguage, let engine use its default
+  String? _resolveLocaleFromCache(String wanted) {
+    final cache = _ttsAvailableLocales;
+
+    // Empty cache means engine threw during enumeration — skip setLanguage
+    if (cache == null || cache.isEmpty) return null;
+
+    final w = wanted.toLowerCase().trim();
+
+    // 1. Exact match
+    if (cache.contains(w)) return w;
+
+    // 2. Language-code prefix match (e.g. wanted="ne-np", cache has "ne-xx")
+    final prefix = w.split('-').first;
+    final prefixMatch = cache.where((l) => l.startsWith(prefix)).toList();
+    if (prefixMatch.isNotEmpty) {
+      // Prefer region-qualified over bare code (better TTS quality)
+      prefixMatch.sort((a, b) => b.length.compareTo(a.length));
+      return prefixMatch.first;
+    }
+
+    // 3. English fallback chain
+    for (final fb in ['en-in', 'en-us', 'en-gb', 'en-au']) {
+      if (cache.contains(fb)) return fb;
+    }
+    final anyEnglish = cache.where((l) => l.startsWith('en')).toList();
+    if (anyEnglish.isNotEmpty) return anyEnglish.first;
+
+    // 4. Absolute last resort — first locale in cache
+    return cache.first;
+  }
+
+  /// Returns [wanted] if the device TTS engine supports it,
+  /// otherwise falls back through a priority list to 'en-IN'.
+  ///
+  /// Delegates to the cached locale set — for external/test use.
+  Future<String> safeResolveTtsLocale(String wanted) async {
+    if (_ttsAvailableLocales == null) {
+      await _prefetchTtsLocales();
+    }
+    return _resolveLocaleFromCache(wanted) ?? 'en-IN';
   }
 
   Future<void> stopSpeaking() async {
@@ -638,9 +908,18 @@ class ChatbotController extends StateNotifier<ChatbotState> {
   @override
   void dispose() {
     _restartListenTimer?.cancel();
-    _speech.stop();
-    _tts.stop();
+    _restartListenTimer = null;
+    
+    // Stop all voice services
+    _speech.stop().catchError((_) {});
+    _tts.stop().catchError((_) {});
     _audio.dispose();
+    
+    // TODO: Dispose offline STT resources when implemented
+    // _offlineStt.dispose();
+    // _recorder.dispose();
+    // AudioRecorderService.cleanupOldRecordings();
+    
     super.dispose();
   }
 }

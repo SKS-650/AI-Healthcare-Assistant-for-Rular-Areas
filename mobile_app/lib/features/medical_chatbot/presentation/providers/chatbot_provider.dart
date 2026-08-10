@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/network/network_info.dart';
 import '../../../authentication/data/repositories/authentication_repository_impl.dart';
 import '../../../authentication/presentation/providers/authentication_provider.dart';
 import '../../data/repositories/chatbot_repository_impl.dart';
@@ -12,6 +13,10 @@ import '../../domain/usecases/send_dummy_message.dart';
 import '../controllers/chatbot_controller.dart';
 import '../controllers/chatbot_state.dart';
 
+final networkInfoProvider = Provider<NetworkInfo>((ref) {
+  return NetworkInfo.instance;
+});
+
 final chatbotRepositoryProvider = Provider<ChatbotRepository>((ref) {
   // Pass the shared auth repository so the chatbot can read the access token
   // and use the automatic refresh logic.
@@ -23,6 +28,7 @@ final chatbotRepositoryProvider = Provider<ChatbotRepository>((ref) {
 final chatbotControllerProvider =
     StateNotifierProvider<ChatbotController, ChatbotState>((ref) {
   final repository = ref.watch(chatbotRepositoryProvider);
+  final networkInfo = ref.watch(networkInfoProvider);
   return ChatbotController(
     loadConversation: LoadConversation(repository),
     sendDummyMessage: SendDummyMessage(repository),
@@ -30,5 +36,6 @@ final chatbotControllerProvider =
     loadChatHistory: LoadChatHistory(repository),
     saveChatHistory: SaveChatHistory(repository),
     repository: repository,
+    networkInfo: networkInfo,
   );
 });

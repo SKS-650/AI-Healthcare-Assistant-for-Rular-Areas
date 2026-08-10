@@ -16,7 +16,7 @@ class ApiConfig {
   //
   // Format MUST be:  http://<IP>:<PORT>   ← colon between IP and port, no slash at end
   // ─────────────────────────────────────────────────────────────────────────
-  static const String _wifiBackendUrl = 'http://192.168.18.220:8000';
+  static const String _wifiBackendUrl = 'http://192.168.254.11:8000';
 
   // ─────────────────────────────────────────────────────────────────────────
   // Override via dart-define (optional — for CI / team members with different IPs):

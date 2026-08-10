@@ -10,6 +10,7 @@ class VoiceState {
   final String? errorMessage;
   final String? lastAudioBase64; // latest TTS MP3 from backend
   final double volume;       // 0.0–1.0  (mic amplitude hint)
+  final String? sttEngine;   // 'online' | 'offline' | null
 
   const VoiceState({
     this.isListening    = false,
@@ -21,6 +22,7 @@ class VoiceState {
     this.errorMessage,
     this.lastAudioBase64,
     this.volume         = 0.0,
+    this.sttEngine,
   });
 
   VoiceState copyWith({
@@ -33,6 +35,7 @@ class VoiceState {
     String? errorMessage,
     String? lastAudioBase64,
     double? volume,
+    String? sttEngine,
     bool    clearError = false,
     bool    clearAudio = false,
   }) {
@@ -46,9 +49,16 @@ class VoiceState {
       errorMessage   : clearError     ? null : errorMessage ?? this.errorMessage,
       lastAudioBase64: clearAudio     ? null : lastAudioBase64 ?? this.lastAudioBase64,
       volume         : volume         ?? this.volume,
+      sttEngine      : sttEngine      ?? this.sttEngine,
     );
   }
 
   /// True when any voice activity is happening.
   bool get isActive => isListening || isSpeaking || isProcessing;
+  
+  /// True if using offline STT (Whisper)
+  bool get isOfflineMode => sttEngine == 'offline';
+  
+  /// True if using online STT (native speech recognition)
+  bool get isOnlineMode => sttEngine == 'online';
 }
