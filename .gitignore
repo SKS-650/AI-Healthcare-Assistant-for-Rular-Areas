@@ -8,6 +8,9 @@
 .env
 .env.*
 !.env.example          # keep the example template — it has no real secrets
+
+# Single source of truth for WiFi IP — edit this, then run sync_ip.ps1
+network.env
 backend/.env
 backend/.env.*
 !backend/.env.example
