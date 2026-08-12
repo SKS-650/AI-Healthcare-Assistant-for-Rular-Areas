@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 # Token lifetimes (seconds)
-ACCESS_TOKEN_EXPIRE_SECONDS: int = 15 * 60          # 15 minutes
+ACCESS_TOKEN_EXPIRE_SECONDS: int = 60 * 60          # 1 hour
 REFRESH_TOKEN_EXPIRE_SECONDS: int = 30 * 24 * 60 * 60  # 30 days
 
 # OTP

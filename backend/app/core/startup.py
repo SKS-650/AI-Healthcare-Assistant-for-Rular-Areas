@@ -85,16 +85,18 @@ async def on_startup() -> None:
             async with engine.begin() as conn:
                 await conn.run_sync(Base.metadata.create_all)
             logger.info("Database tables created/verified (dev auto-create).")
-            # Auto-seed admin defaults
+            # Auto-seed admin user and system settings
             try:
                 from app.database.connection import _get_session_factory
                 from app.admin.service import SystemSettingsService
+                from app.admin.seed import seed_admin
                 factory = _get_session_factory()
                 async with factory() as db:
+                    await seed_admin(db)
                     await SystemSettingsService.seed_defaults(db)
-                logger.info("System settings seeded.")
+                logger.info("Admin user and system settings seeded.")
             except Exception as seed_err:
-                logger.warning("Settings seed skipped: %s", seed_err)
+                logger.warning("Seed skipped: %s", seed_err)
         except Exception as e:
             logger.warning("Auto table creation failed (non-fatal): %s", e)
 
