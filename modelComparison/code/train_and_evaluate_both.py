@@ -250,6 +250,22 @@ def main():
     rf_metrics = evaluate_model(rf_model, X_test, y_test, "Random Forest")
     xgb_metrics = evaluate_model(xgb_model, X_test, y_test, "XGBoost")
     
+    # Save test predictions for statistical tests
+    print("\nSaving predictions for statistical testing...")
+    import pickle
+    rf_predictions = rf_model.predict(X_test)
+    xgb_predictions = xgb_model.predict(X_test)
+    
+    predictions_data = {
+        'y_test': y_test,
+        'rf_predictions': rf_predictions,
+        'xgb_predictions': xgb_predictions
+    }
+    
+    with open('test_predictions.pkl', 'wb') as f:
+        pickle.dump(predictions_data, f)
+    print("✓ Test predictions saved to test_predictions.pkl")
+    
     # Cross-validation on full dataset (using smaller subset for speed)
     print("\n" + "="*70)
     print("CROSS-VALIDATION")
@@ -264,6 +280,16 @@ def main():
     
     rf_cv_results = cross_validate_model(rf_model, X_cv, y_cv, "Random Forest", cv=5)
     xgb_cv_results = cross_validate_model(xgb_model, X_cv, y_cv, "XGBoost", cv=5)
+    
+    # Save CV scores for statistical tests
+    cv_scores_data = {
+        'rf_scores': rf_cv_results['cv_scores'],
+        'xgb_scores': xgb_cv_results['cv_scores']
+    }
+    
+    with open('cv_scores.pkl', 'wb') as f:
+        pickle.dump(cv_scores_data, f)
+    print("✓ CV scores saved to cv_scores.pkl")
     
     # Compile all results
     results = {

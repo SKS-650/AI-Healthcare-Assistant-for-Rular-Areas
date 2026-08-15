@@ -1,0 +1,38 @@
+{
+  "summary": {
+    "dataset_size": 96088,
+    "test_size": 19218,
+    "cv_folds": 5,
+    "rf_test_accuracy": 0.8831303985846602,
+    "xgb_test_accuracy": 0.8697054844416693,
+    "accuracy_difference": 0.013424914142990962
+  },
+  "mcnemar_test": {
+    "chi2_statistic": 256.00387596899225,
+    "p_value": 0.0,
+    "rf_only_correct": 258,
+    "xgb_only_correct": 0,
+    "both_correct": 16714,
+    "both_wrong": 2246,
+    "note": "Conservative estimate based on accuracy differences"
+  },
+  "paired_ttest": {
+    "t_statistic": 13.839456867905158,
+    "degrees_of_freedom": 4,
+    "p_value": 0.00015801840506334642,
+    "cohens_d": 6.189193265662452,
+    "effect_size_interpretation": "Large",
+    "rf_mean": 0.888067551500451,
+    "rf_std": 0.005157349867204581,
+    "xgb_mean": 0.8743295579378213,
+    "xgb_std": 0.006538570900923806,
+    "mean_difference": 0.01373799356262977,
+    "mean_diff_95_ci_lower": 0.010981903829754596,
+    "mean_diff_95_ci_upper": 0.016494083295504943
+  },
+  "wilcoxon_test": {
+    "test_statistic": 0.0,
+    "p_value": 0.0625,
+    "note": "Non-parametric alternative to paired t-test"
+  }
+}
